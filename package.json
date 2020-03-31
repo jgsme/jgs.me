@@ -24,7 +24,7 @@
     "@jigsaw/sb-scripts": "^0.0.4",
     "@progfay/scrapbox-parser": "^4.0.0-0",
     "@svgr/webpack": "^5.1.0",
-    "next": "^9.2.1",
+    "next": "^9.3.2",
     "react": "^16.12.0",
     "react-dom": "^16.12.0"
   },

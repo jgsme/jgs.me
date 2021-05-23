@@ -234,10 +234,6 @@ export const Layout: FC = ({ children }) => (
         type="text/javascript"
         dangerouslySetInnerHTML={{ __html: ga }}
       ></script>
-      <script
-        src="https://kit.fontawesome.com/eccd084921.js"
-        crossOrigin="anonymous"
-      ></script>
     </Head>
     <div>
       <header>

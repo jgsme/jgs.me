@@ -4,35 +4,29 @@ copy: A Web Application/Service Creator
 mainLinks:
   - name: Codes
     href: https://github.com/e-jigsaw
-    fa: fab fa-github
+    fa: github
   - name: Scrapbox
     href: https://scrapbox.io/jigsaw/
-    fa: fas fa-sticky-note
+    fa: edit
 links:
   - name: neo6120
     href: https://twitter.com/neo6120
-    fa: fab fa-twitter-square
+    fa: twitter
   - name: takaya.kobayashi
     href: http://fb.me/takaya.kobayashi
-    fa: fab fa-facebook-square
+    fa: facebook
   - name: takaya-kobayashi
     href: https://www.linkedin.com/in/takaya-kobayashi/
-    fa: fab fa-linkedin
-  - name: jgs
-    href: https://dev.to/jgs
-    fa: fab fa-dev
+    fa: linkedin
   - name: neo6120
     href: https://steamcommunity.com/id/neo6120
-    fa: fab fa-steam
+    fa: globe
   - name: neo6120
     href: https://www.last.fm/user/neo6120
-    fa: fab fa-lastfm-square
-  - name: jigsaw
-    href: https://bookmeter.com/users/81576
-    fa: fas fa-book
+    fa: music
   - name: jgs
     href: https://keybase.io/jgs
-    fa: fas fa-key
+    fa: key
 projects:
   - name: 2 minutes starter
     href: https://2.kbys.tk

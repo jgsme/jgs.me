@@ -1,4 +1,5 @@
 import { NextPage } from 'next'
+import { icons } from 'feather-icons'
 import { Layout } from 'components/Layout'
 import data from 'data/meta.json'
 import updates from 'data/updates.json'
@@ -19,7 +20,13 @@ const TopPage: NextPage = () => (
       <div className="main-links">
         {data.mainLinks.map((link) => (
           <a className="link" href={link.href} key={link.href}>
-            <i className={`icon ${link.fa}`} />
+            <i
+              className="icon"
+              style={{ position: 'relative', top: 4 }}
+              dangerouslySetInnerHTML={{
+                __html: icons[link.fa]?.toSvg({ width: 28, height: 28 }),
+              }}
+            ></i>
             {link.name}
           </a>
         ))}
@@ -33,7 +40,13 @@ const TopPage: NextPage = () => (
         <div className="link-grid">
           {data.links.map((link) => (
             <a className="link" href={link.href} key={link.href}>
-              <i className={`icon ${link.fa}`} />
+              <i
+                className="icon"
+                style={{ position: 'relative', top: 2 }}
+                dangerouslySetInnerHTML={{
+                  __html: icons[link.fa]?.toSvg({ width: 24, height: 24 }),
+                }}
+              ></i>
               <span>{link.name}</span>
             </a>
           ))}

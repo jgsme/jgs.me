@@ -236,8 +236,7 @@ export const Layout: FC = ({ children }) => (
       ></script>
       <script
         type="text/javascript"
-        src="https://use.fontawesome.com/releases/v5.4.2/js/all.js"
-        defer
+        src="https://use.fontawesome.com/releases/v5.15.3/js/all.js"
       ></script>
     </Head>
     <div>

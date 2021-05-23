@@ -31,7 +31,7 @@
   "scripts": {
     "dev": "next",
     "build": "next build && next export",
-    "meta": "js-yaml meta.yml > meta.json",
+    "meta": "js-yaml meta.yml > data/meta.json",
     "fetch": "node node_modules/@jigsaw/sb-scripts/prepare.js && node node_modules/@jigsaw/sb-scripts/dic.js && node scripts/fetch.js"
   }
 }

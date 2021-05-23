@@ -1,6 +1,6 @@
 import { NextPage } from 'next'
 import { Layout } from 'components/Layout'
-import data from 'meta.json'
+import data from 'data/meta.json'
 import updates from 'data/updates.json'
 
 const TopPage: NextPage = () => (
@@ -17,7 +17,7 @@ const TopPage: NextPage = () => (
         <p>{data.copy}</p>
       </div>
       <div className="main-links">
-        {data.mainLinks.map(link => (
+        {data.mainLinks.map((link) => (
           <a className="link" href={link.href} key={link.href}>
             <i className={`icon ${link.fa}`} />
             {link.name}
@@ -31,7 +31,7 @@ const TopPage: NextPage = () => (
           <span>Links</span>
         </h3>
         <div className="link-grid">
-          {data.links.map(link => (
+          {data.links.map((link) => (
             <a className="link" href={link.href} key={link.href}>
               <i className={`icon ${link.fa}`} />
               <span>{link.name}</span>
@@ -46,7 +46,7 @@ const TopPage: NextPage = () => (
           <span>Recent Articles</span>
         </h3>
         <div className="update-container">
-          {updates.articles.map(article => (
+          {updates.articles.map((article) => (
             <a
               href={`https://amp.kbys.tk/${article.id}.html`}
               key={article.id}
@@ -65,7 +65,7 @@ const TopPage: NextPage = () => (
           <span>Recent Clips</span>
         </h3>
         <div className="update-container">
-          {updates.clips.map(clip => (
+          {updates.clips.map((clip) => (
             <a
               href={`https://amp.kbys.tk/${clip.id}.html`}
               key={clip.id}

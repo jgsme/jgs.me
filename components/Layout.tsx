@@ -235,8 +235,8 @@ export const Layout: FC = ({ children }) => (
         dangerouslySetInnerHTML={{ __html: ga }}
       ></script>
       <script
-        type="text/javascript"
-        src="https://use.fontawesome.com/releases/v5.15.3/js/all.js"
+        src="https://kit.fontawesome.com/eccd084921.js"
+        crossOrigin="anonymous"
       ></script>
     </Head>
     <div>

@@ -7,7 +7,7 @@ mainLinks:
     fa: fab fa-github
   - name: Scrapbox
     href: https://scrapbox.io/jigsaw/
-    fa: fas fa-sticky-note 
+    fa: fas fa-sticky-note
 links:
   - name: neo6120
     href: https://twitter.com/neo6120
@@ -33,3 +33,28 @@ links:
   - name: jgs
     href: https://keybase.io/jgs
     fa: fas fa-key
+projects:
+  - name: 2 minutes starter
+    href: https://2.kbys.tk
+    desc: Just 2 minutes starter
+  - name: status
+    href: https://st.kbys.tk
+    desc: Status my own
+  - name: amp
+    href: https://amp.kbys.tk
+    desc: Generated from scrapbox
+  - name: color
+    href: https://color.kbys.tk
+    desc: Random color code generator
+  - name: emo
+    href: https://emo.kbys.tk
+    desc: Emoji search by Japanese
+donates:
+  monthly:
+    - name: GitHub
+      href: https://github.com/e-jigsaw
+  onetime:
+    - name: PayPal
+      href: https://paypal.me/jgsw
+    - name: Buy me a ramen
+      href: https://www.buymeacoffee.com/jgsw

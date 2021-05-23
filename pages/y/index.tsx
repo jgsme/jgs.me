@@ -1,7 +1,7 @@
 import { NextPage } from 'next'
-import { Layout } from '../../components/Layout'
-import data from '../../meta.json'
-import updates from '../../data/updates.json'
+import { Layout } from 'components/Layout'
+import data from 'meta.json'
+import updates from 'data/updates.json'
 
 const TopPage: NextPage = () => (
   <Layout>

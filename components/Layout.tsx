@@ -234,11 +234,6 @@ export const Layout: FC = ({ children }) => (
         type="text/javascript"
         dangerouslySetInnerHTML={{ __html: ga }}
       ></script>
-      <script
-        type="text/javascript"
-        src="https://use.fontawesome.com/releases/v5.4.2/js/all.js"
-        defer
-      ></script>
     </Head>
     <div>
       <header>

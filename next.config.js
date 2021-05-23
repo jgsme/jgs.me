@@ -5,5 +5,9 @@ module.exports = {
       use: ['@svgr/webpack'],
     })
     return config
-  }
+  },
+  reactStrictMode: true,
+  future: {
+    webpack5: true,
+  },
 }

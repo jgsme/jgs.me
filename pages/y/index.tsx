@@ -1,7 +1,8 @@
 import { NextPage } from 'next'
-import { Layout } from '../../components/Layout'
-import data from '../../meta.json'
-import updates from '../../data/updates.json'
+import { icons } from 'feather-icons'
+import { Layout } from 'components/Layout'
+import data from 'data/meta.json'
+import updates from 'data/updates.json'
 
 const TopPage: NextPage = () => (
   <Layout>
@@ -17,9 +18,15 @@ const TopPage: NextPage = () => (
         <p>{data.copy}</p>
       </div>
       <div className="main-links">
-        {data.mainLinks.map(link => (
+        {data.mainLinks.map((link) => (
           <a className="link" href={link.href} key={link.href}>
-            <i className={`icon ${link.fa}`} />
+            <i
+              className="icon"
+              style={{ position: 'relative', top: 4 }}
+              dangerouslySetInnerHTML={{
+                __html: icons[link.fa]?.toSvg({ width: 28, height: 28 }),
+              }}
+            ></i>
             {link.name}
           </a>
         ))}
@@ -31,9 +38,15 @@ const TopPage: NextPage = () => (
           <span>Links</span>
         </h3>
         <div className="link-grid">
-          {data.links.map(link => (
+          {data.links.map((link) => (
             <a className="link" href={link.href} key={link.href}>
-              <i className={`icon ${link.fa}`} />
+              <i
+                className="icon"
+                style={{ position: 'relative', top: 2 }}
+                dangerouslySetInnerHTML={{
+                  __html: icons[link.fa]?.toSvg({ width: 24, height: 24 }),
+                }}
+              ></i>
               <span>{link.name}</span>
             </a>
           ))}
@@ -46,7 +59,7 @@ const TopPage: NextPage = () => (
           <span>Recent Articles</span>
         </h3>
         <div className="update-container">
-          {updates.articles.map(article => (
+          {updates.articles.map((article) => (
             <a
               href={`https://amp.kbys.tk/${article.id}.html`}
               key={article.id}
@@ -65,7 +78,7 @@ const TopPage: NextPage = () => (
           <span>Recent Clips</span>
         </h3>
         <div className="update-container">
-          {updates.clips.map(clip => (
+          {updates.clips.map((clip) => (
             <a
               href={`https://amp.kbys.tk/${clip.id}.html`}
               key={clip.id}

@@ -10,30 +10,24 @@
     "@types/js-yaml": "^4.0.1",
     "@types/node": "^15.6.0",
     "@types/react": "^17.0.6",
-    "@typescript-eslint/eslint-plugin": "^4.24.0",
-    "@typescript-eslint/parser": "^4.24.0",
-    "eslint": "^7.27.0",
-    "eslint-config-prettier": "^8.3.0",
-    "eslint-plugin-prettier": "^3.4.0",
-    "eslint-plugin-react": "^7.23.2",
-    "eslint-plugin-react-hooks": "^4.2.0",
     "js-yaml": "^4.1.0",
-    "prettier": "^2.3.0",
     "typescript": "^4.2.4"
   },
   "dependencies": {
-    "@jigsaw/sb-scripts": "^0.0.4",
-    "@progfay/scrapbox-parser": "^7.1.0",
     "@svgr/webpack": "^5.5.0",
     "feather-icons": "^4.28.0",
-    "next": "^10.2.2",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2"
+    "next": "^12.3.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "scripts": {
     "dev": "next",
     "build": "next build && next export",
     "meta": "js-yaml meta.yml > data/meta.json",
-    "fetch": "node node_modules/@jigsaw/sb-scripts/prepare.js && node node_modules/@jigsaw/sb-scripts/dic.js && node scripts/fetch.js"
+    "fetch": "node scripts/fetch.mjs"
+  },
+  "packageManager": "yarn@3.2.4",
+  "volta": {
+    "node": "18.11.0"
   }
 }

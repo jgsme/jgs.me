@@ -1,8 +1,11 @@
-import { NextPage } from 'next'
-import { icons } from 'feather-icons'
-import { Layout } from 'components/Layout'
-import data from 'data/meta.json'
-import updates from 'data/updates.json'
+import { NextPage } from "next";
+import { icons } from "feather-icons";
+import { Layout } from "components/Layout";
+import data from "data/meta.json";
+import updates from "data/updates.json";
+
+const titlePurify = (str: string) =>
+  encodeURIComponent(str.replace(/\s/g, "_"));
 
 const TopPage: NextPage = () => (
   <Layout>
@@ -22,7 +25,7 @@ const TopPage: NextPage = () => (
           <a className="link" href={link.href} key={link.href}>
             <i
               className="icon"
-              style={{ position: 'relative', top: 4 }}
+              style={{ position: "relative", top: 4 }}
               dangerouslySetInnerHTML={{
                 __html: icons[link.fa]?.toSvg({ width: 28, height: 28 }),
               }}
@@ -42,7 +45,7 @@ const TopPage: NextPage = () => (
             <a className="link" href={link.href} key={link.href}>
               <i
                 className="icon"
-                style={{ position: 'relative', top: 2 }}
+                style={{ position: "relative", top: 2 }}
                 dangerouslySetInnerHTML={{
                   __html: icons[link.fa]?.toSvg({ width: 24, height: 24 }),
                 }}
@@ -61,12 +64,12 @@ const TopPage: NextPage = () => (
         <div className="update-container">
           {updates.articles.map((article) => (
             <a
-              href={`https://amp.kbys.tk/${article.id}.html`}
+              href={`https://w.kbys.tk/pages/${titlePurify(article.title)}`}
               key={article.id}
               className="update-link link"
             >
               <div>{article.title}</div>
-              <div>{new Date(article.updated * 1000).toLocaleDateString()}</div>
+              <div>{new Date(article.created).toLocaleDateString()}</div>
             </a>
           ))}
         </div>
@@ -80,12 +83,12 @@ const TopPage: NextPage = () => (
         <div className="update-container">
           {updates.clips.map((clip) => (
             <a
-              href={`https://amp.kbys.tk/${clip.id}.html`}
+              href={`https://w.kbys.tk/pages/${titlePurify(clip.title)}`}
               key={clip.id}
               className="update-link link"
             >
               <div>{clip.title}</div>
-              <div>{new Date(clip.updated * 1000).toLocaleDateString()}</div>
+              <div>{new Date(clip.created).toLocaleDateString()}</div>
             </a>
           ))}
         </div>
@@ -97,16 +100,13 @@ const TopPage: NextPage = () => (
           <span>More Info</span>
         </h3>
         <div className="update-container">
-          <a
-            href="https://amp.kbys.tk/5c29451d434bf90017d3b219.html"
-            className="update-link link"
-          >
+          <a href="https://w.kbys.tk/pages/jgs" className="update-link link">
             <div>About me (ja)</div>
           </a>
         </div>
       </div>
     </div>
   </Layout>
-)
+);
 
-export default TopPage
+export default TopPage;

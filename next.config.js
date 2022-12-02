@@ -1,3 +1,4 @@
+/** @type {import('next').NextConfig} */
 module.exports = {
   webpack(config) {
     config.module.rules.push({
@@ -7,4 +8,7 @@ module.exports = {
     return config;
   },
   reactStrictMode: true,
+  experimental: {
+    appDir: true,
+  },
 };

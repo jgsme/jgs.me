@@ -1,6 +1,7 @@
 lockfileVersion: 5.4
 
 specifiers:
+  '@next/font': ^13.0.6
   '@svgr/webpack': ^6.5.1
   '@types/feather-icons': ^4.29.0
   '@types/js-yaml': ^4.0.5
@@ -14,6 +15,7 @@ specifiers:
   typescript: ^4.9.3
 
 dependencies:
+  '@next/font': 13.0.6
   '@svgr/webpack': 6.5.1
   feather-icons: 4.29.0
   next: 13.0.6_biqbaboplfbrettd7655fr4n2y
@@ -1333,6 +1335,10 @@ packages:
 
   /@next/env/13.0.6:
     resolution: {integrity: sha512-yceT6DCHKqPRS1cAm8DHvDvK74DLIkDQdm5iV+GnIts8h0QbdHvkUIkdOvQoOODgpr6018skbmSQp12z5OWIQQ==}
+    dev: false
+
+  /@next/font/13.0.6:
+    resolution: {integrity: sha512-5vxNmvnV0CbYjQGtztD5Axft9C7npKihbQpiFhnDwdb99f9K/QSFfcJqxz0E5QBkf67O2niVGJ5lApJDu78w0w==}
     dev: false
 
   /@next/swc-android-arm-eabi/13.0.6:

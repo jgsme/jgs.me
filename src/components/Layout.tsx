@@ -1,4 +1,3 @@
-import { FC } from "react";
 import Head from "next/head";
 import Logo from "../../public/static/mark.svg";
 
@@ -9,7 +8,7 @@ const ga = `(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||fun
   ga('create', 'UA-96527600-1', 'auto');
   ga('send', 'pageview');`;
 
-export const Layout: FC = ({ children }) => (
+export const Layout: React.FC<React.PropsWithChildren> = ({ children }) => (
   <div>
     <style jsx global>{`
       html,

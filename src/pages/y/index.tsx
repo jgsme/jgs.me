@@ -27,7 +27,11 @@ const TopPage: NextPage = () => (
               className="icon"
               style={{ position: "relative", top: 4 }}
               dangerouslySetInnerHTML={{
-                __html: icons[link.fa]?.toSvg({ width: 28, height: 28 }),
+                // @ts-ignore
+                __html: icons[link.fa]?.toSvg({
+                  width: 28,
+                  height: 28,
+                }),
               }}
             ></i>
             {link.name}
@@ -47,6 +51,7 @@ const TopPage: NextPage = () => (
                 className="icon"
                 style={{ position: "relative", top: 2 }}
                 dangerouslySetInnerHTML={{
+                  // @ts-ignore
                   __html: icons[link.fa]?.toSvg({ width: 24, height: 24 }),
                 }}
               ></i>

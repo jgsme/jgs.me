@@ -6,17 +6,17 @@
   "author": "Takaya Kobayashi (https://kbys.tk/y)",
   "license": "MIT",
   "devDependencies": {
-    "@types/feather-icons": "^4.7.0",
-    "@types/js-yaml": "^4.0.1",
-    "@types/node": "^15.6.0",
-    "@types/react": "^17.0.6",
+    "@types/feather-icons": "^4.29.0",
+    "@types/js-yaml": "^4.0.5",
+    "@types/node": "^18.11.10",
+    "@types/react": "^18.0.25",
     "js-yaml": "^4.1.0",
-    "typescript": "^4.2.4"
+    "typescript": "^4.9.3"
   },
   "dependencies": {
-    "@svgr/webpack": "^5.5.0",
-    "feather-icons": "^4.28.0",
-    "next": "^12.3.1",
+    "@svgr/webpack": "^6.5.1",
+    "feather-icons": "^4.29.0",
+    "next": "^13.0.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
@@ -26,7 +26,7 @@
     "meta": "js-yaml meta.yml > data/meta.json",
     "fetch": "node scripts/fetch.mjs"
   },
-  "packageManager": "yarn@3.2.4",
+  "packageManager": "pnpm@7.17.1",
   "volta": {
     "node": "18.11.0"
   }

@@ -23,7 +23,7 @@
   "scripts": {
     "dev": "next",
     "build": "next build && next export",
-    "meta": "js-yaml meta.yml > data/meta.json",
+    "meta": "js-yaml meta.yml > src/data/meta.json",
     "fetch": "node scripts/fetch.mjs"
   },
   "packageManager": "pnpm@7.17.1",

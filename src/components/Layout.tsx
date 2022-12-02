@@ -1,13 +1,13 @@
-import { FC } from 'react'
-import Head from 'next/head'
-import Logo from '../public/static/mark.svg'
+import { FC } from "react";
+import Head from "next/head";
+import Logo from "../../public/static/mark.svg";
 
 const ga = `(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
   m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
   })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
   ga('create', 'UA-96527600-1', 'auto');
-  ga('send', 'pageview');`
+  ga('send', 'pageview');`;
 
 export const Layout: FC = ({ children }) => (
   <div>
@@ -43,7 +43,7 @@ export const Layout: FC = ({ children }) => (
       }
 
       header a::before {
-        content: ' ';
+        content: " ";
         border-top: 7rem solid #bd3129;
         border-left: 7rem solid transparent;
         border-right: 7rem solid transparent;
@@ -60,7 +60,7 @@ export const Layout: FC = ({ children }) => (
 
       .profile {
         text-align: center;
-        font-family: 'Cutive Mono', monospace;
+        font-family: "Cutive Mono", monospace;
       }
 
       .profile .photo img {
@@ -244,4 +244,4 @@ export const Layout: FC = ({ children }) => (
       {children}
     </div>
   </div>
-)
+);

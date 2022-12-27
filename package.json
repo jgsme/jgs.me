@@ -6,27 +6,26 @@
   "author": "Takaya Kobayashi (https://kbys.tk/y)",
   "license": "MIT",
   "devDependencies": {
-    "@types/feather-icons": "^4.29.0",
+    "@types/feather-icons": "^4.29.1",
     "@types/js-yaml": "^4.0.5",
-    "@types/node": "^18.11.10",
-    "@types/react": "^18.0.25",
     "js-yaml": "^4.1.0",
-    "typescript": "^4.9.3"
+    "prettier": "^2.8.1",
+    "prettier-plugin-astro": "^0.7.0"
   },
   "dependencies": {
-    "@svgr/webpack": "^6.5.1",
-    "feather-icons": "^4.29.0",
-    "next": "^13.0.6",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "astro": "^1.7.2",
+    "feather-icons": "^4.29.0"
   },
   "scripts": {
-    "dev": "next",
-    "build": "next build && next export",
     "meta": "js-yaml meta.yml > src/data/meta.json",
-    "fetch": "node scripts/fetch.mjs"
+    "fetch": "node scripts/fetch.mjs",
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
   },
-  "packageManager": "pnpm@7.17.1",
+  "packageManager": "pnpm@7.20.0",
   "volta": {
     "node": "18.11.0"
   }

@@ -75,7 +75,7 @@ const titlePurify = (str: string) =>
               class="update-link link"
             >
               <div>{article.title}</div>
-              <div>{new Date(article.created).toLocaleDateString()}</div>
+              <div>{new Date(article.created).toLocaleDateString('ja-jp')}</div>
             </a>
           ))
         }
@@ -95,7 +95,7 @@ const titlePurify = (str: string) =>
               class="update-link link"
             >
               <div>{clip.title}</div>
-              <div>{new Date(clip.created).toLocaleDateString()}</div>
+              <div>{new Date(clip.created).toLocaleDateString('ja-jp')}</div>
             </a>
           ))
         }

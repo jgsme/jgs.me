@@ -18,7 +18,7 @@
   },
   "scripts": {
     "meta": "js-yaml meta.yml > src/data/meta.json",
-    "fetch": "node scripts/fetch.mjs && cat src/data/updates.json",
+    "fetch": "node scripts/fetch.mjs",
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",

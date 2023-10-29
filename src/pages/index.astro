@@ -71,11 +71,11 @@ const titlePurify = (str: string) =>
         {
           updates.articles.map((article) => (
             <a
-              href={`https://w.kbys.tk/pages/${titlePurify(article.title)}`}
+              href={`https://w.jgs.me/pages/${titlePurify(article.title)}`}
               class="update-link link"
             >
               <div>{article.title}</div>
-              <div>{new Date(article.created).toLocaleDateString('ja-jp')}</div>
+              <div>{new Date(article.created).toLocaleDateString("ja-jp")}</div>
             </a>
           ))
         }
@@ -91,11 +91,11 @@ const titlePurify = (str: string) =>
         {
           updates.clips.map((clip) => (
             <a
-              href={`https://w.kbys.tk/pages/${titlePurify(clip.title)}`}
+              href={`https://w.jgs.me/pages/${titlePurify(clip.title)}`}
               class="update-link link"
             >
               <div>{clip.title}</div>
-              <div>{new Date(clip.created).toLocaleDateString('ja-jp')}</div>
+              <div>{new Date(clip.created).toLocaleDateString("ja-jp")}</div>
             </a>
           ))
         }
@@ -108,7 +108,7 @@ const titlePurify = (str: string) =>
         <span>More Info</span>
       </h3>
       <div class="update-container">
-        <a href="https://w.kbys.tk/pages/jgs" class="update-link link">
+        <a href="https://w.jgs.me/pages/jgs" class="update-link link">
           <div>About me (ja)</div>
         </a>
       </div>

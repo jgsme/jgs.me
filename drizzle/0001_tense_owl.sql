@@ -1,0 +1,1 @@
+ALTER TABLE `page` ADD `sbID` text NOT NULL;

@@ -1,8 +1,38 @@
 {
   "private": true,
   "name": "w.jgs.me",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "wrangler pages dev",
+    "deploy": "$npm_execpath run build && wrangler pages deploy",
+    "gen": "drizzle-kit generate"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@paralleldrive/cuid2": "^2.2.2",
+    "@vitejs/plugin-react": "^4.3.1",
+    "drizzle-orm": "^0.33.0",
+    "hono": "^4.5.9",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "vike": "^0.4.193",
+    "vike-cloudflare": "^0.1.0",
+    "vike-react": "^0.5.4",
+    "vite-tsconfig-paths": "^5.0.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240529.0",
+    "@hono/vite-dev-server": "^0.14.0",
+    "@types/react": "^18.3.4",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.20",
+    "drizzle-kit": "^0.24.2",
+    "postcss": "^8.4.41",
+    "tailwindcss": "^3.4.10",
+    "typescript": "^5.6.2",
+    "vite": "^5.2.12",
+    "wrangler": "^3.57.2"
+  }
 }

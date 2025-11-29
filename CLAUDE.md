@@ -19,16 +19,20 @@ pnpm gen          # Generate Drizzle migrations (drizzle-kit generate)
 
 ## Architecture
 
-Vike + React + Hono で構成された Cloudflare Pages アプリケーション。
+Vike + React + Photon + Hono で構成された Cloudflare Pages アプリケーション。
+
+### Photon
+- `@photonjs/cloudflare`, `@photonjs/hono`, `@photonjs/core` を使用
+- `vike-photon` で Vike と統合
+- Vite プラグインとして動作し、Cloudflare Workers 向けにビルド
 
 ### Entry Points
-- `hono-entry.ts` - Hono サーバーエントリポイント。API ルートと Vike ハンドラを統合
-- `server/vike-handler.ts` - Vike の SSR レンダリングを Cloudflare Workers Response に変換
+- `server/index.ts` - Hono サーバーエントリポイント。`@photonjs/hono` の `apply()` と `serve()` で Vike と統合
 
 ### Database
 - Cloudflare D1 (SQLite) + Drizzle ORM
 - スキーマ: `db/schema.ts`
-- D1バインディング: `DB` (wrangler.toml で定義)
+- D1バインディング: `DB` (wrangler.jsonc で定義)
 - マイグレーション: `drizzle/` ディレクトリ
 
 ### Pages (Vike)
@@ -36,7 +40,14 @@ Vike + React + Hono で構成された Cloudflare Pages アプリケーション
 - `+Page.tsx` - ページコンポーネント
 - `+data.ts` - サーバーサイドデータフェッチ
 - `+config.ts` - ページ設定
+- `+route.ts` - カスタムルート定義
 - レイアウト: `pages/Layout.tsx`
+
+### Page Structure
+- `pages/index/` - 記事一覧ページ（ページネーション対応、`?p=N`）
+- `pages/article/@title/` - 記事詳細ページ（ルート: `/pages/@title`）
+  - Scrapbox API からコンテンツ取得、`@progfay/scrapbox-parser` でパース
+- `pages/a/@id/` - 共有URL用リダイレクト（`/a/{id}` → `/pages/{title}`）
 
 ### API Routes
 - `api/` 配下に Hono ハンドラを配置

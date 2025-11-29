@@ -1,6 +1,6 @@
 .wrangler
 node_modules
-wrangler.toml
 **/.claude/settings.local.json
 dist
 data
+.dev.vars

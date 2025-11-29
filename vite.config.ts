@@ -1,7 +1,6 @@
 import { defineConfig } from "vite";
-import { pages } from "vike-cloudflare";
-import devServer from "@hono/vite-dev-server";
-import adapter from "@hono/vite-dev-server/cloudflare";
+import { installPhoton } from "@photonjs/runtime/vite";
+import { cloudflare } from "@photonjs/cloudflare/vite";
 import vike from "vike/plugin";
 import react from "@vitejs/plugin-react";
 
@@ -13,28 +12,12 @@ export default defineConfig(() => {
       },
     },
     plugins: [
-      devServer({
-        entry: "hono-entry.ts",
-        adapter,
-        exclude: [
-          /^\/@.+$/,
-          /.*\.(ts|tsx|vue)($|\?)/,
-          /.*\.(s?css|less)($|\?)/,
-          /^\/favicon\.ico$/,
-          /.*\.(svg|png)($|\?)/,
-          /^\/(public|assets|static)\/.+/,
-          /^\/node_modules\/.*/,
-        ],
-        injectClientScript: false,
-      }),
       react(),
       vike({}),
-      pages({
-        server: {
-          kind: "hono",
-          entry: "hono-entry.ts",
-        },
+      installPhoton({
+        server: "server/index.ts",
       }),
+      cloudflare(),
     ],
   };
 });

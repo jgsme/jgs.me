@@ -23,6 +23,9 @@ importers:
       '@photonjs/runtime':
         specifier: ^0.1.10
         version: 0.1.10(@cloudflare/workers-types@4.20251128.0)(@hattip/core@0.0.49)(hono@4.10.7)(rollup@4.53.3)(vite@7.2.4(jiti@2.6.1)(lightningcss@1.30.2)(yaml@2.7.0))
+      '@progfay/scrapbox-parser':
+        specifier: ^10.0.2
+        version: 10.0.2
       '@vitejs/plugin-react':
         specifier: ^5.1.1
         version: 5.1.1(vite@7.2.4(jiti@2.6.1)(lightningcss@1.30.2)(yaml@2.7.0))
@@ -1072,6 +1075,9 @@ packages:
 
   '@poppinss/exception@1.2.2':
     resolution: {integrity: sha512-m7bpKCD4QMlFCjA/nKTs23fuvoVFoA83brRKmObCUNmi/9tVu8Ve3w4YQAnJu4q3Tjf5fr685HYIC/IA2zHRSg==}
+
+  '@progfay/scrapbox-parser@10.0.2':
+    resolution: {integrity: sha512-UmOqpgMAdYM7/mCY25h7gtI4E0vube+1kkoOu7vnWwYSHIbsM088zJacpmfr/+fr61hAbRgeeMrBPw3pvNnMhQ==}
 
   '@remix-run/node-fetch-server@0.8.1':
     resolution: {integrity: sha512-J1dev372wtJqmqn9U/qbpbZxbJSQrogNN2+Qv1lKlpATpe/WQ9aCZfl/xSb9d2Rgh1IyLSvNxZAXPZxruO6Xig==}
@@ -3147,6 +3153,8 @@ snapshots:
       supports-color: 10.2.2
 
   '@poppinss/exception@1.2.2': {}
+
+  '@progfay/scrapbox-parser@10.0.2': {}
 
   '@remix-run/node-fetch-server@0.8.1': {}
 

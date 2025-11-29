@@ -16,6 +16,7 @@
     "@photonjs/core": "^0.1.13",
     "@photonjs/hono": "^0.1.7",
     "@photonjs/runtime": "^0.1.10",
+    "@progfay/scrapbox-parser": "^10.0.2",
     "@vitejs/plugin-react": "^5.1.1",
     "drizzle-orm": "^0.44.7",
     "hono": "^4.10.7",

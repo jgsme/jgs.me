@@ -1,7 +1,10 @@
 import React from "react";
 import { useData } from "vike-react/useData";
 import type data from "./+data";
-import type { BlockType, NodeType } from "@progfay/scrapbox-parser";
+import type {
+  Block as BlockType,
+  Node as NodeType,
+} from "@progfay/scrapbox-parser";
 
 type Data = Awaited<ReturnType<typeof data>>;
 
@@ -79,7 +82,9 @@ const Node: React.FC<{ node: NodeType }> = ({ node }) => {
     case "icon":
       return (
         <img
-          src={`https://scrapbox.io/api/pages/jigsaw/${encodeURIComponent(node.path)}/icon`}
+          src={`https://scrapbox.io/api/pages/jigsaw/${encodeURIComponent(
+            node.path
+          )}/icon`}
           alt={node.path}
           className="inline w-6 h-6 rounded"
         />
@@ -87,7 +92,12 @@ const Node: React.FC<{ node: NodeType }> = ({ node }) => {
 
     case "quote":
       return (
-        <span className="text-neutral-500 italic">&gt; {node.nodes.map((n, i) => <Node key={i} node={n} />)}</span>
+        <span className="text-neutral-500 italic">
+          &gt;{" "}
+          {node.nodes.map((n, i) => (
+            <Node key={i} node={n} />
+          ))}
+        </span>
       );
 
     default:
@@ -180,14 +190,29 @@ const Page = () => {
     );
   }
 
+  let lineCount = 0;
+  const filteredBlocks = d.blocks.filter((block) => {
+    if (block.type === "title") return false;
+    if (block.type === "line" && d.skipLines > 0) {
+      lineCount++;
+      if (lineCount <= d.skipLines) return false;
+    }
+    return true;
+  });
+
   return (
     <main className="max-w-3xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold">{d.title}</h1>
+        <div>
+          <h1 className="text-2xl font-bold">{d.title}</h1>
+          {d.fromDate && (
+            <p className="text-neutral-500 text-sm mt-1">{d.fromDate}</p>
+          )}
+        </div>
         <CopyButton articleId={d.articleId} />
       </div>
       <article className="space-y-1">
-        {d.blocks.map((block, i) => (
+        {filteredBlocks.map((block, i) => (
           <Block key={i} block={block} />
         ))}
       </article>

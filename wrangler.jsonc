@@ -2,5 +2,5 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "w",
   "compatibility_date": "2025-08-28",
-  "pages_build_output_dir": "./dist/client"
+  "main": "virtual:photon:cloudflare:server-entry"
 }

@@ -1,5 +1,5 @@
 import type { PageContextServer } from "vike/types";
-import { Bindings } from "@/hono-entry";
+import type { Bindings } from "@/server";
 import { articles, pages } from "@/db/schema";
 import { getDB } from "@/db/getDB";
 import { desc, eq } from "drizzle-orm";

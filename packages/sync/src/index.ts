@@ -36,30 +36,20 @@ type ScrapboxPageResponse = {
 
 const SCRAPBOX_PROJECT = "jigsaw";
 
-async function fetchPageList(): Promise<ScrapboxListResponse["pages"]> {
-  let pages: ScrapboxListResponse["pages"] = [];
-  let skip = 0;
-  const limit = 100;
+async function fetchPageListChunk(
+  skip: number,
+  limit: number
+): Promise<{ pages: ScrapboxListResponse["pages"]; total: number }> {
+  const res = await fetch(
+    `https://scrapbox.io/api/pages/${SCRAPBOX_PROJECT}?skip=${skip}&limit=${limit}`
+  );
 
-  while (true) {
-    const res = await fetch(
-      `https://scrapbox.io/api/pages/${SCRAPBOX_PROJECT}?skip=${skip}&limit=${limit}`
-    );
-
-    if (!res.ok) {
-      throw new Error(`Failed to fetch page list: ${res.status}`);
-    }
-
-    const json = (await res.json()) as ScrapboxListResponse;
-    pages = pages.concat(json.pages);
-
-    if (skip + limit >= json.count) {
-      break;
-    }
-    skip += limit;
+  if (!res.ok) {
+    throw new Error(`Failed to fetch page list: ${res.status}`);
   }
 
-  return pages;
+  const json = (await res.json()) as ScrapboxListResponse;
+  return { pages: json.pages, total: json.count };
 }
 
 async function fetchPageDetail(title: string): Promise<ScrapboxPageResponse> {
@@ -78,21 +68,32 @@ async function fetchPageDetail(title: string): Promise<ScrapboxPageResponse> {
 
 export class SyncWorkflow extends WorkflowEntrypoint<Env, unknown> {
   async run(_event: WorkflowEvent<unknown>, step: WorkflowStep) {
-    const pages = await step.do("fetch-page-list", async () => {
-      const allPages = await fetchPageList();
-      return allPages.map((p) => ({
-        id: p.id,
-        title: p.title,
-        updated: p.updated,
-      }));
+    const { total } = await step.do("get-page-count", async () => {
+      const result = await fetchPageListChunk(0, 1);
+      return { total: result.total };
     });
+
+    const listChunkSize = 1000;
+    let allPages: { id: string; title: string; updated: number }[] = [];
+
+    for (let skip = 0; skip < total; skip += listChunkSize) {
+      const chunk = await step.do(`fetch-page-list-${skip}`, async () => {
+        const result = await fetchPageListChunk(skip, listChunkSize);
+        return result.pages.map((p) => ({
+          id: p.id,
+          title: p.title,
+          updated: p.updated,
+        }));
+      });
+      allPages = allPages.concat(chunk);
+    }
 
     let synced = 0;
     let skipped = 0;
 
-    const batchSize = 100;
-    for (let i = 0; i < pages.length; i += batchSize) {
-      const batch = pages.slice(i, i + batchSize);
+    const syncBatchSize = 100;
+    for (let i = 0; i < allPages.length; i += syncBatchSize) {
+      const batch = allPages.slice(i, i + syncBatchSize);
 
       const results = await step.do(`sync-batch-${i}`, async () => {
         const batchResults = { synced: 0, skipped: 0 };
@@ -143,7 +144,7 @@ export class SyncWorkflow extends WorkflowEntrypoint<Env, unknown> {
       skipped += results.skipped;
     }
 
-    return { synced, skipped, total: pages.length };
+    return { synced, skipped, total: allPages.length };
   }
 }
 

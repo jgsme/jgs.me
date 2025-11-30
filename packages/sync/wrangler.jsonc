@@ -6,6 +6,13 @@
   "triggers": {
     "crons": ["0 19 * * *"]
   },
+  "workflows": [
+    {
+      "name": "sync-workflow",
+      "binding": "SYNC_WORKFLOW",
+      "class_name": "SyncWorkflow"
+    }
+  ],
   "r2_buckets": [
     {
       "binding": "R2",

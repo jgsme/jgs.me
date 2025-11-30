@@ -14,6 +14,7 @@ const data = async (c: Context) => {
   const title = decodeURIComponent(c.routeParams.title);
   const db = getDB(c.env.DB);
 
+  // article ID を取得
   const article = await db
     .select({ articleId: articles.id })
     .from(articles)

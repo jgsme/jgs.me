@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "w-sync",
+  "compatibility_date": "2025-08-28",
+  "main": "src/index.ts",
+  "triggers": {
+    "crons": ["0 19 * * *"]
+  },
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "w-data"
+    }
+  ]
+}

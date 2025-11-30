@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 
 export type Bindings = {
   DB: D1Database;
+  R2: R2Bucket;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();

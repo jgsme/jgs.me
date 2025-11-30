@@ -1,0 +1,43 @@
+{
+  "private": true,
+  "name": "web",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "wrangler dev",
+    "deploy": "$npm_execpath run build && wrangler deploy",
+    "gen": "drizzle-kit generate"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@paralleldrive/cuid2": "^3.0.4",
+    "@photonjs/cloudflare": "^0.1.8",
+    "@photonjs/core": "^0.1.13",
+    "@photonjs/hono": "^0.1.7",
+    "@photonjs/runtime": "^0.1.10",
+    "@progfay/scrapbox-parser": "^10.0.2",
+    "@vitejs/plugin-react": "^5.1.1",
+    "drizzle-orm": "^0.44.7",
+    "hono": "^4.10.7",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "vike": "^0.4.247",
+    "vike-photon": "^0.1.20",
+    "vike-react": "^0.6.13",
+    "vite-tsconfig-paths": "^5.1.4"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251128.0",
+    "@tailwindcss/postcss": "^4.1.17",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "autoprefixer": "^10.4.22",
+    "drizzle-kit": "^0.31.7",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.17",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.4",
+    "wrangler": "^4.51.0"
+  }
+}

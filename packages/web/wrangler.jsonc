@@ -18,5 +18,11 @@
       "database_id": "bd809baf-e2e6-41e2-9561-f77981b43ba5",
       "migrations_dir": "drizzle"
     }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "w-data"
+    }
   ]
 }

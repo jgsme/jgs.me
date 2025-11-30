@@ -91,7 +91,7 @@ export class SyncWorkflow extends WorkflowEntrypoint<Env, unknown> {
     let synced = 0;
     let skipped = 0;
 
-    const syncBatchSize = 100;
+    const syncBatchSize = 10;
     for (let i = 0; i < allPages.length; i += syncBatchSize) {
       const batch = allPages.slice(i, i + syncBatchSize);
 

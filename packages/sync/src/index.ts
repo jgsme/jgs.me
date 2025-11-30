@@ -136,14 +136,7 @@ export default {
     );
   },
 
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
-
-    if (url.pathname === "/sync") {
-      const result = await syncFromScrapbox(env);
-      return Response.json(result);
-    }
-
+  async fetch(_request: Request, _env: Env): Promise<Response> {
     return new Response("w-sync worker", { status: 200 });
   },
 };

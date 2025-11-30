@@ -11,6 +11,11 @@
       "name": "sync-workflow",
       "binding": "SYNC_WORKFLOW",
       "class_name": "SyncWorkflow"
+    },
+    {
+      "name": "sync-batch-workflow",
+      "binding": "SYNC_BATCH_WORKFLOW",
+      "class_name": "SyncBatchWorkflow"
     }
   ],
   "r2_buckets": [

@@ -7,6 +7,7 @@ import {
 type Env = {
   R2: R2Bucket;
   SYNC_WORKFLOW: Workflow;
+  SYNC_BATCH_WORKFLOW: Workflow;
 };
 
 type ScrapboxListResponse = {
@@ -32,6 +33,17 @@ type ScrapboxPageResponse = {
     created: number;
     updated: number;
   }[];
+};
+
+type PageInfo = {
+  id: string;
+  title: string;
+  updated: number;
+};
+
+type SyncBatchParams = {
+  pages: PageInfo[];
+  batchIndex: number;
 };
 
 const SCRAPBOX_PROJECT = "jigsaw";
@@ -74,7 +86,7 @@ export class SyncWorkflow extends WorkflowEntrypoint<Env, unknown> {
     });
 
     const listChunkSize = 1000;
-    let allPages: { id: string; title: string; updated: number }[] = [];
+    let allPages: PageInfo[] = [];
 
     for (let skip = 0; skip < total; skip += listChunkSize) {
       const chunk = await step.do(`fetch-page-list-${skip}`, async () => {
@@ -88,63 +100,101 @@ export class SyncWorkflow extends WorkflowEntrypoint<Env, unknown> {
       allPages = allPages.concat(chunk);
     }
 
+    const batchSize = 500;
+    const batchCount = Math.ceil(allPages.length / batchSize);
+    const instanceIds: string[] = [];
+
+    for (let i = 0; i < batchCount; i++) {
+      const batchPages = allPages.slice(i * batchSize, (i + 1) * batchSize);
+
+      const instanceId = await step.do(`start-batch-${i}`, async () => {
+        const instance = await this.env.SYNC_BATCH_WORKFLOW.create({
+          params: {
+            pages: batchPages,
+            batchIndex: i,
+          } satisfies SyncBatchParams,
+        });
+        return instance.id;
+      });
+
+      instanceIds.push(instanceId);
+    }
+
+    return {
+      total: allPages.length,
+      batchCount,
+      instanceIds,
+    };
+  }
+}
+
+export class SyncBatchWorkflow extends WorkflowEntrypoint<
+  Env,
+  SyncBatchParams
+> {
+  async run(event: WorkflowEvent<SyncBatchParams>, step: WorkflowStep) {
+    const { pages, batchIndex } = event.payload;
+
     let synced = 0;
     let skipped = 0;
 
     const syncBatchSize = 10;
-    for (let i = 0; i < allPages.length; i += syncBatchSize) {
-      const batch = allPages.slice(i, i + syncBatchSize);
+    for (let i = 0; i < pages.length; i += syncBatchSize) {
+      const batch = pages.slice(i, i + syncBatchSize);
 
-      const results = await step.do(`sync-batch-${i}`, async () => {
-        const batchResults = { synced: 0, skipped: 0 };
+      const results = await step.do(
+        `batch-${batchIndex}-sync-${i}`,
+        async () => {
+          const batchResults = { synced: 0, skipped: 0 };
 
-        for (const page of batch) {
-          const key = `${page.id}.json`;
+          for (const page of batch) {
+            const key = `${page.id}.json`;
 
-          const existing = await this.env.R2.head(key);
-          if (existing?.customMetadata?.updated) {
-            const existingUpdated = parseInt(
-              existing.customMetadata.updated,
-              10
-            );
-            if (existingUpdated >= page.updated) {
-              batchResults.skipped++;
-              continue;
+            const existing = await this.env.R2.head(key);
+            if (existing?.customMetadata?.updated) {
+              const existingUpdated = parseInt(
+                existing.customMetadata.updated,
+                10
+              );
+              if (existingUpdated >= page.updated) {
+                batchResults.skipped++;
+                continue;
+              }
             }
+
+            const detail = await fetchPageDetail(page.title);
+
+            const data = {
+              id: detail.id,
+              title: detail.title,
+              image: detail.image,
+              created: detail.created,
+              updated: detail.updated,
+              lines: detail.lines.map((line) => ({
+                id: line.id,
+                text: line.text,
+                created: line.created,
+                updated: line.updated,
+              })),
+            };
+
+            await this.env.R2.put(key, JSON.stringify(data), {
+              httpMetadata: { contentType: "application/json" },
+              customMetadata: { updated: String(page.updated) },
+            });
+
+            batchResults.synced++;
           }
 
-          const detail = await fetchPageDetail(page.title);
-
-          const data = {
-            id: detail.id,
-            title: detail.title,
-            image: detail.image,
-            created: detail.created,
-            updated: detail.updated,
-            lines: detail.lines.map((line) => ({
-              id: line.id,
-              text: line.text,
-              created: line.created,
-              updated: line.updated,
-            })),
-          };
-
-          await this.env.R2.put(key, JSON.stringify(data), {
-            httpMetadata: { contentType: "application/json" },
-            customMetadata: { updated: String(page.updated) },
-          });
-
-          batchResults.synced++;
+          return batchResults;
         }
-
-        return batchResults;
-      });
+      );
 
       synced += results.synced;
       skipped += results.skipped;
     }
 
-    return { synced, skipped, total: allPages.length };
+    return { batchIndex, synced, skipped, total: pages.length };
   }
 }
 

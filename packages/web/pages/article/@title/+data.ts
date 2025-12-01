@@ -4,6 +4,7 @@ import { parse } from "@progfay/scrapbox-parser";
 import { getDB } from "@/db/getDB";
 import { articles, pages } from "@jigsaw/db";
 import { eq } from "drizzle-orm";
+import { useConfig } from "vike-react/useConfig";
 
 type Context = PageContextServer & {
   env: Bindings;
@@ -11,6 +12,7 @@ type Context = PageContextServer & {
 };
 
 const data = async (c: Context) => {
+  const config = useConfig();
   const title = decodeURIComponent(c.routeParams.title);
   const db = getDB(c.env.DB);
 
@@ -26,16 +28,26 @@ const data = async (c: Context) => {
   );
 
   if (!res.ok) {
+    config({
+      title: `${title} - I am Electrical machine`,
+    });
     return {
       ok: false as const,
       title,
       articleId: null,
       blocks: [],
+      description: null,
     };
   }
 
   const text = await res.text();
   const blocks = parse(text);
+  const description = text.split("\n").slice(3).join("").slice(0, 200);
+
+  config({
+    title: `${title} - I am Electrical machine`,
+    description,
+  });
 
   let fromDate: string | null = null;
   let skipLines = 0;
@@ -103,6 +115,7 @@ const data = async (c: Context) => {
     fromDate,
     skipLines,
     dateLineIndex,
+    description,
   };
 };
 

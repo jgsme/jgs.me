@@ -7,6 +7,7 @@ export const config = {
   extends: [vikeReact, vikePhoton],
   Layout,
   title: "I am Electrical machine",
+  lang: "ja",
   photon: {
     server: "server/index.ts",
   },

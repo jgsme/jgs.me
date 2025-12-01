@@ -6,7 +6,12 @@ import {
 import { drizzle } from "drizzle-orm/d1";
 import { pages, articles } from "@jigsaw/db";
 import { generateToken } from "@jigsaw/db/token";
-import { eq, isNull, desc } from "drizzle-orm";
+import { eq, isNull, desc, and, sql, SQL } from "drizzle-orm";
+import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
+
+function notGlob(column: SQLiteColumn, pattern: string): SQL {
+  return sql`${column} NOT GLOB ${pattern}`;
+}
 
 type Env = {
   DB: D1Database;
@@ -37,7 +42,13 @@ async function getUnregisteredPages(
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
-    .where(isNull(articles.id))
+    .where(
+      and(
+        isNull(articles.id),
+        notGlob(pages.title, "[0-9][0-9][0-9][0-9][0-9][0-9]"),
+        notGlob(pages.title, "[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]")
+      )
+    )
     .orderBy(desc(pages.created))
     .limit(MAX_PAGES);
 

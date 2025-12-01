@@ -18,6 +18,7 @@ type ScrapboxListResponse = {
     image: string | null;
     created: number;
     updated: number;
+    pin: number;
   }[];
 };
 
@@ -47,8 +48,7 @@ type SyncBatchParams = {
 };
 
 type SyncParams = {
-  start?: number;
-  end?: number;
+  cutoff?: number; // Unix timestamp (seconds). Only sync pages updated after this time.
 };
 
 const SCRAPBOX_PROJECT = "jigsaw";
@@ -58,7 +58,7 @@ async function fetchPageListChunk(
   limit: number
 ): Promise<{ pages: ScrapboxListResponse["pages"]; total: number }> {
   const res = await fetch(
-    `https://scrapbox.io/api/pages/${SCRAPBOX_PROJECT}?skip=${skip}&limit=${limit}`
+    `https://scrapbox.io/api/pages/${SCRAPBOX_PROJECT}?skip=${skip}&limit=${limit}&sort=updated`
   );
 
   if (!res.ok) {
@@ -85,66 +85,74 @@ async function fetchPageDetail(title: string): Promise<ScrapboxPageResponse> {
 
 export class SyncWorkflow extends WorkflowEntrypoint<Env, SyncParams> {
   async run(event: WorkflowEvent<SyncParams>, step: WorkflowStep) {
-    const { start = 0, end } = event.payload ?? {};
-
-    const { total } = await step.do("get-page-count", async () => {
-      const result = await fetchPageListChunk(0, 1);
-      return { total: result.total };
-    });
-
-    const actualEnd = end ?? total;
-    const rangeStart = Math.max(0, start);
-    const rangeEnd = Math.min(total, actualEnd);
+    const defaultCutoff = Math.floor(Date.now() / 1000) - 25 * 60 * 60;
+    const { cutoff = defaultCutoff } = event.payload ?? {};
 
     const listChunkSize = 1000;
     let allPages: PageInfo[] = [];
+    let skip = 0;
+    let reachedCutoff = false;
 
-    const firstChunk = Math.floor(rangeStart / listChunkSize) * listChunkSize;
-    for (let skip = firstChunk; skip < rangeEnd; skip += listChunkSize) {
-      const chunk = await step.do(`fetch-page-list-${skip}`, async () => {
-        const result = await fetchPageListChunk(skip, listChunkSize);
-        return result.pages.map((p) => ({
-          id: p.id,
-          title: p.title,
-          updated: p.updated,
-        }));
+    while (!reachedCutoff) {
+      const result = await step.do(`fetch-page-list-${skip}`, async () => {
+        const chunk = await fetchPageListChunk(skip, listChunkSize);
+        const pages: (PageInfo & { pin: number })[] = [];
+        let foundOldPage = false;
+
+        for (const p of chunk.pages) {
+          if (p.pin > 0 || p.updated >= cutoff) {
+            pages.push({
+              id: p.id,
+              title: p.title,
+              updated: p.updated,
+              pin: p.pin,
+            });
+          } else {
+            foundOldPage = true;
+            break;
+          }
+        }
+
+        return {
+          pages,
+          foundOldPage,
+          chunkSize: chunk.pages.length,
+          total: chunk.total,
+        };
       });
-      allPages = allPages.concat(chunk);
+
+      allPages = allPages.concat(result.pages.map(({ pin, ...rest }) => rest));
+
+      if (result.foundOldPage || result.chunkSize < listChunkSize) {
+        reachedCutoff = true;
+      } else {
+        skip += listChunkSize;
+      }
     }
 
-    const offsetInChunk = rangeStart - firstChunk;
-    const targetPages = allPages.slice(
-      offsetInChunk,
-      offsetInChunk + (rangeEnd - rangeStart)
-    );
-
     const batchSize = 300;
-    const batchCount = Math.ceil(targetPages.length / batchSize);
+    const batchCount = Math.ceil(allPages.length / batchSize);
     const instanceIds: string[] = [];
 
     for (let i = 0; i < batchCount; i++) {
-      const batchPages = targetPages.slice(i * batchSize, (i + 1) * batchSize);
-      const globalBatchIndex = Math.floor(rangeStart / batchSize) + i;
+      const batchPages = allPages.slice(i * batchSize, (i + 1) * batchSize);
 
-      const instanceId = await step.do(
-        `start-batch-${globalBatchIndex}`,
-        async () => {
-          const instance = await this.env.SYNC_BATCH_WORKFLOW.create({
-            params: {
-              pages: batchPages,
-              batchIndex: globalBatchIndex,
-            } satisfies SyncBatchParams,
-          });
-          return instance.id;
-        }
-      );
+      const instanceId = await step.do(`start-batch-${i}`, async () => {
+        const instance = await this.env.SYNC_BATCH_WORKFLOW.create({
+          params: {
+            pages: batchPages,
+            batchIndex: i,
+          } satisfies SyncBatchParams,
+        });
+        return instance.id;
+      });
 
       instanceIds.push(instanceId);
     }
 
     return {
-      range: { start: rangeStart, end: rangeEnd },
-      total: targetPages.length,
+      cutoff,
+      total: allPages.length,
       batchCount,
       instanceIds,
     };

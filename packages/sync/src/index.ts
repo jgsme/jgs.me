@@ -100,7 +100,7 @@ export class SyncWorkflow extends WorkflowEntrypoint<Env, unknown> {
       allPages = allPages.concat(chunk);
     }
 
-    const batchSize = 500;
+    const batchSize = 300;
     const batchCount = Math.ceil(allPages.length / batchSize);
     const instanceIds: string[] = [];
 
@@ -138,7 +138,7 @@ export class SyncBatchWorkflow extends WorkflowEntrypoint<
     let synced = 0;
     let skipped = 0;
 
-    const syncBatchSize = 10;
+    const syncBatchSize = 100;
     for (let i = 0; i < pages.length; i += syncBatchSize) {
       const batch = pages.slice(i, i + syncBatchSize);
 

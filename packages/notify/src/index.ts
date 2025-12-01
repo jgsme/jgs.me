@@ -66,11 +66,16 @@ async function sendDiscordNotification(
     ...lines,
   ].join("\n");
 
-  await fetch(env.DISCORD_WEBHOOK_URL, {
+  const res = await fetch(env.DISCORD_WEBHOOK_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ content }),
   });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Discord webhook failed: ${res.status} ${text}`);
+  }
 }
 
 export class NotifyWorkflow extends WorkflowEntrypoint<Env, unknown> {

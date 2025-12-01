@@ -27,10 +27,7 @@ async function fetchPageText(
     const obj = await r2.get(`${sbID}.json`);
     if (obj) {
       const data = await obj.json<R2PageData>();
-      return data.lines
-        .slice(1)
-        .map((l) => l.text)
-        .join("\n");
+      return data.lines.map((l) => l.text).join("\n");
     }
     console.log(`[R2 miss] title=${title}, sbID=${sbID}`);
   } else {

@@ -4,7 +4,7 @@ import {
   WorkflowStep,
 } from "cloudflare:workers";
 import { drizzle } from "drizzle-orm/d1";
-import { pages, articles } from "@jigsaw/db";
+import { pages, articles, excludedPages } from "@jigsaw/db";
 import { generateToken } from "@jigsaw/db/token";
 import { eq, isNull, desc, and, sql, SQL } from "drizzle-orm";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
@@ -42,9 +42,11 @@ async function getUnregisteredPages(
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
+    .leftJoin(excludedPages, eq(excludedPages.pageID, pages.id))
     .where(
       and(
         isNull(articles.id),
+        isNull(excludedPages.id),
         notGlob(pages.title, "[0-9][0-9][0-9][0-9][0-9][0-9]"),
         notGlob(pages.title, "[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]")
       )
@@ -83,7 +85,9 @@ async function sendDiscordNotification(
     unregisteredPages.map(async (p) => {
       const token = await generateToken(p.id, env.REGISTER_SECRET);
       const registerUrl = `https://${env.SITE_URL}/api/article/register?token=${token}`;
-      return `- ${p.title} ([登録](${registerUrl}))`;
+      const excludeUrl = `https://${env.SITE_URL}/api/article/exclude?token=${token}`;
+      return `- ${p.title}\n
+  - [登録](${registerUrl})・[除外](${excludeUrl})`;
     })
   );
 

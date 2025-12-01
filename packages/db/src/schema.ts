@@ -30,3 +30,20 @@ export const articleRelations = relations(articles, ({ one }) => ({
     references: [pages.id],
   }),
 }));
+
+export const excludedPages = sqliteTable("excluded_page", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  pageID: integer("pageID")
+    .notNull()
+    .references(() => pages.id),
+  created: text("created")
+    .notNull()
+    .default(sql`(CURRENT_TIMESTAMP)`),
+});
+
+export const excludedPageRelations = relations(excludedPages, ({ one }) => ({
+  page: one(pages, {
+    fields: [excludedPages.pageID],
+    references: [pages.id],
+  }),
+}));

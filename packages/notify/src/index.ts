@@ -44,6 +44,22 @@ async function getUnregisteredPages(
   return result;
 }
 
+async function sendDiscordMessage(
+  webhookUrl: string,
+  content: string
+): Promise<void> {
+  const res = await fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Discord webhook failed: ${res.status} ${text}`);
+  }
+}
+
 async function sendDiscordNotification(
   env: Env,
   unregisteredPages: UnregisteredPage[]
@@ -60,21 +76,23 @@ async function sendDiscordNotification(
     })
   );
 
-  const content = [
-    `**未登録の記事が ${unregisteredPages.length} 件あるよ**`,
-    "",
-    ...lines,
-  ].join("\n");
+  const header = `**未登録の記事が ${unregisteredPages.length} 件あるよ**\n\n`;
+  const chunks: string[] = [];
+  let current = header;
 
-  const res = await fetch(env.DISCORD_WEBHOOK_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content }),
-  });
+  for (const line of lines) {
+    if (current.length + line.length + 1 > 1900) {
+      chunks.push(current);
+      current = "";
+    }
+    current += line + "\n";
+  }
+  if (current) {
+    chunks.push(current);
+  }
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Discord webhook failed: ${res.status} ${text}`);
+  for (const chunk of chunks) {
+    await sendDiscordMessage(env.DISCORD_WEBHOOK_URL, chunk);
   }
 }
 

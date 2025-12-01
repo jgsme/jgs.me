@@ -5,6 +5,7 @@ import { getDB } from "@/db/getDB";
 import { articles, pages } from "@jigsaw/db";
 import { eq } from "drizzle-orm";
 import { useConfig } from "vike-react/useConfig";
+import { purifyScrapboxText } from "@/utils/purifyScrapboxText";
 
 type Context = PageContextServer & {
   env: Bindings;
@@ -42,12 +43,6 @@ const data = async (c: Context) => {
 
   const text = await res.text();
   const blocks = parse(text);
-  const description = text.split("\n").slice(3).join("").slice(0, 200);
-
-  config({
-    title: `${title} - I am Electrical machine`,
-    description,
-  });
 
   let fromDate: string | null = null;
   let skipLines = 0;
@@ -107,14 +102,34 @@ const data = async (c: Context) => {
     }
   }
 
+  let lineCount = 0;
+  const filteredBlocks = blocks.filter((block, index) => {
+    if (block.type === "title") return false;
+    if (block.type === "line" && skipLines > 0) {
+      lineCount++;
+      if (lineCount <= skipLines) return false;
+    }
+    if (dateLineIndex !== null && index === dateLineIndex) return false;
+    return true;
+  });
+
+  const rawDescription = filteredBlocks
+    .filter((b) => b.type === "line")
+    .map((b) => (b.type === "line" ? b.nodes.map((n) => n.raw).join("") : ""))
+    .join("\n");
+  const description = purifyScrapboxText(rawDescription).slice(0, 200);
+
+  config({
+    title: `${title} - I am Electrical machine`,
+    description,
+  });
+
   return {
     ok: true as const,
     title,
     articleId: article[0]?.articleId ?? null,
-    blocks,
+    blocks: filteredBlocks,
     fromDate,
-    skipLines,
-    dateLineIndex,
     description,
   };
 };

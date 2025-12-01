@@ -55,7 +55,7 @@ async function sendDiscordNotification(
   const lines = await Promise.all(
     unregisteredPages.map(async (p) => {
       const token = await generateToken(p.id, env.REGISTER_SECRET);
-      const registerUrl = `${env.SITE_URL}/api/article/register?token=${token}`;
+      const registerUrl = `https://${env.SITE_URL}/api/article/register?token=${token}`;
       return `- ${p.title} ([登録](${registerUrl}))`;
     })
   );
@@ -73,11 +73,14 @@ async function sendDiscordNotification(
   });
 }
 
-export class NotifyWorkflow extends WorkflowEntrypoint<Env> {
-  async run(_event: WorkflowEvent<void>, step: WorkflowStep) {
-    const unregisteredPages = await step.do("get-unregistered-pages", async () => {
-      return getUnregisteredPages(this.env.DB);
-    });
+export class NotifyWorkflow extends WorkflowEntrypoint<Env, unknown> {
+  async run(_event: WorkflowEvent<unknown>, step: WorkflowStep) {
+    const unregisteredPages = await step.do(
+      "get-unregistered-pages",
+      async () => {
+        return getUnregisteredPages(this.env.DB);
+      }
+    );
 
     await step.do("send-discord-notification", async () => {
       await sendDiscordNotification(this.env, unregisteredPages);

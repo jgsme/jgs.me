@@ -4,7 +4,7 @@ import {
   WorkflowStep,
 } from "cloudflare:workers";
 import { drizzle } from "drizzle-orm/d1";
-import { pages, articles, excludedPages } from "@jigsaw/db";
+import { pages, articles, excludedPages, clips } from "@jigsaw/db";
 import { generateToken } from "@jigsaw/db/token";
 import { eq, isNull, desc, and, sql, SQL } from "drizzle-orm";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
@@ -43,10 +43,12 @@ async function getUnregisteredPages(
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
     .leftJoin(excludedPages, eq(excludedPages.pageID, pages.id))
+    .leftJoin(clips, eq(clips.pageID, pages.id))
     .where(
       and(
         isNull(articles.id),
         isNull(excludedPages.id),
+        isNull(clips.id),
         notGlob(pages.title, "[0-9][0-9][0-9][0-9][0-9][0-9]"),
         notGlob(pages.title, "[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]")
       )

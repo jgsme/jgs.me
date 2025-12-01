@@ -47,3 +47,20 @@ export const excludedPageRelations = relations(excludedPages, ({ one }) => ({
     references: [pages.id],
   }),
 }));
+
+export const clips = sqliteTable("clip", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  pageID: integer("pageID")
+    .notNull()
+    .references(() => pages.id),
+  created: text("created")
+    .notNull()
+    .default(sql`(CURRENT_TIMESTAMP)`),
+});
+
+export const clipRelations = relations(clips, ({ one }) => ({
+  page: one(pages, {
+    fields: [clips.pageID],
+    references: [pages.id],
+  }),
+}));

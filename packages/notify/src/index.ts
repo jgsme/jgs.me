@@ -1,3 +1,8 @@
+import {
+  WorkflowEntrypoint,
+  WorkflowEvent,
+  WorkflowStep,
+} from "cloudflare:workers";
 import { drizzle } from "drizzle-orm/d1";
 import { pages, articles } from "@jigsaw/db";
 import { generateToken } from "@jigsaw/db/token";
@@ -8,6 +13,7 @@ type Env = {
   DISCORD_WEBHOOK_URL: string;
   REGISTER_SECRET: string;
   SITE_URL: string;
+  NOTIFY_WORKFLOW: Workflow;
 };
 
 type UnregisteredPage = {
@@ -67,13 +73,26 @@ async function sendDiscordNotification(
   });
 }
 
+export class NotifyWorkflow extends WorkflowEntrypoint<Env> {
+  async run(_event: WorkflowEvent<void>, step: WorkflowStep) {
+    const unregisteredPages = await step.do("get-unregistered-pages", async () => {
+      return getUnregisteredPages(this.env.DB);
+    });
+
+    await step.do("send-discord-notification", async () => {
+      await sendDiscordNotification(this.env, unregisteredPages);
+    });
+
+    return { notified: unregisteredPages.length };
+  }
+}
+
 export default {
   async scheduled(
     _event: ScheduledEvent,
     env: Env,
     _ctx: ExecutionContext
   ): Promise<void> {
-    const unregisteredPages = await getUnregisteredPages(env.DB);
-    await sendDiscordNotification(env, unregisteredPages);
+    await env.NOTIFY_WORKFLOW.create();
   },
 };

@@ -12,5 +12,12 @@
       "database_name": "w",
       "database_id": "bd809baf-e2e6-41e2-9561-f77981b43ba5"
     }
+  ],
+  "workflows": [
+    {
+      "name": "notify-workflow",
+      "binding": "NOTIFY_WORKFLOW",
+      "class_name": "NotifyWorkflow"
+    }
   ]
 }

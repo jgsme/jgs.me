@@ -1,12 +1,38 @@
-import type React from "react";
+import React from "react";
 import type { Node as NodeType } from "@progfay/scrapbox-parser";
+
+function getYouTubeVideoId(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    if (
+      (parsed.hostname === "www.youtube.com" ||
+        parsed.hostname === "youtube.com") &&
+      parsed.pathname === "/watch"
+    ) {
+      return parsed.searchParams.get("v");
+    }
+    if (parsed.hostname === "youtu.be") {
+      return parsed.pathname.slice(1);
+    }
+    if (
+      (parsed.hostname === "www.youtube.com" ||
+        parsed.hostname === "youtube.com") &&
+      parsed.pathname.startsWith("/embed/")
+    ) {
+      return parsed.pathname.slice(7);
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
 
 export const ScrapboxNode: React.FC<{ node: NodeType }> = ({ node }) => {
   switch (node.type) {
     case "plain":
       return <>{node.text}</>;
 
-    case "link":
+    case "link": {
       if (node.pathType === "relative") {
         return (
           <a
@@ -17,6 +43,21 @@ export const ScrapboxNode: React.FC<{ node: NodeType }> = ({ node }) => {
           </a>
         );
       }
+
+      const youtubeId = getYouTubeVideoId(node.href);
+      if (youtubeId) {
+        return (
+          <div className="my-4">
+            <iframe
+              className="w-full aspect-video rounded"
+              src={`https://www.youtube.com/embed/${youtubeId}`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        );
+      }
+
       return (
         <a
           href={node.href}
@@ -27,6 +68,7 @@ export const ScrapboxNode: React.FC<{ node: NodeType }> = ({ node }) => {
           {node.content || node.href}
         </a>
       );
+    }
 
     case "hashTag":
       return (

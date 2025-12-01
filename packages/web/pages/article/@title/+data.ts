@@ -12,23 +12,55 @@ type Context = PageContextServer & {
   routeParams: { title: string };
 };
 
+type R2PageData = {
+  id: string;
+  title: string;
+  lines: { text: string }[];
+};
+
+async function fetchPageText(
+  r2: R2Bucket,
+  sbID: string | null,
+  title: string
+): Promise<string | null> {
+  if (sbID) {
+    const obj = await r2.get(`${sbID}.json`);
+    if (obj) {
+      const data = await obj.json<R2PageData>();
+      return data.lines
+        .slice(1)
+        .map((l) => l.text)
+        .join("\n");
+    }
+    console.log(`[R2 miss] title=${title}, sbID=${sbID}`);
+  } else {
+    console.log(`[R2 skip] title=${title} (no sbID in DB)`);
+  }
+
+  const res = await fetch(
+    `https://scrapbox.io/api/pages/jigsaw/${encodeURIComponent(title)}/text`
+  );
+  if (!res.ok) return null;
+  return res.text();
+}
+
 const data = async (c: Context) => {
   const config = useConfig();
   const title = decodeURIComponent(c.routeParams.title);
   const db = getDB(c.env.DB);
 
-  const article = await db
-    .select({ articleId: articles.id })
-    .from(articles)
-    .innerJoin(pages, eq(articles.pageID, pages.id))
+  const pageInfo = await db
+    .select({ articleId: articles.id, sbID: pages.sbID })
+    .from(pages)
+    .leftJoin(articles, eq(articles.pageID, pages.id))
     .where(eq(pages.title, title))
     .limit(1);
 
-  const res = await fetch(
-    `https://scrapbox.io/api/pages/jigsaw/${encodeURIComponent(title)}/text`
-  );
+  const sbID = pageInfo[0]?.sbID ?? null;
+  const articleId = pageInfo[0]?.articleId ?? null;
+  const text = await fetchPageText(c.env.R2, sbID, title);
 
-  if (!res.ok) {
+  if (text === null) {
     config({
       title: `${title} - I am Electrical machine`,
     });
@@ -40,8 +72,6 @@ const data = async (c: Context) => {
       description: null,
     };
   }
-
-  const text = await res.text();
   const blocks = parse(text);
 
   let fromDate: string | null = null;
@@ -127,7 +157,7 @@ const data = async (c: Context) => {
   return {
     ok: true as const,
     title,
-    articleId: article[0]?.articleId ?? null,
+    articleId,
     blocks: filteredBlocks,
     fromDate,
     description,

@@ -14,7 +14,6 @@ const data = async (c: Context) => {
   const title = decodeURIComponent(c.routeParams.title);
   const db = getDB(c.env.DB);
 
-  // article ID を取得
   const article = await db
     .select({ articleId: articles.id })
     .from(articles)
@@ -68,6 +67,34 @@ const data = async (c: Context) => {
     }
   }
 
+  let dateLineIndex: number | null = null;
+  if (!fromDate) {
+    for (let i = blocks.length - 1; i >= Math.max(0, blocks.length - 5); i--) {
+      const block = blocks[i];
+      if (block.type !== "line") continue;
+      for (const node of block.nodes) {
+        if (node.type === "hashTag") {
+          const match = node.href.match(/^(\d{4})(\d{2})(\d{2})$/);
+          if (match) {
+            const [, year, month, day] = match;
+            fromDate = `${year}/${month}/${day}`;
+            dateLineIndex = i;
+            break;
+          }
+        }
+      }
+      if (fromDate) break;
+    }
+  }
+
+  if (!fromDate) {
+    const titleDateMatch = title.match(/(\d{4})(\d{2})(\d{2})/);
+    if (titleDateMatch) {
+      const [, year, month, day] = titleDateMatch;
+      fromDate = `${year}/${month}/${day}`;
+    }
+  }
+
   return {
     ok: true as const,
     title,
@@ -75,6 +102,7 @@ const data = async (c: Context) => {
     blocks,
     fromDate,
     skipLines,
+    dateLineIndex,
   };
 };
 

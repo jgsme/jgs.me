@@ -89,7 +89,10 @@ async function sendDiscordNotification(
       const registerUrl = `https://${env.SITE_URL}/api/article/register?token=${token}`;
       const clipUrl = `https://${env.SITE_URL}/api/article/clip?token=${token}`;
       const excludeUrl = `https://${env.SITE_URL}/api/article/exclude?token=${token}`;
-      return `- ${p.title}
+      const pageUrl = `https://${env.SITE_URL}/pages/${encodeURIComponent(
+        p.title
+      )}`;
+      return `- [${p.title}](${pageUrl})
   - [記事](${registerUrl})・[クリップ](${clipUrl})・[除外](${excludeUrl})`;
     })
   );

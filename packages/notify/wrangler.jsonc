@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "w-notify",
+  "compatibility_date": "2025-08-28",
+  "main": "src/index.ts",
+  "triggers": {
+    "crons": ["0 20 * * *"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "w",
+      "database_id": "bd809baf-e2e6-41e2-9561-f77981b43ba5"
+    }
+  ]
+}

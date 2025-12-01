@@ -1,0 +1,12 @@
+{
+  "name": "@jigsaw/db",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/schema.ts",
+    "./token": "./src/token.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.44.2"
+  }
+}

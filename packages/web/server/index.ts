@@ -1,43 +1,48 @@
 import { Hono } from "hono";
 import { apply, serve } from "@photonjs/hono";
-import { pages, articles } from "@/db/schema";
+import { pages, articles } from "@jigsaw/db";
+import { verifyToken } from "@jigsaw/db/token";
 import { getDB } from "@/db/getDB";
 import { eq } from "drizzle-orm";
 
 export type Bindings = {
   DB: D1Database;
   R2: R2Bucket;
+  REGISTER_SECRET: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-app.post("/api/page/create", async (c) => {
-  const json = await c.req.json();
-  if (json) {
-    const db = getDB(c.env.DB);
-    const res = await db.insert(pages).values(json);
-    if (res.success) {
-      return c.json({ ok: true, payload: { id: res.results[0] } });
-    }
+app.get("/api/article/register", async (c) => {
+  const token = c.req.query("token");
+  if (!token) {
+    return c.text("Missing token", 400);
   }
-  return c.json({ ok: false });
-});
 
-app.post("/api/article/create", async (c) => {
-  const json = await c.req.json();
-  if (json) {
-    const db = getDB(c.env.DB);
-    const page = await db.query.pages.findFirst({
-      where: eq(pages.sbID, json.id),
-    });
-    if (page) {
-      const res = await db.insert(articles).values({ pageID: page.id });
-      if (res.success) {
-        return c.json({ ok: true, payload: { id: res.results[0] } });
-      }
-    }
+  const pageId = await verifyToken(token, c.env.REGISTER_SECRET);
+  if (pageId === null) {
+    return c.text("Invalid token", 403);
   }
-  return c.json({ ok: false });
+
+  const db = getDB(c.env.DB);
+
+  const page = await db.query.pages.findFirst({
+    where: eq(pages.id, pageId),
+  });
+  if (!page) {
+    return c.text("Page not found", 404);
+  }
+
+  const existing = await db.query.articles.findFirst({
+    where: eq(articles.pageID, pageId),
+  });
+  if (existing) {
+    return c.redirect(`/pages/${encodeURIComponent(page.title)}`);
+  }
+
+  await db.insert(articles).values({ pageID: pageId });
+
+  return c.redirect(`/pages/${encodeURIComponent(page.title)}`);
 });
 
 apply(app);

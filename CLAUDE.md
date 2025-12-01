@@ -19,6 +19,15 @@ pnpm gen          # Generate Drizzle migrations (drizzle-kit generate)
 
 ## Architecture
 
+pnpm ワークスペースによるモノレポ構成。
+
+### Packages
+- `packages/db` - 共有 Drizzle スキーマ（`@jigsaw/db` としてインポート）
+- `packages/web` - メインのWebアプリ（Vike + React + Photon + Hono、Cloudflare Pages）
+- `packages/sync` - Scrapbox同期ワーカー（Cloudflare Workflows で R2 にデータ同期）
+- `packages/notify` - 通知ワーカー（未登録記事をDiscord Webhookで通知、JST 05:00 cron）
+
+### Web App (packages/web)
 Vike + React + Photon + Hono で構成された Cloudflare Pages アプリケーション。
 
 ### Photon
@@ -26,14 +35,14 @@ Vike + React + Photon + Hono で構成された Cloudflare Pages アプリケー
 - `vike-photon` で Vike と統合
 - Vite プラグインとして動作し、Cloudflare Workers 向けにビルド
 
-### Entry Points
+### Entry Points (packages/web)
 - `server/index.ts` - Hono サーバーエントリポイント。`@photonjs/hono` の `apply()` と `serve()` で Vike と統合
 
 ### Database
 - Cloudflare D1 (SQLite) + Drizzle ORM
-- スキーマ: `db/schema.ts`
+- スキーマ: `packages/db/src/schema.ts`（`@jigsaw/db` でインポート）
 - D1バインディング: `DB` (wrangler.jsonc で定義)
-- マイグレーション: `drizzle/` ディレクトリ
+- マイグレーション: `packages/web/drizzle/` ディレクトリ
 
 ### Pages (Vike)
 - ファイルベースルーティング: `pages/` 配下

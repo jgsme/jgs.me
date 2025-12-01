@@ -8,6 +8,31 @@ importers:
 
   .: {}
 
+  packages/db:
+    dependencies:
+      drizzle-orm:
+        specifier: ^0.44.2
+        version: 0.44.7(@cloudflare/workers-types@4.20251128.0)
+
+  packages/notify:
+    dependencies:
+      '@jigsaw/db':
+        specifier: workspace:*
+        version: link:../db
+      drizzle-orm:
+        specifier: ^0.44.2
+        version: 0.44.7(@cloudflare/workers-types@4.20251128.0)
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20251128.0
+        version: 4.20251128.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      wrangler:
+        specifier: ^4.51.0
+        version: 4.51.0(@cloudflare/workers-types@4.20251128.0)
+
   packages/sync:
     devDependencies:
       '@cloudflare/workers-types':
@@ -22,6 +47,9 @@ importers:
 
   packages/web:
     dependencies:
+      '@jigsaw/db':
+        specifier: workspace:*
+        version: link:../db
       '@paralleldrive/cuid2':
         specifier: ^3.0.4
         version: 3.0.4

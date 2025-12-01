@@ -2,7 +2,7 @@ import type { PageContextServer } from "vike/types";
 import type { Bindings } from "@/server";
 import { parse } from "@progfay/scrapbox-parser";
 import { getDB } from "@/db/getDB";
-import { articles, pages } from "@/db/schema";
+import { articles, pages } from "@jigsaw/db";
 import { eq } from "drizzle-orm";
 
 type Context = PageContextServer & {

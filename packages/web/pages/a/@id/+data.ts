@@ -1,7 +1,7 @@
 import type { PageContextServer } from "vike/types";
 import type { Bindings } from "@/server";
 import { getDB } from "@/db/getDB";
-import { articles, pages } from "@/db/schema";
+import { articles, pages } from "@jigsaw/db";
 import { eq } from "drizzle-orm";
 import { redirect } from "vike/abort";
 

@@ -1,6 +1,6 @@
 import type { PageContextServer } from "vike/types";
 import type { Bindings } from "@/server";
-import { articles, pages } from "@/db/schema";
+import { articles, pages } from "@jigsaw/db";
 import { getDB } from "@/db/getDB";
 import { count, desc, eq } from "drizzle-orm";
 

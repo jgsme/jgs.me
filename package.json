@@ -5,6 +5,8 @@
     "build": "pnpm --filter web build",
     "deploy": "pnpm --filter web deploy",
     "dev:sync": "pnpm --filter sync dev",
-    "deploy:sync": "pnpm --filter sync deploy"
+    "deploy:sync": "pnpm --filter sync deploy",
+    "dev:notify": "pnpm --filter notify dev",
+    "deploy:notify": "pnpm --filter notify deploy"
   }
 }

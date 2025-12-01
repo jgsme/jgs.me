@@ -18,7 +18,9 @@ type UnregisteredPage = {
 
 const MAX_PAGES = 20;
 
-async function getUnregisteredPages(d1: D1Database): Promise<UnregisteredPage[]> {
+async function getUnregisteredPages(
+  d1: D1Database
+): Promise<UnregisteredPage[]> {
   const db = drizzle(d1);
 
   const result = await db
@@ -73,19 +75,5 @@ export default {
   ): Promise<void> {
     const unregisteredPages = await getUnregisteredPages(env.DB);
     await sendDiscordNotification(env, unregisteredPages);
-  },
-
-  async fetch(_request: Request, env: Env): Promise<Response> {
-    const unregisteredPages = await getUnregisteredPages(env.DB);
-
-    const pagesWithTokens = await Promise.all(
-      unregisteredPages.map(async (p) => ({
-        ...p,
-        token: await generateToken(p.id, env.REGISTER_SECRET),
-        registerUrl: `${env.SITE_URL}/api/article/register?token=${await generateToken(p.id, env.REGISTER_SECRET)}`,
-      }))
-    );
-
-    return Response.json({ unregistered: unregisteredPages.length, pages: pagesWithTokens });
   },
 };

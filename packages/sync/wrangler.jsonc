@@ -23,5 +23,12 @@
       "binding": "R2",
       "bucket_name": "w-data"
     }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "w",
+      "database_id": "bd809baf-e2e6-41e2-9561-f77981b43ba5"
+    }
   ]
 }

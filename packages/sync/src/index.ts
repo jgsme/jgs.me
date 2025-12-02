@@ -3,9 +3,13 @@ import {
   WorkflowEvent,
   WorkflowStep,
 } from "cloudflare:workers";
+import { drizzle } from "drizzle-orm/d1";
+import { eq } from "drizzle-orm";
+import { pages as pagesTable } from "@jigsaw/db";
 
 type Env = {
   R2: R2Bucket;
+  DB: D1Database;
   SYNC_WORKFLOW: Workflow;
   SYNC_BATCH_WORKFLOW: Workflow;
 };
@@ -213,6 +217,29 @@ export class SyncBatchWorkflow extends WorkflowEntrypoint<
               httpMetadata: { contentType: "application/json" },
               customMetadata: { updated: String(page.updated) },
             });
+
+            const db = drizzle(this.env.DB);
+            const existingPage = await db
+              .select()
+              .from(pagesTable)
+              .where(eq(pagesTable.sbID, detail.id))
+              .get();
+
+            if (existingPage) {
+              await db
+                .update(pagesTable)
+                .set({
+                  title: detail.title,
+                  image: detail.image,
+                })
+                .where(eq(pagesTable.sbID, detail.id));
+            } else {
+              await db.insert(pagesTable).values({
+                title: detail.title,
+                image: detail.image,
+                sbID: detail.id,
+              });
+            }
 
             batchResults.synced++;
           }

@@ -231,6 +231,8 @@ export class SyncBatchWorkflow extends WorkflowEntrypoint<
                 .set({
                   title: detail.title,
                   image: detail.image,
+                  created: new Date(detail.created * 1000).toISOString(),
+                  updated: new Date(detail.updated * 1000).toISOString(),
                 })
                 .where(eq(pagesTable.sbID, detail.id));
             } else {
@@ -238,6 +240,8 @@ export class SyncBatchWorkflow extends WorkflowEntrypoint<
                 title: detail.title,
                 image: detail.image,
                 sbID: detail.id,
+                created: new Date(detail.created * 1000).toISOString(),
+                updated: new Date(detail.updated * 1000).toISOString(),
               });
             }
 

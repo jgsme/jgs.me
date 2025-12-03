@@ -401,7 +401,7 @@ async function fetchRecentArticles(
     })
     .from(articles)
     .innerJoin(pages, eq(articles.pageID, pages.id))
-    .where(gte(articles.created, twoWeeksAgoStr))
+    .where(gte(pages.created, twoWeeksAgoStr))
     .orderBy(desc(pages.created))
     .limit(10);
 }

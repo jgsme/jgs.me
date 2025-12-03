@@ -2,10 +2,19 @@ import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
 import { desc, eq, gte } from "drizzle-orm";
 import { articles, pages } from "@jigsaw/db";
+import {
+  WorkflowEntrypoint,
+  WorkflowEvent,
+  WorkflowStep,
+} from "cloudflare:workers";
 
 type Bindings = {
   DB: D1Database;
+  KV: KVNamespace;
+  CACHE_WORKFLOW: Workflow;
 };
+
+const KV_KEY = "home-html";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -47,30 +56,15 @@ const data = {
   ],
 };
 
-const encodeTitle = (title: string) =>
-  encodeURIComponent(title.replace(/\s/g, "_"));
+type RecentArticle = {
+  id: number;
+  title: string;
+  created: string;
+};
 
-app.get("/", async (c) => {
-  const db = drizzle(c.env.DB);
-
-  const twoWeeksAgo = new Date();
-  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-  const twoWeeksAgoStr = twoWeeksAgo.toISOString();
-
-  const recentArticles = await db
-    .select({
-      id: articles.id,
-      title: pages.title,
-      created: articles.created,
-    })
-    .from(articles)
-    .innerJoin(pages, eq(articles.pageID, pages.id))
-    .where(gte(articles.created, twoWeeksAgoStr))
-    .orderBy(desc(articles.created))
-    .limit(10);
-
+async function generateHtml(recentArticles: RecentArticle[]): Promise<string> {
   const html = (
-    <html lang="en">
+    <html lang="ja">
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width" />
@@ -389,7 +383,62 @@ app.get("/", async (c) => {
     </html>
   );
 
-  return c.html("<!DOCTYPE html>" + html);
+  return "<!DOCTYPE html>" + html;
+}
+
+async function fetchRecentArticles(
+  db: ReturnType<typeof drizzle>
+): Promise<RecentArticle[]> {
+  const twoWeeksAgo = new Date();
+  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+  const twoWeeksAgoStr = twoWeeksAgo.toISOString();
+
+  return db
+    .select({
+      id: articles.id,
+      title: pages.title,
+      created: articles.created,
+    })
+    .from(articles)
+    .innerJoin(pages, eq(articles.pageID, pages.id))
+    .where(gte(articles.created, twoWeeksAgoStr))
+    .orderBy(desc(articles.created))
+    .limit(10);
+}
+
+app.get("/", async (c) => {
+  const cached = await c.env.KV.get(KV_KEY);
+  if (cached) {
+    return c.html(cached);
+  }
+
+  const db = drizzle(c.env.DB);
+  const recentArticles = await fetchRecentArticles(db);
+  const html = await generateHtml(recentArticles);
+  return c.html(html);
 });
 
-export default app;
+export class CacheWorkflow extends WorkflowEntrypoint<Bindings, unknown> {
+  async run(_event: WorkflowEvent<unknown>, step: WorkflowStep) {
+    await step.do("regenerate-cache", async () => {
+      const db = drizzle(this.env.DB);
+      const recentArticles = await fetchRecentArticles(db);
+      const html = await generateHtml(recentArticles);
+      await this.env.KV.put(KV_KEY, html);
+      return { regenerated: true };
+    });
+
+    return { success: true };
+  }
+}
+
+export default {
+  fetch: app.fetch,
+  async scheduled(_event: ScheduledEvent, env: Bindings) {
+    const db = drizzle(env.DB);
+    const recentArticles = await fetchRecentArticles(db);
+    const html = await generateHtml(recentArticles);
+    await env.KV.put(KV_KEY, html);
+    console.log("Home page HTML generated and cached to KV");
+  },
+};

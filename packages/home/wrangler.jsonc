@@ -7,12 +7,28 @@
   "assets": {
     "directory": "public"
   },
+  "triggers": {
+    "crons": ["0 22 * * *"]
+  },
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "9bbeadda28e44eff90e5b8a3837dcb45"
+    }
+  ],
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "w",
       "database_id": "bd809baf-e2e6-41e2-9561-f77981b43ba5",
       "migrations_dir": "../web/drizzle"
+    }
+  ],
+  "workflows": [
+    {
+      "name": "home-cache-workflow",
+      "binding": "CACHE_WORKFLOW",
+      "class_name": "CacheWorkflow"
     }
   ]
 }

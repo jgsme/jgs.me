@@ -47,12 +47,13 @@ const data = async (c: Context) => {
   const db = getDB(c.env.DB);
 
   const pageInfo = await db
-    .select({ articleId: articles.id, sbID: pages.sbID })
+    .select({ pageId: pages.id, articleId: articles.id, sbID: pages.sbID })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
     .where(eq(pages.title, title))
     .limit(1);
 
+  const pageId = pageInfo[0]?.pageId ?? null;
   const sbID = pageInfo[0]?.sbID ?? null;
   const articleId = pageInfo[0]?.articleId ?? null;
   const text = await fetchPageText(c.env.R2, sbID, title);
@@ -64,6 +65,7 @@ const data = async (c: Context) => {
     return {
       ok: false as const,
       title,
+      pageId: null,
       articleId: null,
       blocks: [],
       description: null,
@@ -154,6 +156,7 @@ const data = async (c: Context) => {
   return {
     ok: true as const,
     title,
+    pageId,
     articleId,
     blocks: filteredBlocks,
     fromDate,

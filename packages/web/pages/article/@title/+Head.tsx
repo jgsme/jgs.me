@@ -3,10 +3,15 @@ import type data from "./+data";
 
 type Data = Awaited<ReturnType<typeof data>>;
 
+const OG_BASE_URL = "https://og.w.jgs.me";
+
 export function Head() {
   const d = useData<Data>();
 
   const ogUrl = `https://w.jgs.me/pages/${encodeURIComponent(d.title)}`;
+  const ogImage = d.pageId
+    ? `${OG_BASE_URL}/p/${d.pageId}.png`
+    : `${OG_BASE_URL}/default.png`;
 
   return (
     <>
@@ -19,6 +24,10 @@ export function Head() {
       <meta property="og:type" content="article" />
       <meta property="og:site_name" content="I am Electrical machine" />
       <meta property="og:url" content={ogUrl} />
+      <meta property="og:image" content={ogImage} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta name="twitter:card" content="summary_large_image" />
       {d.description && (
         <meta property="og:description" content={d.description} />
       )}

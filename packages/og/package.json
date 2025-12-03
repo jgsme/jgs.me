@@ -1,0 +1,21 @@
+{
+  "name": "og",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --persist-to ../../.wrangler/state --var ENVIRONMENT:development",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251128.0",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.51.0"
+  },
+  "dependencies": {
+    "@jigsaw/db": "workspace:*",
+    "@resvg/resvg-wasm": "^2.6.2",
+    "drizzle-orm": "^0.44.7",
+    "hono": "^4.10.7",
+    "satori": "^0.18.3"
+  }
+}

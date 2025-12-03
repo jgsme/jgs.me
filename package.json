@@ -7,6 +7,8 @@
     "dev:sync": "pnpm --filter sync dev",
     "deploy:sync": "pnpm --filter sync deploy",
     "dev:notify": "pnpm --filter notify dev",
-    "deploy:notify": "pnpm --filter notify deploy"
+    "deploy:notify": "pnpm --filter notify deploy",
+    "dev:og": "pnpm --filter og dev",
+    "deploy:og": "pnpm --filter og deploy"
   }
 }

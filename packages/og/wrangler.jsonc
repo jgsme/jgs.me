@@ -18,10 +18,6 @@
     {
       "binding": "OG",
       "bucket_name": "w-og"
-    },
-    {
-      "binding": "R2",
-      "bucket_name": "w-data"
     }
   ],
   "d1_databases": [

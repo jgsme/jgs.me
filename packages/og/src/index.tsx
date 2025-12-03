@@ -365,14 +365,15 @@ async function generateImageWithTitleOgImage(
     // 横長画像: 縦スタック（画像 → 白枠タイトル → マーク）
     const fontSize = title.length > 30 ? 28 : 36;
 
-    // 画像サイズの決定: 幅はOG_WIDTH、高さは比率維持（縮小のみ）
+    // 画像サイズの決定: 幅は最大OG_WIDTH - 64px（左右32pxずつpadding）、高さは比率維持（縮小のみ）
+    const maxImageWidth = OG_WIDTH - 64;
     let displayWidth = imageInfo.width;
     let displayHeight = imageInfo.height;
 
-    // 幅をOG_WIDTHに合わせる（縮小のみ）
-    if (displayWidth > OG_WIDTH) {
-      const scale = OG_WIDTH / displayWidth;
-      displayWidth = OG_WIDTH;
+    // 幅を最大幅に合わせる（縮小のみ）
+    if (displayWidth > maxImageWidth) {
+      const scale = maxImageWidth / displayWidth;
+      displayWidth = maxImageWidth;
       displayHeight = Math.round(imageInfo.height * scale);
     }
     // 高さの最大は350px（タイトルとマークのスペースを確保）

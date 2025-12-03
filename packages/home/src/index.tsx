@@ -352,7 +352,7 @@ async function generateHtml(recentArticles: RecentArticle[]): Promise<string> {
               {recentArticles.length > 0 &&
                 recentArticles.map((article) => (
                   <a
-                    href={`https://w.jgs.me/p/${article.id}`}
+                    href={`https://w.jgs.me/a/${article.id}`}
                     class="update-link link"
                   >
                     <div>{article.title}</div>

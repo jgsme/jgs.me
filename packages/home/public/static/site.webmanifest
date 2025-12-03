@@ -1,0 +1,20 @@
+{
+  "name": "Takaya Kobayashi",
+  "short_name": "jgs.me",
+  "icons": [
+    {
+      "src": "/static/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#bd3129",
+  "background_color": "#bd3129",
+  "display": "standalone",
+  "start_url": "/"
+}

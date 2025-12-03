@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "jgs-home",
+  "compatibility_date": "2025-08-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "src/index.tsx",
+  "assets": {
+    "directory": "public"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "w",
+      "database_id": "bd809baf-e2e6-41e2-9561-f77981b43ba5",
+      "migrations_dir": "../web/drizzle"
+    }
+  ]
+}

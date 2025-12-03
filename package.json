@@ -9,6 +9,8 @@
     "dev:notify": "pnpm --filter notify dev",
     "deploy:notify": "pnpm --filter notify deploy",
     "dev:og": "pnpm --filter og dev",
-    "deploy:og": "pnpm --filter og deploy"
+    "deploy:og": "pnpm --filter og deploy",
+    "dev:home": "pnpm --filter home dev",
+    "deploy:home": "pnpm --filter home deploy"
   }
 }

@@ -1,0 +1,19 @@
+{
+  "name": "home",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --persist-to ../../.wrangler/state --port 8790",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@jigsaw/db": "workspace:*",
+    "drizzle-orm": "^0.44.7",
+    "hono": "^4.10.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251128.0",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.51.0"
+  }
+}

@@ -14,6 +14,28 @@ importers:
         specifier: ^0.44.2
         version: 0.44.7(@cloudflare/workers-types@4.20251128.0)
 
+  packages/home:
+    dependencies:
+      '@jigsaw/db':
+        specifier: workspace:*
+        version: link:../db
+      drizzle-orm:
+        specifier: ^0.44.7
+        version: 0.44.7(@cloudflare/workers-types@4.20251128.0)
+      hono:
+        specifier: ^4.10.7
+        version: 4.10.7
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20251128.0
+        version: 4.20251128.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      wrangler:
+        specifier: ^4.51.0
+        version: 4.51.0(@cloudflare/workers-types@4.20251128.0)
+
   packages/notify:
     dependencies:
       '@jigsaw/db':

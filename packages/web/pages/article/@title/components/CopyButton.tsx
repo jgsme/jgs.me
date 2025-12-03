@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { useState } from "react";
 
 export const CopyButton: React.FC<{ articleId: number | null }> = ({
@@ -18,7 +18,7 @@ export const CopyButton: React.FC<{ articleId: number | null }> = ({
   return (
     <button
       onClick={handleCopy}
-      className="text-sm text-blue-600 hover:underline"
+      className="text-sm border border-solid border-gray-300 px-2 rounded cursor-pointer"
     >
       {copied ? "Copied!" : "Copy Share URL"}
     </button>

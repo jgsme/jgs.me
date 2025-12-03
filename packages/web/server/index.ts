@@ -9,6 +9,7 @@ export type Bindings = {
   DB: D1Database;
   R2: R2Bucket;
   REGISTER_SECRET: string;
+  AI: Ai;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();

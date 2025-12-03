@@ -1,12 +1,14 @@
 import React from "react";
 import { useData } from "vike-react/useData";
 import type data from "./+data";
+import { SearchForm } from "../components/SearchForm";
 
 const Page = () => {
   const d = useData<Awaited<ReturnType<typeof data>>>();
 
   return (
     <main className="max-w-[600px] mx-auto px-4 pb-[200px]">
+      <SearchForm />
       <ul>
         {d.payload.articles.map((article) => (
           <li key={article.id} className="my-8">

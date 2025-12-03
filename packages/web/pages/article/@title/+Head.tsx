@@ -1,9 +1,9 @@
+import React from "react";
 import { useData } from "vike-react/useData";
 import type data from "./+data";
+import { OG_BASE_URL } from "@/constants/og";
 
 type Data = Awaited<ReturnType<typeof data>>;
-
-const OG_BASE_URL = "https://og.w.jgs.me";
 
 export function Head() {
   const d = useData<Data>();

@@ -3,6 +3,9 @@
   "name": "w",
   "compatibility_date": "2025-08-28",
   "main": "virtual:photon:cloudflare:server-entry",
+  "ai": {
+    "binding": "AI"
+  },
   "observability": {
     "logs": {
       "enabled": true,

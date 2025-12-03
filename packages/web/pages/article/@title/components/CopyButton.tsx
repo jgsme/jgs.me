@@ -18,7 +18,7 @@ export const CopyButton: React.FC<{ articleId: number | null }> = ({
   return (
     <button
       onClick={handleCopy}
-      className="text-sm border border-solid border-gray-300 px-2 rounded cursor-pointer"
+      className="text-xs border border-solid border-gray-300 px-1 rounded cursor-pointer"
     >
       {copied ? "Copied!" : "Copy Share URL"}
     </button>

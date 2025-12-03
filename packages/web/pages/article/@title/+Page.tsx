@@ -20,14 +20,14 @@ const Page = () => {
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold">{d.title}</h1>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold">{d.title}</h1>
+        <div className="flex gap-2">
           {d.fromDate && (
             <p className="text-neutral-500 text-sm mt-1">{d.fromDate}</p>
           )}
+          <CopyButton articleId={d.articleId} />
         </div>
-        <CopyButton articleId={d.articleId} />
       </div>
       <article className="space-y-1">
         {d.blocks.map((block, i) => (

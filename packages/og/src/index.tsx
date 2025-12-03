@@ -180,7 +180,7 @@ async function generateTitleOgImage(title: string): Promise<Uint8Array> {
   await ensureWasmInitialized();
   const font = await loadFont();
 
-  const fontSize = title.length > 30 ? 48 : 64;
+  const fontSize = title.length > 30 ? 56 : 72;
 
   // OG_WIDTH=1200, OG_HEIGHT=630
   // 上左右: 32px, カード: 1136 x 500, 下: マーク用スペース 98px
@@ -266,7 +266,7 @@ async function generateImageWithTitleOgImage(
 
   if (!isLandscape) {
     // 縦長・正方形画像: 左に画像(630pxフルハイト、白枠の外)、右に白枠(タイトル)+マーク
-    const fontSize = title.length > 20 ? 36 : 44;
+    const fontSize = title.length > 20 ? 44 : 52;
 
     // 画像サイズの決定: 高さは630pxフル、幅は比率維持
     // 拡大はしない、縮小のみ
@@ -363,7 +363,7 @@ async function generateImageWithTitleOgImage(
     );
   } else {
     // 横長画像: 縦スタック（画像 → 白枠タイトル → マーク）
-    const fontSize = title.length > 30 ? 28 : 36;
+    const fontSize = title.length > 30 ? 36 : 44;
 
     // 画像サイズの決定: 幅は最大OG_WIDTH - 64px（左右32pxずつpadding）、高さは比率維持（縮小のみ）
     const maxImageWidth = OG_WIDTH - 64;

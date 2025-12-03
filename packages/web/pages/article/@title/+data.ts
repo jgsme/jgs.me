@@ -65,8 +65,8 @@ const data = async (c: Context) => {
     return {
       ok: false as const,
       title,
-      pageId: null,
-      articleId: null,
+      pageId,
+      articleId,
       blocks: [],
       description: null,
     };

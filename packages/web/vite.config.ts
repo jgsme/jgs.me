@@ -1,23 +1,28 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
-import { installPhoton } from "@photonjs/runtime/vite";
+import vikePhoton from "vike-photon/plugin";
 import { cloudflare } from "@photonjs/cloudflare/vite";
 import vike from "vike/plugin";
 import react from "@vitejs/plugin-react";
+
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig(() => {
   return {
     resolve: {
       alias: {
-        "@": process.cwd(),
+        "@": __dirname,
       },
     },
     plugins: [
       react(),
       vike({}),
-      installPhoton({
-        server: "server/index.ts",
+      vikePhoton(),
+      cloudflare({
+        persistState: {
+          path: "../../.wrangler/state",
+        },
       }),
-      cloudflare(),
     ],
   };
 });

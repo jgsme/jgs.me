@@ -115,12 +115,13 @@ async function fetchImageAsDataUri(url: string): Promise<ImageInfo> {
     if (bytes[12] === 0x56 && bytes[13] === 0x50 && bytes[14] === 0x38) {
       // VP8
       if (bytes[15] === 0x20) {
-        width = ((bytes[26] | (bytes[27] << 8)) & 0x3fff);
-        height = ((bytes[28] | (bytes[29] << 8)) & 0x3fff);
+        width = (bytes[26] | (bytes[27] << 8)) & 0x3fff;
+        height = (bytes[28] | (bytes[29] << 8)) & 0x3fff;
       }
       // VP8L
       else if (bytes[15] === 0x4c) {
-        const bits = bytes[21] | (bytes[22] << 8) | (bytes[23] << 16) | (bytes[24] << 24);
+        const bits =
+          bytes[21] | (bytes[22] << 8) | (bytes[23] << 16) | (bytes[24] << 24);
         width = (bits & 0x3fff) + 1;
         height = ((bits >> 14) & 0x3fff) + 1;
       }
@@ -181,10 +182,7 @@ async function generateTitleOgImage(title: string): Promise<Uint8Array> {
   const font = await loadFont();
 
   const fontSize = title.length > 30 ? 56 : 72;
-
-  // OG_WIDTH=1200, OG_HEIGHT=630
-  // 上左右: 32px, カード: 1136 x 500, 下: マーク用スペース 98px
-  const cardWidth = OG_WIDTH - 32 * 2; // 1136
+  const cardWidth = OG_WIDTH - 32 * 2;
   const cardHeight = 500;
 
   const element = (
@@ -265,21 +263,16 @@ async function generateImageWithTitleOgImage(
   let element: React.ReactNode;
 
   if (!isLandscape) {
-    // 縦長・正方形画像: 左に画像(630pxフルハイト、白枠の外)、右に白枠(タイトル)+マーク
     const fontSize = title.length > 20 ? 44 : 52;
 
-    // 画像サイズの決定: 高さは630pxフル、幅は比率維持
-    // 拡大はしない、縮小のみ
     let displayWidth = imageInfo.width;
     let displayHeight = imageInfo.height;
 
-    // 高さをOG_HEIGHTに合わせる（縮小のみ）
     if (displayHeight > OG_HEIGHT) {
       const scale = OG_HEIGHT / displayHeight;
       displayHeight = OG_HEIGHT;
       displayWidth = Math.round(imageInfo.width * scale);
     }
-    // 幅の最大はOG_WIDTHの50%（右側に白枠を配置するため）
     const maxWidth = Math.round(OG_WIDTH * 0.5);
     if (displayWidth > maxWidth) {
       const scale = maxWidth / displayWidth;
@@ -296,7 +289,6 @@ async function generateImageWithTitleOgImage(
           backgroundColor: BG_COLOR,
         }}
       >
-        {/* 左側: 画像 (630pxフルハイト、白枠の外) */}
         <div
           style={{
             height: "100%",
@@ -315,7 +307,6 @@ async function generateImageWithTitleOgImage(
             }}
           />
         </div>
-        {/* 右側: 白枠(タイトル) + マーク(白枠の外) */}
         <div
           style={{
             flex: 1,
@@ -325,7 +316,6 @@ async function generateImageWithTitleOgImage(
             padding: "32px",
           }}
         >
-          {/* 白枠: タイトルのみ */}
           <div
             style={{
               width: "100%",
@@ -351,7 +341,6 @@ async function generateImageWithTitleOgImage(
               {title}
             </div>
           </div>
-          {/* マーク: 白枠の外 */}
           <img
             src={markDataUri}
             width={60}
@@ -362,21 +351,17 @@ async function generateImageWithTitleOgImage(
       </div>
     );
   } else {
-    // 横長画像: 縦スタック（画像 → 白枠タイトル → マーク）
     const fontSize = title.length > 30 ? 36 : 44;
 
-    // 画像サイズの決定: 幅は最大OG_WIDTH - 64px（左右32pxずつpadding）、高さは比率維持（縮小のみ）
     const maxImageWidth = OG_WIDTH - 64;
     let displayWidth = imageInfo.width;
     let displayHeight = imageInfo.height;
 
-    // 幅を最大幅に合わせる（縮小のみ）
     if (displayWidth > maxImageWidth) {
       const scale = maxImageWidth / displayWidth;
       displayWidth = maxImageWidth;
       displayHeight = Math.round(imageInfo.height * scale);
     }
-    // 高さの最大は350px（タイトルとマークのスペースを確保）
     const maxHeight = 350;
     if (displayHeight > maxHeight) {
       const scale = maxHeight / displayHeight;
@@ -396,7 +381,6 @@ async function generateImageWithTitleOgImage(
           paddingTop: "20px",
         }}
       >
-        {/* 画像 */}
         <img
           src={imageInfo.dataUri}
           style={{
@@ -406,7 +390,6 @@ async function generateImageWithTitleOgImage(
             borderRadius: "16px",
           }}
         />
-        {/* 白枠タイトル */}
         <div
           style={{
             flex: 1,
@@ -442,7 +425,6 @@ async function generateImageWithTitleOgImage(
             </div>
           </div>
         </div>
-        {/* マーク */}
         <img
           src={markDataUri}
           width={60}
@@ -498,7 +480,9 @@ app.get("/default.png", async (c) => {
   return new Response(png.buffer as ArrayBuffer, {
     headers: {
       "Content-Type": "image/png",
-      "Cache-Control": isDev ? "no-cache" : "public, max-age=31536000, immutable",
+      "Cache-Control": isDev
+        ? "no-cache"
+        : "public, max-age=31536000, immutable",
     },
   });
 });

@@ -26,6 +26,8 @@ pnpm ワークスペースによるモノレポ構成。
 - `packages/web` - メインのWebアプリ（Vike + React + Photon + Hono、Cloudflare Pages）
 - `packages/sync` - Scrapbox同期ワーカー（Cloudflare Workflows で R2 にデータ同期）
 - `packages/notify` - 通知ワーカー（未登録記事をDiscord Webhookで通知、JST 05:00 cron）
+- `packages/og` - OG画像生成ワーカー（Satori + Resvg）
+- `packages/home` - ホームページ用ワーカー
 
 ### Web App (packages/web)
 Vike + React + Photon + Hono で構成された Cloudflare Pages アプリケーション。
@@ -57,10 +59,30 @@ Vike + React + Photon + Hono で構成された Cloudflare Pages アプリケー
 - `pages/article/@title/` - 記事詳細ページ（ルート: `/pages/@title`）
   - Scrapbox API からコンテンツ取得、`@progfay/scrapbox-parser` でパース
 - `pages/a/@id/` - 共有URL用リダイレクト（`/a/{id}` → `/pages/{title}`）
+- `pages/search/` - 検索ページ
+- `pages/clips/` - クリップ一覧ページ
 
 ### API Routes
-- `api/` 配下に Hono ハンドラを配置
-- `hono-entry.ts` でルート登録
+- `server/routes/` 配下に Hono ハンドラを配置
+- `server/hono-entry.ts` でルート登録
+- 主要エンドポイント:
+  - `GET /api/article/register` - 記事登録（トークン認証）
+  - `GET /api/article/exclude` - ページ除外（トークン認証）
+  - `GET /api/article/clip` - クリップ追加（トークン認証）
+  - `/rss` - RSS フィード
 
 ### Path Alias
 - `@/*` → プロジェクトルートからの絶対パス (tsconfig.json + vite.config.ts)
+
+### Database Schema
+- `page` - Scrapbox ページ (id, title, created, updated, image, sbID)
+- `article` - 登録済み記事 (id, pageID, created)
+- `excluded_page` - 除外ページ (id, pageID, created)
+- `clip` - クリップ (id, pageID, created)
+
+### Environment Variables
+- `DB` - D1 データベースバインディング
+- `R2` - R2 バケットバインディング
+- `REGISTER_SECRET` - トークン署名用シークレット
+- `DISCORD_WEBHOOK_URL` - Discord Webhook URL (notify ワーカー用)
+- `SITE_URL` - サイトURL

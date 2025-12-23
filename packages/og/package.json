@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev --persist-to ../../.wrangler/state --var ENVIRONMENT:development",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "gen:image": "bun scripts/generate-image.ts"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20251128.0",

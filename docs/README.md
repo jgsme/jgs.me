@@ -1,0 +1,2 @@
+- https://w.jgs.me/pages/Git%20%E3%81%AE%E6%AC%A1%E4%B8%96%E4%BB%A3%E3%81%8B%EF%BC%9F%20%E8%A9%B1%E9%A1%8C%E3%81%AE%20VCS%E3%80%8CJujutsu%20(jj)%E3%80%8D%E3%81%A8%E3%81%AF%E4%BD%95%E3%81%8B
+- jujutsu を使ってみたいのでこのリポジトリで有効化する計画を考えたい

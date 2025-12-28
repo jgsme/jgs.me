@@ -1,7 +1,7 @@
 import React from "react";
 import "./index.css";
 
-export const Layout: React.FC<React.PropsWithChildren> = ({ children }) => {
+export const Layout = ({ children }: React.PropsWithChildren) => {
   return (
     <>
       <div className="w-full bg-[#82221c] h-[4rem] py-[8px]">

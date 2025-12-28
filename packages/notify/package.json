@@ -8,11 +8,11 @@
   },
   "dependencies": {
     "@jigsaw/db": "workspace:*",
-    "drizzle-orm": "^0.44.2"
+    "drizzle-orm": "catalog:"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20251128.0",
-    "typescript": "^5.9.3",
-    "wrangler": "^4.51.0"
+    "@cloudflare/workers-types": "catalog:",
+    "typescript": "catalog:",
+    "wrangler": "catalog:"
   }
 }

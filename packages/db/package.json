@@ -10,9 +10,9 @@
     "gen": "drizzle-kit generate"
   },
   "dependencies": {
-    "drizzle-orm": "^0.44.2"
+    "drizzle-orm": "catalog:"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.31.7"
+    "drizzle-kit": "catalog:"
   }
 }

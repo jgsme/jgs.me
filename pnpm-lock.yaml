@@ -4,6 +4,39 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@cloudflare/workers-types':
+      specifier: ^4.20251128.0
+      version: 4.20251128.0
+    '@progfay/scrapbox-parser':
+      specifier: ^10.0.2
+      version: 10.0.2
+    drizzle-kit:
+      specifier: ^0.31.7
+      version: 0.31.7
+    drizzle-orm:
+      specifier: ^0.44.7
+      version: 0.44.7
+    hono:
+      specifier: ^4.10.7
+      version: 4.10.7
+    react:
+      specifier: ^19.2.0
+      version: 19.2.0
+    react-dom:
+      specifier: ^19.2.0
+      version: 19.2.0
+    typescript:
+      specifier: ^5.9.3
+      version: 5.9.3
+    vitest:
+      specifier: ^4.0.14
+      version: 4.0.14
+    wrangler:
+      specifier: ^4.51.0
+      version: 4.51.0
+
 importers:
 
   .: {}
@@ -11,11 +44,11 @@ importers:
   packages/db:
     dependencies:
       drizzle-orm:
-        specifier: ^0.44.2
+        specifier: 'catalog:'
         version: 0.44.7(@cloudflare/workers-types@4.20251128.0)
     devDependencies:
       drizzle-kit:
-        specifier: ^0.31.7
+        specifier: 'catalog:'
         version: 0.31.7
 
   packages/home:
@@ -24,20 +57,20 @@ importers:
         specifier: workspace:*
         version: link:../db
       drizzle-orm:
-        specifier: ^0.44.7
+        specifier: 'catalog:'
         version: 0.44.7(@cloudflare/workers-types@4.20251128.0)
       hono:
-        specifier: ^4.10.7
+        specifier: 'catalog:'
         version: 4.10.7
     devDependencies:
       '@cloudflare/workers-types':
-        specifier: ^4.20251128.0
+        specifier: 'catalog:'
         version: 4.20251128.0
       typescript:
-        specifier: ^5.9.3
+        specifier: 'catalog:'
         version: 5.9.3
       wrangler:
-        specifier: ^4.51.0
+        specifier: 'catalog:'
         version: 4.51.0(@cloudflare/workers-types@4.20251128.0)
 
   packages/notify:
@@ -46,17 +79,17 @@ importers:
         specifier: workspace:*
         version: link:../db
       drizzle-orm:
-        specifier: ^0.44.2
+        specifier: 'catalog:'
         version: 0.44.7(@cloudflare/workers-types@4.20251128.0)
     devDependencies:
       '@cloudflare/workers-types':
-        specifier: ^4.20251128.0
+        specifier: 'catalog:'
         version: 4.20251128.0
       typescript:
-        specifier: ^5.9.3
+        specifier: 'catalog:'
         version: 5.9.3
       wrangler:
-        specifier: ^4.51.0
+        specifier: 'catalog:'
         version: 4.51.0(@cloudflare/workers-types@4.20251128.0)
 
   packages/og:
@@ -68,23 +101,23 @@ importers:
         specifier: ^2.6.2
         version: 2.6.2
       drizzle-orm:
-        specifier: ^0.44.7
+        specifier: 'catalog:'
         version: 0.44.7(@cloudflare/workers-types@4.20251128.0)
       hono:
-        specifier: ^4.10.7
+        specifier: 'catalog:'
         version: 4.10.7
       satori:
         specifier: ^0.18.3
         version: 0.18.3
     devDependencies:
       '@cloudflare/workers-types':
-        specifier: ^4.20251128.0
+        specifier: 'catalog:'
         version: 4.20251128.0
       typescript:
-        specifier: ^5.9.3
+        specifier: 'catalog:'
         version: 5.9.3
       wrangler:
-        specifier: ^4.51.0
+        specifier: 'catalog:'
         version: 4.51.0(@cloudflare/workers-types@4.20251128.0)
 
   packages/sync:
@@ -93,23 +126,23 @@ importers:
         specifier: workspace:*
         version: link:../db
       '@progfay/scrapbox-parser':
-        specifier: ^10.0.2
+        specifier: 'catalog:'
         version: 10.0.2
       drizzle-orm:
-        specifier: ^0.44.7
+        specifier: 'catalog:'
         version: 0.44.7(@cloudflare/workers-types@4.20251128.0)
     devDependencies:
       '@cloudflare/workers-types':
-        specifier: ^4.20251128.0
+        specifier: 'catalog:'
         version: 4.20251128.0
       typescript:
-        specifier: ^5.9.3
+        specifier: 'catalog:'
         version: 5.9.3
       vitest:
-        specifier: ^4.0.14
+        specifier: 'catalog:'
         version: 4.0.14(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(yaml@2.7.0)
       wrangler:
-        specifier: ^4.51.0
+        specifier: 'catalog:'
         version: 4.51.0(@cloudflare/workers-types@4.20251128.0)
 
   packages/web:
@@ -133,22 +166,22 @@ importers:
         specifier: ^0.1.10
         version: 0.1.10(@cloudflare/workers-types@4.20251128.0)(@hattip/core@0.0.49)(hono@4.10.7)(rollup@4.53.3)(vite@7.2.4(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(yaml@2.7.0))
       '@progfay/scrapbox-parser':
-        specifier: ^10.0.2
+        specifier: 'catalog:'
         version: 10.0.2
       '@vitejs/plugin-react':
         specifier: ^5.1.1
         version: 5.1.1(vite@7.2.4(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(yaml@2.7.0))
       drizzle-orm:
-        specifier: ^0.44.7
+        specifier: 'catalog:'
         version: 0.44.7(@cloudflare/workers-types@4.20251128.0)
       hono:
-        specifier: ^4.10.7
+        specifier: 'catalog:'
         version: 4.10.7
       react:
-        specifier: ^19.2.0
+        specifier: 'catalog:'
         version: 19.2.0
       react-dom:
-        specifier: ^19.2.0
+        specifier: 'catalog:'
         version: 19.2.0(react@19.2.0)
       vike:
         specifier: ^0.4.247
@@ -164,7 +197,7 @@ importers:
         version: 5.1.4(typescript@5.9.3)(vite@7.2.4(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(yaml@2.7.0))
     devDependencies:
       '@cloudflare/workers-types':
-        specifier: ^4.20251128.0
+        specifier: 'catalog:'
         version: 4.20251128.0
       '@tailwindcss/postcss':
         specifier: ^4.1.17
@@ -188,16 +221,16 @@ importers:
         specifier: ^4.1.17
         version: 4.1.17
       typescript:
-        specifier: ^5.9.3
+        specifier: 'catalog:'
         version: 5.9.3
       vite:
         specifier: ^7.2.4
         version: 7.2.4(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(yaml@2.7.0)
       vitest:
-        specifier: ^4.0.14
+        specifier: 'catalog:'
         version: 4.0.14(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(yaml@2.7.0)
       wrangler:
-        specifier: ^4.51.0
+        specifier: 'catalog:'
         version: 4.51.0(@cloudflare/workers-types@4.20251128.0)
 
 packages:

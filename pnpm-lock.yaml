@@ -13,6 +13,10 @@ importers:
       drizzle-orm:
         specifier: ^0.44.2
         version: 0.44.7(@cloudflare/workers-types@4.20251128.0)
+    devDependencies:
+      drizzle-kit:
+        specifier: ^0.31.7
+        version: 0.31.7
 
   packages/home:
     dependencies:
@@ -88,6 +92,9 @@ importers:
       '@jigsaw/db':
         specifier: workspace:*
         version: link:../db
+      '@progfay/scrapbox-parser':
+        specifier: ^10.0.2
+        version: 10.0.2
       drizzle-orm:
         specifier: ^0.44.7
         version: 0.44.7(@cloudflare/workers-types@4.20251128.0)
@@ -98,6 +105,9 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      vitest:
+        specifier: ^4.0.14
+        version: 4.0.14(@types/node@24.10.1)(jiti@2.6.1)(lightningcss@1.30.2)(yaml@2.7.0)
       wrangler:
         specifier: ^4.51.0
         version: 4.51.0(@cloudflare/workers-types@4.20251128.0)
@@ -171,9 +181,6 @@ importers:
       autoprefixer:
         specifier: ^10.4.22
         version: 10.4.22(postcss@8.5.6)
-      drizzle-kit:
-        specifier: ^0.31.7
-        version: 0.31.7
       postcss:
         specifier: ^8.5.6
         version: 8.5.6

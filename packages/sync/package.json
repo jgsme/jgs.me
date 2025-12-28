@@ -9,10 +9,12 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20251128.0",
     "typescript": "^5.9.3",
+    "vitest": "^4.0.14",
     "wrangler": "^4.51.0"
   },
   "dependencies": {
     "@jigsaw/db": "workspace:*",
+    "@progfay/scrapbox-parser": "^10.0.2",
     "drizzle-orm": "^0.44.7"
   }
 }

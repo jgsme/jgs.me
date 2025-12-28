@@ -16,6 +16,11 @@
       "name": "sync-batch-workflow",
       "binding": "SYNC_BATCH_WORKFLOW",
       "class_name": "SyncBatchWorkflow"
+    },
+    {
+      "name": "on-this-day-workflow",
+      "binding": "ON_THIS_DAY_WORKFLOW",
+      "class_name": "OnThisDayWorkflow"
     }
   ],
   "r2_buckets": [
@@ -28,7 +33,8 @@
     {
       "binding": "DB",
       "database_name": "w",
-      "database_id": "bd809baf-e2e6-41e2-9561-f77981b43ba5"
+      "database_id": "bd809baf-e2e6-41e2-9561-f77981b43ba5",
+      "migrations_dir": "../db/drizzle"
     }
   ]
 }

@@ -6,7 +6,13 @@
     ".": "./src/schema.ts",
     "./token": "./src/token.ts"
   },
+  "scripts": {
+    "gen": "drizzle-kit generate"
+  },
   "dependencies": {
     "drizzle-orm": "^0.44.2"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.7"
   }
 }

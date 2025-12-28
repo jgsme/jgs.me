@@ -64,3 +64,33 @@ export const clipRelations = relations(clips, ({ one }) => ({
     references: [pages.id],
   }),
 }));
+
+export const onThisDayEntries = sqliteTable("on_this_day_entry", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  pageID: integer("pageID")
+    .notNull()
+    .references(() => pages.id), // 親ページ (例: 0401) への参照
+  targetPageID: integer("targetPageID")
+    .notNull()
+    .references(() => pages.id), // 実際の記事ページへの参照
+  year: integer("year").notNull(), // 記事の年 (例: 2022)
+  created: text("created")
+    .notNull()
+    .default(sql`(CURRENT_TIMESTAMP)`),
+  updated: text("updated")
+    .notNull()
+    .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+});
+
+export const onThisDayEntryRelations = relations(onThisDayEntries, ({ one }) => ({
+  page: one(pages, {
+    fields: [onThisDayEntries.pageID],
+    references: [pages.id],
+    relationName: "on_this_day_page",
+  }),
+  targetPage: one(pages, {
+    fields: [onThisDayEntries.targetPageID],
+    references: [pages.id],
+    relationName: "on_this_day_target_page",
+  }),
+}));

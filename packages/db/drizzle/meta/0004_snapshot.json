@@ -1,0 +1,289 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "5c0db953-e0d6-4706-ab6e-a2b005a1875f",
+  "prevId": "09bd2a9f-4507-4732-8289-bda465f916e1",
+  "tables": {
+    "article": {
+      "name": "article",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "pageID": {
+          "name": "pageID",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created": {
+          "name": "created",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(CURRENT_TIMESTAMP)"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "article_pageID_page_id_fk": {
+          "name": "article_pageID_page_id_fk",
+          "tableFrom": "article",
+          "tableTo": "page",
+          "columnsFrom": [
+            "pageID"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "clip": {
+      "name": "clip",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "pageID": {
+          "name": "pageID",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created": {
+          "name": "created",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(CURRENT_TIMESTAMP)"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "clip_pageID_page_id_fk": {
+          "name": "clip_pageID_page_id_fk",
+          "tableFrom": "clip",
+          "tableTo": "page",
+          "columnsFrom": [
+            "pageID"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "excluded_page": {
+      "name": "excluded_page",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "pageID": {
+          "name": "pageID",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created": {
+          "name": "created",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(CURRENT_TIMESTAMP)"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "excluded_page_pageID_page_id_fk": {
+          "name": "excluded_page_pageID_page_id_fk",
+          "tableFrom": "excluded_page",
+          "tableTo": "page",
+          "columnsFrom": [
+            "pageID"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "on_this_day_entry": {
+      "name": "on_this_day_entry",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "pageID": {
+          "name": "pageID",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "targetPageID": {
+          "name": "targetPageID",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "year": {
+          "name": "year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created": {
+          "name": "created",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(CURRENT_TIMESTAMP)"
+        },
+        "updated": {
+          "name": "updated",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "on_this_day_entry_pageID_page_id_fk": {
+          "name": "on_this_day_entry_pageID_page_id_fk",
+          "tableFrom": "on_this_day_entry",
+          "tableTo": "page",
+          "columnsFrom": [
+            "pageID"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "on_this_day_entry_targetPageID_page_id_fk": {
+          "name": "on_this_day_entry_targetPageID_page_id_fk",
+          "tableFrom": "on_this_day_entry",
+          "tableTo": "page",
+          "columnsFrom": [
+            "targetPageID"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "page": {
+      "name": "page",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created": {
+          "name": "created",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(CURRENT_TIMESTAMP)"
+        },
+        "updated": {
+          "name": "updated",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "image": {
+          "name": "image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "sbID": {
+          "name": "sbID",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}

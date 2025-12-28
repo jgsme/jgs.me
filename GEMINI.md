@@ -71,17 +71,6 @@ To run the test suite for the `web` package:
 pnpm --filter web test
 ```
 
-### Deployment
-
-Each package can be deployed to Cloudflare individually. To deploy the main web application:
-
-```bash
-# Build and deploy the web app to Cloudflare Pages
-pnpm deploy
-```
-
-Similarly, other workers can be deployed using their `deploy:<worker_name>` script (e.g., `pnpm deploy:sync`).
-
 ## Development Conventions
 
 - **Database Migrations:** Database schema is managed by Drizzle ORM. To generate a new migration based on changes in `packages/db/src/schema.ts`, run the `gen` script in the `web` package:
@@ -91,3 +80,5 @@ Similarly, other workers can be deployed using their `deploy:<worker_name>` scri
 - **Code Style:** The project uses Prettier for code formatting (inferred from common JS/TS project standards, though no `.prettierrc` is visible) and ESLint (inferred). Adhere to the existing style.
 - **API Routes:** Backend API logic for the `web` app is located in `packages/web/server/routes/`. New API endpoints should be added here.
 - **UI Pages:** Frontend pages are located in `packages/web/pages/`. The application uses Vike's file-based routing.
+- **Commit Tracing:** Ensure traceability by executing the `jj describe` command after each step.
+- **Approval Flow:** NEVER start implementation before the user explicitly approves the proposed plan in `docs/`.

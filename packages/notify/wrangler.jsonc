@@ -10,7 +10,8 @@
     {
       "binding": "DB",
       "database_name": "w",
-      "database_id": "bd809baf-e2e6-41e2-9561-f77981b43ba5"
+      "database_id": "bd809baf-e2e6-41e2-9561-f77981b43ba5",
+      "migrations_dir": "../db/drizzle"
     }
   ],
   "workflows": [

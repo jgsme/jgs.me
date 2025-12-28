@@ -60,7 +60,7 @@ export class OnThisDayWorkflow extends WorkflowEntrypoint<Env, OnThisDayParams> 
       const cutoffDate = new Date(cutoff * 1000);
       return candidates.filter((p) => {
         const titleStr = String(p.title);
-        if (!/^\\d{4}$/.test(titleStr)) return false;
+        if (!/^\d{4}$/.test(titleStr)) return false;
         const updatedDate = new Date(p.updated.replace(" ", "T") + "Z");
         return updatedDate >= cutoffDate;
       });

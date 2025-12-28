@@ -8,15 +8,15 @@
     "gen:image": "bun scripts/generate-image.ts"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20251128.0",
-    "typescript": "^5.9.3",
-    "wrangler": "^4.51.0"
+    "@cloudflare/workers-types": "catalog:",
+    "typescript": "catalog:",
+    "wrangler": "catalog:"
   },
   "dependencies": {
     "@jigsaw/db": "workspace:*",
     "@resvg/resvg-wasm": "^2.6.2",
-    "drizzle-orm": "^0.44.7",
-    "hono": "^4.10.7",
+    "drizzle-orm": "catalog:",
+    "hono": "catalog:",
     "satori": "^0.18.3"
   }
 }

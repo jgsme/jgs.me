@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { Block as BlockType } from "@progfay/scrapbox-parser";
 import { ScrapboxNode } from "./ScrapboxNode";
 

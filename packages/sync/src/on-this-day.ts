@@ -11,6 +11,7 @@ import { parse, type Node } from "@progfay/scrapbox-parser";
 type Env = {
   R2: R2Bucket;
   DB: D1Database;
+  ON_THIS_DAY_INDEX_WORKFLOW: Workflow;
 };
 
 type OnThisDayParams = {
@@ -40,7 +41,7 @@ export class OnThisDayWorkflow extends WorkflowEntrypoint<
     const { cutoff: payloadCutoff, fullScan, start, end } = event.payload ?? {};
     let cutoff = payloadCutoff;
 
-    if (fullScan) {
+    if (fullScan || start || end) {
       cutoff = 0;
     } else if (cutoff === undefined) {
       cutoff = Math.floor(Date.now() / 1000) - 25 * 60 * 60;

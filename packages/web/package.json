@@ -16,7 +16,7 @@
     "@photonjs/cloudflare": "^0.1.8",
     "@photonjs/core": "^0.1.13",
     "@photonjs/hono": "^0.1.7",
-    "@photonjs/runtime": "^0.1.10",
+    "@photonjs/runtime": "^0.1.16",
     "@progfay/scrapbox-parser": "catalog:",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.4.2",

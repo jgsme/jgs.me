@@ -21,6 +21,11 @@
       "name": "on-this-day-workflow",
       "binding": "ON_THIS_DAY_WORKFLOW",
       "class_name": "OnThisDayWorkflow"
+    },
+    {
+      "name": "on-this-day-index-workflow",
+      "binding": "ON_THIS_DAY_INDEX_WORKFLOW",
+      "class_name": "OnThisDayIndexWorkflow"
     }
   ],
   "r2_buckets": [

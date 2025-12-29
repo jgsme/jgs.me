@@ -11,6 +11,7 @@ import { parse, type Node } from "@progfay/scrapbox-parser";
 type Env = {
   R2: R2Bucket;
   DB: D1Database;
+  ON_THIS_DAY_INDEX_WORKFLOW: Workflow;
 };
 
 type OnThisDayParams = {

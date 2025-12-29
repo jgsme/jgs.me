@@ -7,6 +7,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
 import { pages as pagesTable } from "@jigsaw/db";
 export { OnThisDayWorkflow } from "./on-this-day";
+export { OnThisDayIndexWorkflow } from "./on-this-day-index";
 
 type Env = {
   R2: R2Bucket;
@@ -14,6 +15,7 @@ type Env = {
   SYNC_WORKFLOW: Workflow;
   SYNC_BATCH_WORKFLOW: Workflow;
   ON_THIS_DAY_WORKFLOW: Workflow;
+  ON_THIS_DAY_INDEX_WORKFLOW: Workflow;
 };
 
 type ScrapboxListResponse = {

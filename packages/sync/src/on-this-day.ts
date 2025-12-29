@@ -16,6 +16,8 @@ type Env = {
 type OnThisDayParams = {
   cutoff?: number; // Unix timestamp
   fullScan?: boolean;
+  start?: string; // MMDD
+  end?: string; // MMDD
 };
 
 type PageData = {
@@ -30,9 +32,12 @@ type TempEntry = {
   tempTitle: string;
 };
 
-export class OnThisDayWorkflow extends WorkflowEntrypoint<Env, OnThisDayParams> {
+export class OnThisDayWorkflow extends WorkflowEntrypoint<
+  Env,
+  OnThisDayParams
+> {
   async run(event: WorkflowEvent<OnThisDayParams>, step: WorkflowStep) {
-    const { cutoff: payloadCutoff, fullScan } = event.payload ?? {};
+    const { cutoff: payloadCutoff, fullScan, start, end } = event.payload ?? {};
     let cutoff = payloadCutoff;
 
     if (fullScan) {
@@ -43,7 +48,9 @@ export class OnThisDayWorkflow extends WorkflowEntrypoint<Env, OnThisDayParams> 
 
     const runId = Date.now();
 
-    console.log(`[OnThisDay] START: runId=${runId}, cutoff=${cutoff}, fullScan=${fullScan}`);
+    console.log(
+      `[OnThisDay] START: runId=${runId}, cutoff=${cutoff}, fullScan=${fullScan}, start=${start}, end=${end}`
+    );
 
     const db = drizzle(this.env.DB);
 
@@ -55,12 +62,17 @@ export class OnThisDayWorkflow extends WorkflowEntrypoint<Env, OnThisDayParams> 
           sbID: pages.sbID,
           updated: pages.updated,
         })
-        .from(pages);
+        .from(pages)
+        .orderBy(pages.title);
 
       const cutoffDate = new Date(cutoff * 1000);
       return candidates.filter((p) => {
         const titleStr = String(p.title);
         if (!/^\d{4}$/.test(titleStr)) return false;
+
+        if (start && titleStr < start) return false;
+        if (end && titleStr > end) return false;
+
         const updatedDate = new Date(p.updated.replace(" ", "T") + "Z");
         return updatedDate >= cutoffDate;
       });

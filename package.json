@@ -12,5 +12,8 @@
     "deploy:og": "pnpm --filter og deploy",
     "dev:home": "pnpm --filter home dev",
     "deploy:home": "pnpm --filter home deploy"
+  },
+  "devDependencies": {
+    "wrangler": "catalog:"
   }
 }

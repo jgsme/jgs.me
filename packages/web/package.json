@@ -14,7 +14,7 @@
     "@jigsaw/db": "workspace:*",
     "@paralleldrive/cuid2": "^3.0.4",
     "@photonjs/cloudflare": "^0.1.8",
-    "@photonjs/core": "^0.1.13",
+    "@photonjs/core": "^0.1.20",
     "@photonjs/hono": "^0.1.7",
     "@photonjs/runtime": "^0.1.10",
     "@progfay/scrapbox-parser": "catalog:",

@@ -2,13 +2,21 @@ import React from "react";
 import { useData } from "vike-react/useData";
 import type data from "./+data";
 import { SearchForm } from "../components/SearchForm";
+import { TodayLink } from "../components/TodayLink";
 
 const Page = () => {
   const d = useData<Awaited<ReturnType<typeof data>>>();
 
   return (
     <main className="max-w-[600px] mx-auto px-4 pb-[200px]">
-      <SearchForm />
+      <div className="flex gap-4 my-2">
+        <div className="grow">
+          <SearchForm />
+        </div>
+        <div>
+          <TodayLink />
+        </div>
+      </div>
       <ul>
         {d.payload.articles.map((article) => (
           <li key={article.id} className="my-8">

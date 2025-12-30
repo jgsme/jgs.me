@@ -20,6 +20,12 @@ const createCacheMiddleware = (maxAge: number) => {
     c: Parameters<Parameters<typeof app.use>[1]>[0],
     next: () => Promise<void>
   ) => {
+    const url = new URL(c.req.url);
+    if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
+      await next();
+      return;
+    }
+
     const cache = caches.default;
     const cacheKey = new Request(c.req.url, { method: "GET" });
 

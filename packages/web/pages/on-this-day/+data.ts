@@ -19,10 +19,8 @@ type Context = PageContextServer & {
 const data = async (c: Context): Promise<Data> => {
   try {
     const object = await c.env.R2.get("on-this-day-index.json");
-    console.log(object);
     if (object) {
       const index = await object.json<OnThisDayIndex>();
-      console.log("Successfully loaded on-this-day index from R2");
       return { index };
     }
   } catch (e) {

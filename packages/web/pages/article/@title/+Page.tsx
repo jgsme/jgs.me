@@ -34,6 +34,17 @@ const Page = () => {
           <ScrapboxBlock key={i} block={block} />
         ))}
       </article>
+      {/^\d{4}$/.test(d.title) && (
+        <div className="mt-12 flex justify-center">
+          <a
+            href="/on-this-day"
+            className="group relative inline-flex items-center justify-center px-16 py-8 font-bold text-white transition-all duration-300 bg-neutral-900 rounded-full overflow-hidden hover:scale-105 active:scale-95"
+          >
+            <div className="absolute inset-0 w-full h-full bg-[url('/warp.gif')] bg-cover opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <span className="relative z-10 text-5xl">WARP</span>
+          </a>
+        </div>
+      )}
     </main>
   );
 };

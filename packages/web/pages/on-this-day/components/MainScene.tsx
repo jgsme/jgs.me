@@ -170,12 +170,27 @@ export const MainScene = ({
   selectedYear: number | null;
 }) => {
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
+  const [isAutoRotating, setIsAutoRotating] = useState(true);
+  const autoRotateTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
   const centerX = (52 * TOTAL_HORIZONTAL_SIZE) / 2;
   const centerZ = (7 * TOTAL_HORIZONTAL_SIZE) / 2;
 
   const handleWeekSelect = (weekIndex: number) => {
     setSelectedWeek((prev) => (prev === weekIndex ? null : weekIndex));
+  };
+
+  const handleControlStart = () => {
+    if (autoRotateTimerRef.current) {
+      clearTimeout(autoRotateTimerRef.current);
+    }
+    setIsAutoRotating(false);
+  };
+
+  const handleControlEnd = () => {
+    autoRotateTimerRef.current = setTimeout(() => {
+      setIsAutoRotating(true);
+    }, 5000);
   };
 
   return (
@@ -188,7 +203,13 @@ export const MainScene = ({
         far={2000}
         onUpdate={(c) => c.lookAt(centerX, 0, centerZ)}
       />
-      <OrbitControls target={[centerX, 0, centerZ]} />
+      <OrbitControls
+        target={[centerX, 0, centerZ]}
+        autoRotate={isAutoRotating}
+        autoRotateSpeed={0.5}
+        onStart={handleControlStart}
+        onEnd={handleControlEnd}
+      />
 
       <color attach="background" args={["#000000"]} />
       <Stars

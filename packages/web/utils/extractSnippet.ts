@@ -17,7 +17,7 @@ export type ExtractSnippetOptions = {
  */
 export function extractSnippet(
   lines: Line[],
-  options: ExtractSnippetOptions
+  options: ExtractSnippetOptions,
 ): string {
   const { title, maxLength = 200, maxLines = 10 } = options;
 

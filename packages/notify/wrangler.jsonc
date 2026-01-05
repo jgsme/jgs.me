@@ -4,21 +4,21 @@
   "compatibility_date": "2025-08-28",
   "main": "src/index.ts",
   "triggers": {
-    "crons": ["0 20 * * *"]
+    "crons": ["0 20 * * *"],
   },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "w",
       "database_id": "bd809baf-e2e6-41e2-9561-f77981b43ba5",
-      "migrations_dir": "../db/drizzle"
-    }
+      "migrations_dir": "../db/drizzle",
+    },
   ],
   "workflows": [
     {
       "name": "notify-workflow",
       "binding": "NOTIFY_WORKFLOW",
-      "class_name": "NotifyWorkflow"
-    }
-  ]
+      "class_name": "NotifyWorkflow",
+    },
+  ],
 }

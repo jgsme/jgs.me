@@ -14,7 +14,7 @@ const BG_COLOR = "#82221c";
 
 async function loadFont(): Promise<ArrayBuffer> {
   const res = await fetch(
-    "https://cdn.jsdelivr.net/fontsource/fonts/noto-sans-jp@latest/japanese-700-normal.woff"
+    "https://cdn.jsdelivr.net/fontsource/fonts/noto-sans-jp@latest/japanese-700-normal.woff",
   );
   return res.arrayBuffer();
 }
@@ -233,7 +233,7 @@ export async function generateTitleOgImage(title: string): Promise<Uint8Array> {
 
 export async function generateImageWithTitleOgImage(
   title: string,
-  imageUrl: string
+  imageUrl: string,
 ): Promise<Uint8Array> {
   const font = await loadFont();
 

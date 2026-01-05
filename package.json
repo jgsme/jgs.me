@@ -8,9 +8,12 @@
     "dev:og": "pnpm --filter og dev",
     "dev:home": "pnpm --filter home dev",
     "dev:on-this-day": "pnpm --filter on-this-day dev",
-    "dev:on-this-day-index": "pnpm --filter on-this-day-index dev"
+    "dev:on-this-day-index": "pnpm --filter on-this-day-index dev",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check"
   },
   "devDependencies": {
+    "prettier": "^3.7.4",
     "wrangler": "catalog:"
   }
 }

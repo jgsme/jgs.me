@@ -12,7 +12,7 @@ describe("purifyScrapboxText", () => {
 
   it("装飾記法 [* text] を除去する", () => {
     expect(purifyScrapboxText("[* 強調] されたテキスト")).toBe(
-      "強調 されたテキスト"
+      "強調 されたテキスト",
     );
     expect(purifyScrapboxText("[** 太字強調] テスト")).toBe("太字強調 テスト");
     expect(purifyScrapboxText("[/ 斜体] テスト")).toBe("斜体 テスト");
@@ -52,10 +52,10 @@ describe("purifyScrapboxText", () => {
 
   it("インデントを除去する", () => {
     expect(purifyScrapboxText("\tインデントされたテキスト")).toBe(
-      "インデントされたテキスト"
+      "インデントされたテキスト",
     );
     expect(purifyScrapboxText("  スペースインデント")).toBe(
-      "スペースインデント"
+      "スペースインデント",
     );
   });
 

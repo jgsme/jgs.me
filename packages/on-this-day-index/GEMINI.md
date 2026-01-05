@@ -17,8 +17,8 @@ This package is a Cloudflare Worker (`w-on-this-day-index`) responsible for gene
 
 The worker uses a single workflow:
 
-| Workflow | Description |
-| :--- | :--- |
+| Workflow                 | Description                                                                                                                          |
+| :----------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
 | `OnThisDayIndexWorkflow` | Fetches all entries from the `onThisDayEntries` table, aggregates counts by date and year, and writes a compressed index JSON to R2. |
 
 #### Data Flow

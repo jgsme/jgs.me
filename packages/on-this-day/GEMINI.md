@@ -18,8 +18,8 @@ This package is a Cloudflare Worker (`w-on-this-day`) that processes "On This Da
 
 The worker uses a single workflow:
 
-| Workflow | Description |
-| :--- | :--- |
+| Workflow            | Description                                                                                                                                                             |
+| :------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `OnThisDayWorkflow` | Fetches recently updated `MMDD` pages from D1, reads their full content from R2, parses them to find `[YYYY]` sections, and updates the `onThisDayEntries` table in D1. |
 
 #### Data Flow

@@ -82,15 +82,18 @@ export const onThisDayEntries = sqliteTable("on_this_day_entry", {
     .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 });
 
-export const onThisDayEntryRelations = relations(onThisDayEntries, ({ one }) => ({
-  page: one(pages, {
-    fields: [onThisDayEntries.pageID],
-    references: [pages.id],
-    relationName: "on_this_day_page",
+export const onThisDayEntryRelations = relations(
+  onThisDayEntries,
+  ({ one }) => ({
+    page: one(pages, {
+      fields: [onThisDayEntries.pageID],
+      references: [pages.id],
+      relationName: "on_this_day_page",
+    }),
+    targetPage: one(pages, {
+      fields: [onThisDayEntries.targetPageID],
+      references: [pages.id],
+      relationName: "on_this_day_target_page",
+    }),
   }),
-  targetPage: one(pages, {
-    fields: [onThisDayEntries.targetPageID],
-    references: [pages.id],
-    relationName: "on_this_day_target_page",
-  }),
-}));
+);

@@ -17,9 +17,9 @@ This package is a Cloudflare Worker (`w-sync`) responsible for periodically fetc
 
 The synchronization process uses two workflows:
 
-| Workflow | Description |
-| :--- | :--- |
-| `SyncWorkflow` | The main entry point. Iteratively fetches the page list from Scrapbox, identifies changes, and spawns `SyncBatchWorkflow` instances. |
+| Workflow            | Description                                                                                                                                       |
+| :------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `SyncWorkflow`      | The main entry point. Iteratively fetches the page list from Scrapbox, identifies changes, and spawns `SyncBatchWorkflow` instances.              |
 | `SyncBatchWorkflow` | Handles the heavy lifting for a batch of pages: fetches full content, stores raw JSON in R2, and updates the article metadata in the D1 database. |
 
 #### Data Flow
@@ -59,5 +59,3 @@ To perform type checking without emitting files:
 pnpm --filter sync exec tsc --noEmit
 
 ```
-
-

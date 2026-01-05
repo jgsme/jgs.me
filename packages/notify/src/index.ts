@@ -30,7 +30,7 @@ type UnregisteredPage = {
 const MAX_PAGES = 20;
 
 async function getUnregisteredPages(
-  d1: D1Database
+  d1: D1Database,
 ): Promise<UnregisteredPage[]> {
   const db = drizzle(d1);
 
@@ -50,8 +50,8 @@ async function getUnregisteredPages(
         isNull(excludedPages.id),
         isNull(clips.id),
         notGlob(pages.title, "[0-9][0-9][0-9][0-9][0-9][0-9]"),
-        notGlob(pages.title, "[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]")
-      )
+        notGlob(pages.title, "[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]"),
+      ),
     )
     .orderBy(desc(pages.created))
     .limit(MAX_PAGES);
@@ -61,7 +61,7 @@ async function getUnregisteredPages(
 
 async function sendDiscordMessage(
   webhookUrl: string,
-  content: string
+  content: string,
 ): Promise<void> {
   const res = await fetch(webhookUrl, {
     method: "POST",
@@ -77,7 +77,7 @@ async function sendDiscordMessage(
 
 async function sendDiscordNotification(
   env: Env,
-  unregisteredPages: UnregisteredPage[]
+  unregisteredPages: UnregisteredPage[],
 ): Promise<void> {
   if (unregisteredPages.length === 0) {
     return;
@@ -94,7 +94,7 @@ async function sendDiscordNotification(
         p.title.length > 80 ? p.title.slice(0, 80) + "…" : p.title;
       return `- [${displayTitle}](${pageUrl})
   - [記事](${registerUrl})・[クリップ](${clipUrl})・[除外](${excludeUrl})`;
-    })
+    }),
   );
 
   const header = `**未登録の記事が ${unregisteredPages.length} 件あるよ**\n\n`;
@@ -123,7 +123,7 @@ export class NotifyWorkflow extends WorkflowEntrypoint<Env, unknown> {
       "get-unregistered-pages",
       async () => {
         return getUnregisteredPages(this.env.DB);
-      }
+      },
     );
 
     await step.do("send-discord-notification", async () => {
@@ -138,7 +138,7 @@ export default {
   async scheduled(
     _event: ScheduledEvent,
     env: Env,
-    _ctx: ExecutionContext
+    _ctx: ExecutionContext,
   ): Promise<void> {
     await env.NOTIFY_WORKFLOW.create();
   },

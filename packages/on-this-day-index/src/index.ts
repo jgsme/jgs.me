@@ -68,9 +68,8 @@ export class OnThisDayIndexWorkflow extends WorkflowEntrypoint<Env, {}> {
     });
 
     console.log(
-      `[OnThisDayIndex] FINISH: runId=${runId}, dayCount=${counts.dayCount}, entryCount=${counts.entryCount}`
+      `[OnThisDayIndex] FINISH: runId=${runId}, dayCount=${counts.dayCount}, entryCount=${counts.entryCount}`,
     );
     return counts;
   }
 }
-

@@ -77,7 +77,7 @@ pnpm --filter web test
   ```bash
   pnpm --filter web gen
   ```
-- **Code Style:** The project uses Prettier for code formatting (inferred from common JS/TS project standards, though no `.prettierrc` is visible) and ESLint (inferred). Adhere to the existing style.
+- **Code Style:** Use Prettier for code formatting. Always run `pnpm format` before creating a commit.
 - **API Routes:** Backend API logic for the `web` app is located in `packages/web/server/routes/`. New API endpoints should be added here.
 - **UI Pages:** Frontend pages are located in `packages/web/pages/`. The application uses Vike's file-based routing.
 - **Commit Tracing:** Ensure traceability by executing the `jj describe` command after each step.
@@ -102,18 +102,19 @@ jj config set --user remotes.origin.auto-track-bookmarks '"glob:*"'
     jj new main -m "feat: description of changes"
     jj bookmark set feat/your-feature-name
     ```
-2.  **Develop & Commit:** Make changes and update the commit description.
+2.  **Develop & Format:** Make changes, then format the code before committing.
     ```bash
+    pnpm format
     jj describe -m "feat: updated description"
     ```
-3.  **Push Bookmark:** Push your specific bookmark to the remote.
+3.  **Push Bookmark:** **Wait for user approval.** Once approved, push your specific bookmark to the remote to create/update the Pull Request.
     ```bash
     jj git push --bookmark feat/your-feature-name
     ```
 4.  **Create Pull Request:** Open a Pull Request on GitHub targeting `main`.
 5.  **Merge:** After approval, merge the PR on GitHub.
-6.  **Update Local:** Fetch changes and rebase your work if needed.
+6.  **Update Local:** Fetch changes and start a new task.
     ```bash
     jj git fetch
-    jj rebase -d main
+    jj new main
     ```

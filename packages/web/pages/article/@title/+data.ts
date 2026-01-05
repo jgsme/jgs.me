@@ -21,7 +21,7 @@ type R2PageData = {
 async function fetchPageText(
   r2: R2Bucket,
   sbID: string | null,
-  title: string
+  title: string,
 ): Promise<string | null> {
   if (sbID) {
     const obj = await r2.get(`${sbID}.json`);
@@ -35,7 +35,7 @@ async function fetchPageText(
   }
 
   const res = await fetch(
-    `https://scrapbox.io/api/pages/jigsaw/${encodeURIComponent(title)}/text`
+    `https://scrapbox.io/api/pages/jigsaw/${encodeURIComponent(title)}/text`,
   );
   if (!res.ok) return null;
   return res.text();
@@ -77,7 +77,7 @@ const data = async (c: Context) => {
   let skipLines = 0;
 
   const firstLineIndex = blocks.findIndex(
-    (b) => b.type === "line" && b.nodes.length > 0
+    (b) => b.type === "line" && b.nodes.length > 0,
   );
 
   if (firstLineIndex !== -1) {

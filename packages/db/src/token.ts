@@ -6,7 +6,7 @@ async function getKey(secret: string): Promise<CryptoKey> {
     encoder.encode(secret),
     { name: "HMAC", hash: "SHA-256" },
     false,
-    ["sign", "verify"]
+    ["sign", "verify"],
   );
 }
 
@@ -26,7 +26,7 @@ function fromHex(hex: string): Uint8Array {
 
 export async function generateToken(
   pageId: number,
-  secret: string
+  secret: string,
 ): Promise<string> {
   const key = await getKey(secret);
   const data = encoder.encode(String(pageId));
@@ -36,7 +36,7 @@ export async function generateToken(
 
 export async function verifyToken(
   token: string,
-  secret: string
+  secret: string,
 ): Promise<number | null> {
   const [pageIdStr, sig] = token.split(".");
   if (!pageIdStr || !sig) return null;

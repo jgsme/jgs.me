@@ -4,28 +4,28 @@
   "compatibility_date": "2025-08-28",
   "main": "virtual:photon:cloudflare:server-entry",
   "ai": {
-    "binding": "AI"
+    "binding": "AI",
   },
   "observability": {
     "logs": {
       "enabled": true,
       "head_sampling_rate": 1,
       "invocation_logs": true,
-      "persist": true
-    }
+      "persist": true,
+    },
   },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "w",
       "database_id": "bd809baf-e2e6-41e2-9561-f77981b43ba5",
-      "migrations_dir": "../db/drizzle"
-    }
+      "migrations_dir": "../db/drizzle",
+    },
   ],
   "r2_buckets": [
     {
       "binding": "R2",
-      "bucket_name": "w-data"
-    }
-  ]
+      "bucket_name": "w-data",
+    },
+  ],
 }

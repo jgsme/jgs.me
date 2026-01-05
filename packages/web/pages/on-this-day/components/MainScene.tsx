@@ -263,7 +263,7 @@ export const MainScene = ({
                     const pageName = cell.dateStr.replace("-", "");
                     window.location.assign(`/pages/${pageName}`);
                   }}
-                />
+                />,
               );
               currentY++;
             }

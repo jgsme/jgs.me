@@ -18,7 +18,7 @@ const app = new Hono<{ Bindings: Bindings }>();
 const createCacheMiddleware = (maxAge: number) => {
   return async (
     c: Parameters<Parameters<typeof app.use>[1]>[0],
-    next: () => Promise<void>
+    next: () => Promise<void>,
   ) => {
     const url = new URL(c.req.url);
     if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {

@@ -118,7 +118,7 @@ export const ScrapboxNode: React.FC<{ node: NodeType }> = ({ node }) => {
       return (
         <img
           src={`https://scrapbox.io/api/pages/jigsaw/${encodeURIComponent(
-            node.path
+            node.path,
           )}/icon`}
           alt={node.path}
           className="inline w-6 h-6 rounded"

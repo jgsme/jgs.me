@@ -28,7 +28,7 @@ const extractTitle = (content: Array<{ text: string }>): string | null => {
 
 const extractSnippetFromContent = (
   content: Array<{ text: string }>,
-  title: string
+  title: string,
 ): string => {
   const text = content[0]?.text ?? "";
   try {

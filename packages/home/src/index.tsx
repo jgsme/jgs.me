@@ -387,7 +387,7 @@ async function generateHtml(recentArticles: RecentArticle[]): Promise<string> {
 }
 
 async function fetchRecentArticles(
-  db: ReturnType<typeof drizzle>
+  db: ReturnType<typeof drizzle>,
 ): Promise<RecentArticle[]> {
   const twoWeeksAgo = new Date();
   twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);

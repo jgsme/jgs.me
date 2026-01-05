@@ -90,6 +90,7 @@ pnpm --filter web test
 ### Initial Setup
 
 Configure `jj` to automatically track bookmarks from the remote to simplify the push workflow.
+
 ```bash
 jj config set --user remotes.origin.auto-track-bookmarks '"glob:*"'
 ```

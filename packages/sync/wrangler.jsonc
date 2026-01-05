@@ -4,32 +4,32 @@
   "compatibility_date": "2025-08-28",
   "main": "src/index.ts",
   "triggers": {
-    "crons": ["0 19 * * *"]
+    "crons": ["0 19 * * *"],
   },
   "workflows": [
     {
       "name": "sync-workflow",
       "binding": "SYNC_WORKFLOW",
-      "class_name": "SyncWorkflow"
+      "class_name": "SyncWorkflow",
     },
     {
       "name": "sync-batch-workflow",
       "binding": "SYNC_BATCH_WORKFLOW",
-      "class_name": "SyncBatchWorkflow"
-    }
+      "class_name": "SyncBatchWorkflow",
+    },
   ],
   "r2_buckets": [
     {
       "binding": "R2",
-      "bucket_name": "w-data"
-    }
+      "bucket_name": "w-data",
+    },
   ],
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "w",
       "database_id": "bd809baf-e2e6-41e2-9561-f77981b43ba5",
-      "migrations_dir": "../db/drizzle"
-    }
-  ]
+      "migrations_dir": "../db/drizzle",
+    },
+  ],
 }

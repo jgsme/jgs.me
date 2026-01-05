@@ -51,12 +51,12 @@ async function main() {
       if (!title || !imageUrl) {
         console.error("Error: Title or imageUrl argument is missing.");
         console.error(
-          "Usage: bun run scripts/generate-image.ts image <title> <imageUrl>"
+          "Usage: bun run scripts/generate-image.ts image <title> <imageUrl>",
         );
         process.exit(1);
       }
       console.log(
-        `Generating OG image with title: "${title}" and image: ${imageUrl}...`
+        `Generating OG image with title: "${title}" and image: ${imageUrl}...`,
       );
       const png = await generateImageWithTitleOgImage(title, imageUrl);
       const outputPath = path.join(outputDir, "image.png");

@@ -59,10 +59,10 @@ const SCRAPBOX_PROJECT = "jigsaw";
 
 async function fetchPageListChunk(
   skip: number,
-  limit: number
+  limit: number,
 ): Promise<{ pages: ScrapboxListResponse["pages"]; total: number }> {
   const res = await fetch(
-    `https://scrapbox.io/api/pages/${SCRAPBOX_PROJECT}?skip=${skip}&limit=${limit}&sort=updated`
+    `https://scrapbox.io/api/pages/${SCRAPBOX_PROJECT}?skip=${skip}&limit=${limit}&sort=updated`,
   );
 
   if (!res.ok) {
@@ -76,8 +76,8 @@ async function fetchPageListChunk(
 async function fetchPageDetail(title: string): Promise<ScrapboxPageResponse> {
   const res = await fetch(
     `https://scrapbox.io/api/pages/${SCRAPBOX_PROJECT}/${encodeURIComponent(
-      title
-    )}`
+      title,
+    )}`,
   );
 
   if (!res.ok) {
@@ -189,7 +189,7 @@ export class SyncBatchWorkflow extends WorkflowEntrypoint<
             if (existing?.customMetadata?.updated) {
               const existingUpdated = parseInt(
                 existing.customMetadata.updated,
-                10
+                10,
               );
               if (existingUpdated >= page.updated) {
                 batchResults.skipped++;
@@ -249,7 +249,7 @@ export class SyncBatchWorkflow extends WorkflowEntrypoint<
           }
 
           return batchResults;
-        }
+        },
       );
 
       synced += results.synced;
@@ -264,7 +264,7 @@ export default {
   async scheduled(
     _event: ScheduledEvent,
     env: Env,
-    _ctx: ExecutionContext
+    _ctx: ExecutionContext,
   ): Promise<void> {
     await env.SYNC_WORKFLOW.create();
   },

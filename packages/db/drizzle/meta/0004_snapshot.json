@@ -36,12 +36,8 @@
           "name": "article_pageID_page_id_fk",
           "tableFrom": "article",
           "tableTo": "page",
-          "columnsFrom": [
-            "pageID"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["pageID"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -82,12 +78,8 @@
           "name": "clip_pageID_page_id_fk",
           "tableFrom": "clip",
           "tableTo": "page",
-          "columnsFrom": [
-            "pageID"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["pageID"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -128,12 +120,8 @@
           "name": "excluded_page_pageID_page_id_fk",
           "tableFrom": "excluded_page",
           "tableTo": "page",
-          "columnsFrom": [
-            "pageID"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["pageID"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -195,12 +183,8 @@
           "name": "on_this_day_entry_pageID_page_id_fk",
           "tableFrom": "on_this_day_entry",
           "tableTo": "page",
-          "columnsFrom": [
-            "pageID"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["pageID"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -208,12 +192,8 @@
           "name": "on_this_day_entry_targetPageID_page_id_fk",
           "tableFrom": "on_this_day_entry",
           "tableTo": "page",
-          "columnsFrom": [
-            "targetPageID"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["targetPageID"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }

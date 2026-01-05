@@ -52,7 +52,7 @@ export const onThisDayEntryRelations = relations(
       fields: [onThisDayEntries.targetPageID],
       references: [pages.id],
     }),
-  })
+  }),
 );
 ```
 

@@ -41,12 +41,18 @@ const Page = () => {
           </a>
         )}
         {d.payload.page > 2 && (
-          <a href={`/clips?p=${d.payload.page - 1}`} className="block underline">
+          <a
+            href={`/clips?p=${d.payload.page - 1}`}
+            className="block underline"
+          >
             前のページ
           </a>
         )}
         {d.payload.hasNext && (
-          <a href={`/clips?p=${d.payload.page + 1}`} className="block underline">
+          <a
+            href={`/clips?p=${d.payload.page + 1}`}
+            className="block underline"
+          >
             次のページ
           </a>
         )}

@@ -50,7 +50,7 @@ export class OnThisDayWorkflow extends WorkflowEntrypoint<
     const runId = Date.now();
 
     console.log(
-      `[OnThisDay] START: runId=${runId}, cutoff=${cutoff}, fullScan=${fullScan}, start=${start}, end=${end}`
+      `[OnThisDay] START: runId=${runId}, cutoff=${cutoff}, fullScan=${fullScan}, start=${start}, end=${end}`,
     );
 
     const db = drizzle(this.env.DB);
@@ -68,7 +68,7 @@ export class OnThisDayWorkflow extends WorkflowEntrypoint<
 
       const cutoffDate = new Date(cutoff * 1000);
       console.log(
-        `[OnThisDay] Filter cutoffDate: ${cutoffDate.toISOString()} (timestamp: ${cutoff})`
+        `[OnThisDay] Filter cutoffDate: ${cutoffDate.toISOString()} (timestamp: ${cutoff})`,
       );
 
       const parseDate = (dateStr: string): Date => {
@@ -93,7 +93,7 @@ export class OnThisDayWorkflow extends WorkflowEntrypoint<
           console.log(
             `[OnThisDay] Hit: ${p.title} (raw: ${
               p.updated
-            }, parsed: ${updatedDate.toISOString()}) >= cutoff: ${cutoffDate.toISOString()}`
+            }, parsed: ${updatedDate.toISOString()}) >= cutoff: ${cutoffDate.toISOString()}`,
           );
         }
 
@@ -165,7 +165,7 @@ export class OnThisDayWorkflow extends WorkflowEntrypoint<
 
           if (tempEntries.length > 0) {
             const titles = Array.from(
-              new Set(tempEntries.map((e) => e.tempTitle))
+              new Set(tempEntries.map((e) => e.tempTitle)),
             );
             const foundPages = await db
               .select({ id: pages.id, title: pages.title })
@@ -208,7 +208,7 @@ export default {
   async scheduled(
     _event: ScheduledEvent,
     env: Env,
-    _ctx: ExecutionContext
+    _ctx: ExecutionContext,
   ): Promise<void> {
     await env.WORKFLOW.create();
   },

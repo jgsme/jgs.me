@@ -36,12 +36,8 @@
           "name": "article_pageID_page_id_fk",
           "tableFrom": "article",
           "tableTo": "page",
-          "columnsFrom": [
-            "pageID"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["pageID"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }

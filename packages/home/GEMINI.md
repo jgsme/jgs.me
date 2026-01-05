@@ -37,12 +37,3 @@ pnpm dev:home
 ```
 
 This starts a local Wrangler server on port `8790`.
-
-### Deployment
-
-To deploy the worker to Cloudflare:
-
-```bash
-# Run from the root of the monorepo
-pnpm deploy:home
-```

@@ -3,8 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --persist-to ../../.wrangler/state",
-    "deploy": "wrangler deploy"
+    "dev": "wrangler dev --persist-to ../../.wrangler/state"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",
@@ -14,7 +13,6 @@
   },
   "dependencies": {
     "@jigsaw/db": "workspace:*",
-    "@progfay/scrapbox-parser": "catalog:",
     "drizzle-orm": "catalog:"
   }
 }

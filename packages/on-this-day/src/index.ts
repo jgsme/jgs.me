@@ -4,14 +4,14 @@ import {
   WorkflowStep,
 } from "cloudflare:workers";
 import { drizzle } from "drizzle-orm/d1";
-import { eq, gt, inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { pages, onThisDayEntries } from "@jigsaw/db";
 import { parse, type Node } from "@progfay/scrapbox-parser";
 
 type Env = {
   R2: R2Bucket;
   DB: D1Database;
-  ON_THIS_DAY_INDEX_WORKFLOW: Workflow;
+  WORKFLOW: Workflow;
 };
 
 type OnThisDayParams = {
@@ -67,6 +67,18 @@ export class OnThisDayWorkflow extends WorkflowEntrypoint<
         .orderBy(pages.title);
 
       const cutoffDate = new Date(cutoff * 1000);
+      console.log(
+        `[OnThisDay] Filter cutoffDate: ${cutoffDate.toISOString()} (timestamp: ${cutoff})`
+      );
+
+      const parseDate = (dateStr: string): Date => {
+        if (/^\d+$/.test(dateStr)) {
+          return new Date(parseInt(dateStr, 10) * 1000);
+        }
+        if (dateStr.includes("T")) return new Date(dateStr);
+        return new Date(dateStr.replace(" ", "T") + "Z");
+      };
+
       return candidates.filter((p) => {
         const titleStr = String(p.title);
         if (!/^\d{4}$/.test(titleStr)) return false;
@@ -74,8 +86,18 @@ export class OnThisDayWorkflow extends WorkflowEntrypoint<
         if (start && titleStr < start) return false;
         if (end && titleStr > end) return false;
 
-        const updatedDate = new Date(p.updated.replace(" ", "T") + "Z");
-        return updatedDate >= cutoffDate;
+        const updatedDate = parseDate(p.updated);
+        const keep = updatedDate >= cutoffDate;
+
+        if (keep) {
+          console.log(
+            `[OnThisDay] Hit: ${p.title} (raw: ${
+              p.updated
+            }, parsed: ${updatedDate.toISOString()}) >= cutoff: ${cutoffDate.toISOString()}`
+          );
+        }
+
+        return keep;
       });
     });
 
@@ -181,3 +203,13 @@ export class OnThisDayWorkflow extends WorkflowEntrypoint<
     return { processedCount };
   }
 }
+
+export default {
+  async scheduled(
+    _event: ScheduledEvent,
+    env: Env,
+    _ctx: ExecutionContext
+  ): Promise<void> {
+    await env.WORKFLOW.create();
+  },
+};

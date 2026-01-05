@@ -40,12 +40,3 @@ pnpm dev:og
 ```
 
 This starts a local Wrangler server.
-
-### Deployment
-
-To deploy the worker to Cloudflare:
-
-```bash
-# Run from the root of the monorepo
-pnpm deploy:og
-```

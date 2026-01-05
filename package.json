@@ -3,15 +3,12 @@
   "scripts": {
     "dev": "pnpm --filter web dev",
     "build": "pnpm --filter web build",
-    "deploy": "pnpm --filter web deploy",
     "dev:sync": "pnpm --filter sync dev",
-    "deploy:sync": "pnpm --filter sync deploy",
     "dev:notify": "pnpm --filter notify dev",
-    "deploy:notify": "pnpm --filter notify deploy",
     "dev:og": "pnpm --filter og dev",
-    "deploy:og": "pnpm --filter og deploy",
     "dev:home": "pnpm --filter home dev",
-    "deploy:home": "pnpm --filter home deploy"
+    "dev:on-this-day": "pnpm --filter on-this-day dev",
+    "dev:on-this-day-index": "pnpm --filter on-this-day-index dev"
   },
   "devDependencies": {
     "wrangler": "catalog:"

@@ -3,8 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --persist-to ../../.wrangler/state --port 8790",
-    "deploy": "wrangler deploy"
+    "dev": "wrangler dev --persist-to ../../.wrangler/state --port 8790"
   },
   "dependencies": {
     "@jigsaw/db": "workspace:*",

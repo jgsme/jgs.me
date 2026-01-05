@@ -1,21 +1,16 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "w-sync",
+  "name": "w-on-this-day-index",
   "compatibility_date": "2025-08-28",
   "main": "src/index.ts",
   "triggers": {
-    "crons": ["0 19 * * *"]
+    "crons": []
   },
   "workflows": [
     {
-      "name": "sync-workflow",
-      "binding": "SYNC_WORKFLOW",
-      "class_name": "SyncWorkflow"
-    },
-    {
-      "name": "sync-batch-workflow",
-      "binding": "SYNC_BATCH_WORKFLOW",
-      "class_name": "SyncBatchWorkflow"
+      "name": "on-this-day-index-workflow",
+      "binding": "WORKFLOW",
+      "class_name": "OnThisDayIndexWorkflow"
     }
   ],
   "r2_buckets": [

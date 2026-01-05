@@ -6,16 +6,12 @@ import {
 import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
 import { pages as pagesTable } from "@jigsaw/db";
-export { OnThisDayWorkflow } from "./on-this-day";
-export { OnThisDayIndexWorkflow } from "./on-this-day-index";
 
 type Env = {
   R2: R2Bucket;
   DB: D1Database;
   SYNC_WORKFLOW: Workflow;
   SYNC_BATCH_WORKFLOW: Workflow;
-  ON_THIS_DAY_WORKFLOW: Workflow;
-  ON_THIS_DAY_INDEX_WORKFLOW: Workflow;
 };
 
 type ScrapboxListResponse = {
@@ -157,16 +153,6 @@ export class SyncWorkflow extends WorkflowEntrypoint<Env, SyncParams> {
 
       instanceIds.push(instanceId);
     }
-
-    // Trigger On This Day workflow
-    // It runs independently, checking for updated pages.
-    await step.do("trigger-on-this-day", async () => {
-      await this.env.ON_THIS_DAY_WORKFLOW.create({
-        params: {
-          cutoff,
-        },
-      });
-    });
 
     return {
       cutoff,

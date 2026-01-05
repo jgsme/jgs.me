@@ -36,12 +36,3 @@ pnpm dev:notify
 ```
 
 This starts a local Wrangler server. You will need to provide the required secrets via a `.dev.vars` file for local testing.
-
-### Deployment
-
-To deploy the worker to Cloudflare:
-
-```bash
-# Run from the root of the monorepo
-pnpm deploy:notify
-```

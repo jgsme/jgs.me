@@ -62,17 +62,6 @@ To run the unit and integration tests:
 pnpm --filter web test
 ```
 
-### Deployment
-
-To deploy the application to Cloudflare Pages:
-
-```bash
-# Run from the root of the monorepo
-pnpm deploy
-```
-
-This command first builds the application, then deploys it using the Wrangler CLI.
-
 ### Database Migrations
 
 To generate a new migration after changing the schema in `packages/db/src/schema.ts`:

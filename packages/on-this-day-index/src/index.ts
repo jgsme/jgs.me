@@ -10,6 +10,7 @@ import { pages, onThisDayEntries } from "@jigsaw/db";
 type Env = {
   R2: R2Bucket;
   DB: D1Database;
+  WORKFLOW: Workflow;
 };
 
 export class OnThisDayIndexWorkflow extends WorkflowEntrypoint<Env, {}> {
@@ -66,7 +67,10 @@ export class OnThisDayIndexWorkflow extends WorkflowEntrypoint<Env, {}> {
       };
     });
 
-    console.log(`[OnThisDayIndex] FINISH: runId=${runId}, dayCount=${counts.dayCount}, entryCount=${counts.entryCount}`);
+    console.log(
+      `[OnThisDayIndex] FINISH: runId=${runId}, dayCount=${counts.dayCount}, entryCount=${counts.entryCount}`
+    );
     return counts;
   }
 }
+

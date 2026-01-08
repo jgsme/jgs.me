@@ -73,3 +73,13 @@ export class OnThisDayIndexWorkflow extends WorkflowEntrypoint<Env, {}> {
     return counts;
   }
 }
+
+export default {
+  async scheduled(
+    _event: ScheduledEvent,
+    env: Env,
+    _ctx: ExecutionContext,
+  ): Promise<void> {
+    await env.WORKFLOW.create();
+  },
+};

@@ -9,6 +9,6 @@ export const config = {
   title: "I am Electrical machine",
   lang: "ja",
   photon: {
-    server: "server/index.ts",
+    server: "../server/index.ts",
   },
 } satisfies Config;

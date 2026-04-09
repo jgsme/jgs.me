@@ -5,3 +5,4 @@ dist
 .jj
 pnpm-lock.yaml
 *.log
+*.json

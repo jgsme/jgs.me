@@ -1,0 +1,55 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":dependencyDashboard"],
+  "schedule": ["before 6am on monday"],
+  "timezone": "Asia/Tokyo",
+  "prHourlyLimit": 0,
+  "prConcurrentLimit": 10,
+  "rangeStrategy": "bump",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"]
+  },
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["patch"],
+      "automerge": false
+    },
+    {
+      "groupName": "cloudflare",
+      "matchPackageNames": ["wrangler", "@cloudflare/**"]
+    },
+    {
+      "groupName": "drizzle",
+      "matchPackageNames": ["drizzle-orm", "drizzle-kit"]
+    },
+    {
+      "groupName": "react",
+      "matchPackageNames": ["react", "react-dom", "@types/react", "@types/react-dom"]
+    },
+    {
+      "groupName": "vike",
+      "matchPackageNames": ["vike", "vike-**", "@photonjs/**"]
+    },
+    {
+      "groupName": "three",
+      "matchPackageNames": ["three", "@react-three/**", "@types/three"]
+    },
+    {
+      "groupName": "tailwindcss",
+      "matchPackageNames": ["tailwindcss", "@tailwindcss/**", "postcss", "autoprefixer"]
+    },
+    {
+      "groupName": "vite",
+      "matchPackageNames": ["vite", "@vitejs/**", "vite-**", "vitest"]
+    },
+    {
+      "groupName": "hono",
+      "matchPackageNames": ["hono"]
+    },
+    {
+      "groupName": "og-image",
+      "matchPackageNames": ["satori", "@resvg/**"]
+    }
+  ]
+}

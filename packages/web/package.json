@@ -19,7 +19,7 @@
     "@progfay/scrapbox-parser": "catalog:",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.4.2",
-    "@vitejs/plugin-react": "^5.1.1",
+    "@vitejs/plugin-react": "^6.0.1",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "react": "catalog:",
@@ -28,7 +28,7 @@
     "vike": "^0.4.247",
     "vike-photon": "^0.1.20",
     "vike-react": "^0.6.13",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^6.1.1"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",
@@ -41,7 +41,7 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.17",
     "typescript": "catalog:",
-    "vite": "^7.2.4",
+    "vite": "^8.0.3",
     "vitest": "catalog:",
     "wrangler": "catalog:"
   }

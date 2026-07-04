@@ -2,7 +2,7 @@ packages:
   - packages/*
 
 catalog:
-  drizzle-orm: ^0.44.7
+  drizzle-orm: ^0.45.2
   hono: ^4.10.7
   react: ^19.2.0
   react-dom: ^19.2.0
@@ -11,7 +11,7 @@ catalog:
   typescript: ^5.9.3
   vitest: ^4.0.14
   wrangler: ^4.79.0
-  drizzle-kit: ^0.31.7
+  drizzle-kit: ^0.31.10
 
 onlyBuiltDependencies:
   - workerd

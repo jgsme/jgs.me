@@ -3,7 +3,7 @@ packages:
 
 catalog:
   drizzle-orm: ^0.45.2
-  hono: ^4.10.7
+  hono: ^4.12.27
   react: ^19.2.7
   react-dom: ^19.2.7
   "@progfay/scrapbox-parser": ^10.0.2

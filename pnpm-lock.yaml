@@ -42,8 +42,8 @@ importers:
   .:
     devDependencies:
       prettier:
-        specifier: ^3.7.4
-        version: 3.7.4
+        specifier: ^3.9.4
+        version: 3.9.4
       wrangler:
         specifier: 'catalog:'
         version: 4.79.0(@cloudflare/workers-types@4.20251128.0)
@@ -2977,8 +2977,8 @@ packages:
   potpack@1.0.2:
     resolution: {integrity: sha512-choctRBIV9EMT9WGAZHn3V7t0Z2pMQyl0EZE6pFc/6ml3ssw7Dlf/oAOvFwjm1HVsqfQN8GfeFyJ+d8tRzqueQ==}
 
-  prettier@3.7.4:
-    resolution: {integrity: sha512-v6UNi1+3hSlVvv8fSaoUbggEM5VErKmmpGA7Pl3HF8V6uKY7rvClBOJlH6yNwQtfTueNkGVpOv/mtWL9L4bgRA==}
+  prettier@3.9.4:
+    resolution: {integrity: sha512-yWG/o/4oJfo036EKAfK6ACAoDOfHeRHx4tuxkfBZiauURiaSmYwlpOr5LQqKtIkRD2z1PLteme2WoxEnj4tHTg==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -5705,7 +5705,7 @@ snapshots:
 
   potpack@1.0.2: {}
 
-  prettier@3.7.4: {}
+  prettier@3.9.4: {}
 
   promise-worker-transferable@1.0.4:
     dependencies:

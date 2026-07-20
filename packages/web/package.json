@@ -12,10 +12,10 @@
   "dependencies": {
     "@jigsaw/db": "workspace:*",
     "@paralleldrive/cuid2": "^3.0.4",
-    "@photonjs/cloudflare": "^0.1.8",
+    "@photonjs/cloudflare": "^0.1.13",
     "@photonjs/core": "^0.1.22",
-    "@photonjs/hono": "^0.1.7",
-    "@photonjs/runtime": "^0.1.16",
+    "@photonjs/hono": "^0.1.12",
+    "@photonjs/runtime": "^0.1.17",
     "@progfay/scrapbox-parser": "catalog:",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.4.2",
@@ -25,9 +25,9 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "three": "^0.182.0",
-    "vike": "^0.4.247",
-    "vike-photon": "^0.1.20",
-    "vike-react": "^0.6.13",
+    "vike": "^0.4.260",
+    "vike-photon": "^0.1.26",
+    "vike-react": "^0.6.25",
     "vite-tsconfig-paths": "^5.1.4"
   },
   "devDependencies": {

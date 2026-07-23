@@ -7,10 +7,10 @@ catalog:
   react: ^19.2.7
   react-dom: ^19.2.7
   "@progfay/scrapbox-parser": ^10.0.2
-  "@cloudflare/workers-types": ^4.20251128.0
+  "@cloudflare/workers-types": ^4.20260702.1
   typescript: ^5.9.3
   vitest: ^4.0.14
-  wrangler: ^4.79.0
+  wrangler: ^4.114.0
   drizzle-kit: ^0.31.10
 
 onlyBuiltDependencies:

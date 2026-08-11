@@ -25,7 +25,7 @@ This package is a Cloudflare Worker (`w-notify`) designed to send notifications.
 - [pnpm](https://pnpm.io/installation)
 - [Cloudflare Wrangler](https://developers.cloudflare.com/workers/wrangler/install-and-update/)
 - Dependencies installed via `pnpm install` in the root directory.
-- `DISCORD_BOT_TOKEN` / `DISCORD_CHANNEL_ID` / `DISCORD_PUBLIC_KEY` secrets configured in Cloudflare for deployments.
+- `DISCORD_BOT_TOKEN` / `DISCORD_CHANNEL_ID` / `DISCORD_PUBLIC_KEY` / `SITE_URL` secrets configured in Cloudflare for deployments.
 
 ### Development
 

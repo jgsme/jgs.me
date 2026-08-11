@@ -50,7 +50,7 @@ This starts a local Wrangler server. You will need to provide the required secre
 
 This worker exposes `POST /interactions`, so a real deployment requires registering it with Discord, not just running `wrangler deploy`.
 
-1. Set the secrets with `wrangler secret put`: `DISCORD_APPLICATION_ID`, `DISCORD_BOT_TOKEN`, `DISCORD_CHANNEL_ID`, `DISCORD_PUBLIC_KEY`, and `COMMAND_REGISTER_TOKEN` (any random string you keep; it only guards `/register`).
+1. Set the secrets with `wrangler secret put`: `DISCORD_APPLICATION_ID`, `DISCORD_BOT_TOKEN`, `DISCORD_CHANNEL_ID`, `DISCORD_PUBLIC_KEY`, and `COMMAND_REGISTER_TOKEN`. The last one only guards `/register`, but that route is publicly reachable, so generate it rather than inventing one: `openssl rand -hex 32`.
 2. Run `wrangler deploy`. The output prints the worker's `https://w-notify.<subdomain>.workers.dev` URL — `<subdomain>` is account-specific and only known after this step.
 3. In the Discord Developer Portal, set the Interactions Endpoint URL to `https://w-notify.<subdomain>.workers.dev/interactions` and save.
 4. On save, Discord immediately probes the endpoint with a PING and with a deliberately invalid signature. Saving succeeds only if both signature verification and the PONG response are correct — a failed save means something above is wrong.

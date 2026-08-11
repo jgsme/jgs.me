@@ -1,7 +1,7 @@
 const BEARER = "Bearer ";
 
-// 長さが同じ場合に早期 return しない比較。ネットワーク越しのタイミング攻撃は
-// 現実的ではないが、秘密の突き合わせを一定時間にしておくコストはほぼゼロ。
+// 長さが一致する場合に内容で早期 return しない比較。長さ自体は漏れるので
+// 完全な対策ではない。実効的な防御は十分に長いランダムなトークンを使うこと。
 function timingSafeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
 

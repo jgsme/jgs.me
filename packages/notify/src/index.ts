@@ -10,7 +10,11 @@ import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 import { verifyKey } from "discord-interactions";
 import { applyAction } from "./actions";
 import { isAuthorized } from "./auth";
-import { buildCommandsPayload, pullResultMessage } from "./commands";
+import {
+  PULL_COMMAND,
+  buildCommandsPayload,
+  pullResultMessage,
+} from "./commands";
 import { decide, replaceRow } from "./interactions";
 import { buildMessages, resultLabel } from "./message";
 import type { DiscordMessage, Interaction, PageSummary } from "./types";
@@ -31,6 +35,8 @@ type Env = {
 };
 
 const DISCORD_API = "https://discord.com/api/v10";
+const FOLLOWUP_ATTEMPTS = 2;
+const FOLLOWUP_RETRY_MS = 1000;
 
 const MAX_PAGES = 20;
 
@@ -92,23 +98,34 @@ function ephemeral(content: string): Response {
 }
 
 // deferred (type 5) で先に返した後、interaction token で最初の返事を書き換える。
-// waitUntil の中で走るので、失敗してもログに落とすだけにする。
+// ここが失敗すると deferred のスピナーが出たまま 15 分放置されてユーザには
+// 成否が分からないので、1 度だけ張り直す。決して throw しない。
 async function editOriginalResponse(
   env: Env,
   interactionToken: string,
   content: string,
 ): Promise<void> {
-  const res = await fetch(
-    `${DISCORD_API}/webhooks/${env.DISCORD_APPLICATION_ID}/${interactionToken}/messages/@original`,
-    {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content }),
-    },
-  );
+  const url = `${DISCORD_API}/webhooks/${env.DISCORD_APPLICATION_ID}/${interactionToken}/messages/@original`;
+  const init = {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  };
 
-  if (!res.ok) {
-    console.error(`followup failed: ${res.status} ${await res.text()}`);
+  for (let attempt = 1; attempt <= FOLLOWUP_ATTEMPTS; attempt++) {
+    try {
+      const res = await fetch(url, init);
+      if (res.ok) return;
+      console.error(
+        `followup attempt ${attempt} failed: ${res.status} ${await res.text()}`,
+      );
+    } catch (e) {
+      console.error(`followup attempt ${attempt} threw`, e);
+    }
+
+    if (attempt < FOLLOWUP_ATTEMPTS) {
+      await new Promise((resolve) => setTimeout(resolve, FOLLOWUP_RETRY_MS));
+    }
   }
 }
 
@@ -121,8 +138,10 @@ async function runPull(env: Env, interactionToken: string): Promise<void> {
     await sendDiscordNotification(env, unregisteredPages);
     message = pullResultMessage(unregisteredPages.length);
   } catch (e) {
+    // 最大 4 通を直列で送るので、途中で 429 を踏むと既に投稿済みの分がある。
+    // 「もう一度試して」と言うと二重投稿を誘発するため、目視を促す。
     console.error("pull failed", e);
-    message = "失敗した。しばらくしてもう一度試して";
+    message = "失敗した。途中まで流れてるかもしれないからチャンネルを見て";
   }
 
   await editOriginalResponse(env, interactionToken, message);
@@ -130,6 +149,10 @@ async function runPull(env: Env, interactionToken: string): Promise<void> {
 
 // PUT は全置換なので何度叩いても冪等。
 async function registerCommands(env: Env): Promise<Response> {
+  if (!env.DISCORD_APPLICATION_ID) {
+    return new Response("DISCORD_APPLICATION_ID unset", { status: 500 });
+  }
+
   const payload = buildCommandsPayload();
   const res = await fetch(
     `${DISCORD_API}/applications/${env.DISCORD_APPLICATION_ID}/commands`,
@@ -221,11 +244,19 @@ export default {
       if (decision.kind === "unknown") return ephemeral("知らない操作だ");
 
       if (decision.kind === "command") {
+        // コマンドが増えた時に黙って /pull を叩かないよう明示的に振り分ける。
+        if (decision.name !== PULL_COMMAND) return ephemeral("知らない操作だ");
+
         const interactionToken = interaction.token;
         if (!interactionToken) return ephemeral("interaction token が無い");
 
         // 送信は最大 4 通あって 3 秒に収まらないので deferred で先に返す。
-        ctx.waitUntil(runPull(env, interactionToken));
+        // waitUntil に例外を漏らすと何も報告されないので握り潰す。
+        ctx.waitUntil(
+          runPull(env, interactionToken).catch((e) =>
+            console.error("pull crashed", e),
+          ),
+        );
         return Response.json({ type: 5, data: { flags: 64 } });
       }
 

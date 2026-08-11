@@ -5,9 +5,13 @@ import {
 } from "cloudflare:workers";
 import { drizzle } from "drizzle-orm/d1";
 import { pages, articles, excludedPages, clips } from "@jigsaw/db";
-import { generateToken } from "@jigsaw/db/token";
 import { eq, isNull, desc, and, sql, SQL } from "drizzle-orm";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
+import { verifyKey } from "discord-interactions";
+import { applyAction } from "./actions";
+import { decide, replaceRow } from "./interactions";
+import { buildMessages, resultLabel } from "./message";
+import type { DiscordMessage, Interaction, PageSummary } from "./types";
 
 function notGlob(column: SQLiteColumn, pattern: string): SQL {
   return sql`${column} NOT GLOB ${pattern}`;
@@ -15,30 +19,22 @@ function notGlob(column: SQLiteColumn, pattern: string): SQL {
 
 type Env = {
   DB: D1Database;
-  DISCORD_WEBHOOK_URL: string;
-  REGISTER_SECRET: string;
+  DISCORD_BOT_TOKEN: string;
+  DISCORD_CHANNEL_ID: string;
+  DISCORD_PUBLIC_KEY: string;
   SITE_URL: string;
   NOTIFY_WORKFLOW: Workflow;
 };
 
-type UnregisteredPage = {
-  id: number;
-  title: string;
-  created: string | null;
-};
-
 const MAX_PAGES = 20;
 
-async function getUnregisteredPages(
-  d1: D1Database,
-): Promise<UnregisteredPage[]> {
+async function getUnregisteredPages(d1: D1Database): Promise<PageSummary[]> {
   const db = drizzle(d1);
 
-  const result = await db
+  return db
     .select({
       id: pages.id,
       title: pages.title,
-      created: pages.created,
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
@@ -55,66 +51,38 @@ async function getUnregisteredPages(
     )
     .orderBy(desc(pages.created))
     .limit(MAX_PAGES);
-
-  return result;
 }
 
-async function sendDiscordMessage(
-  webhookUrl: string,
-  content: string,
-): Promise<void> {
-  const res = await fetch(webhookUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content }),
-  });
+async function postMessage(env: Env, message: DiscordMessage): Promise<void> {
+  const res = await fetch(
+    `https://discord.com/api/v10/channels/${env.DISCORD_CHANNEL_ID}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(message),
+    },
+  );
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Discord webhook failed: ${res.status} ${text}`);
+    throw new Error(`Discord message failed: ${res.status} ${text}`);
   }
 }
 
 async function sendDiscordNotification(
   env: Env,
-  unregisteredPages: UnregisteredPage[],
+  unregisteredPages: PageSummary[],
 ): Promise<void> {
-  if (unregisteredPages.length === 0) {
-    return;
+  for (const message of buildMessages(unregisteredPages, env.SITE_URL)) {
+    await postMessage(env, message);
   }
+}
 
-  const lines = await Promise.all(
-    unregisteredPages.map(async (p) => {
-      const token = await generateToken(p.id, env.REGISTER_SECRET);
-      const registerUrl = `https://${env.SITE_URL}/api/article/register?token=${token}`;
-      const clipUrl = `https://${env.SITE_URL}/api/article/clip?token=${token}`;
-      const excludeUrl = `https://${env.SITE_URL}/api/article/exclude?token=${token}`;
-      const pageUrl = `https://${env.SITE_URL}/p/${p.id}`;
-      const displayTitle =
-        p.title.length > 80 ? p.title.slice(0, 80) + "…" : p.title;
-      return `- [${displayTitle}](${pageUrl})
-  - [記事](${registerUrl})・[クリップ](${clipUrl})・[除外](${excludeUrl})`;
-    }),
-  );
-
-  const header = `**未登録の記事が ${unregisteredPages.length} 件あるよ**\n\n`;
-  const chunks: string[] = [];
-  let current = header;
-
-  for (const line of lines) {
-    if (current.length + line.length + 1 > 1900) {
-      chunks.push(current);
-      current = "";
-    }
-    current += line + "\n";
-  }
-  if (current) {
-    chunks.push(current);
-  }
-
-  for (const chunk of chunks) {
-    await sendDiscordMessage(env.DISCORD_WEBHOOK_URL, chunk);
-  }
+function ephemeral(content: string): Response {
+  return Response.json({ type: 4, data: { content, flags: 64 } });
 }
 
 export class NotifyWorkflow extends WorkflowEntrypoint<Env, unknown> {
@@ -141,5 +109,55 @@ export default {
     _ctx: ExecutionContext,
   ): Promise<void> {
     await env.NOTIFY_WORKFLOW.create();
+  },
+
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+    if (url.pathname !== "/interactions" || request.method !== "POST") {
+      return new Response("not found", { status: 404 });
+    }
+
+    const signature = request.headers.get("X-Signature-Ed25519") ?? "";
+    const timestamp = request.headers.get("X-Signature-Timestamp") ?? "";
+    const rawBody = await request.text();
+
+    const valid = await verifyKey(
+      rawBody,
+      signature,
+      timestamp,
+      env.DISCORD_PUBLIC_KEY,
+    );
+    if (!valid) {
+      return new Response("invalid request signature", { status: 401 });
+    }
+
+    try {
+      const interaction = JSON.parse(rawBody) as Interaction;
+      const decision = decide(interaction);
+
+      if (decision.kind === "pong") return Response.json({ type: 1 });
+      if (decision.kind === "unknown") return ephemeral("知らないボタンだ");
+
+      const rows = interaction.message?.components ?? [];
+
+      const result = await applyAction(
+        drizzle(env.DB),
+        decision.action,
+        decision.pageId,
+      );
+      return Response.json({
+        type: 7,
+        data: {
+          components: replaceRow(
+            rows,
+            decision.pageId,
+            resultLabel(decision.action, result),
+          ),
+        },
+      });
+    } catch (e) {
+      console.error("applyAction failed", e);
+      return ephemeral("失敗した。しばらくしてもう一度押して");
+    }
   },
 };

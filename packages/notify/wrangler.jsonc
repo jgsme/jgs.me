@@ -3,6 +3,15 @@
   "name": "w-notify",
   "compatibility_date": "2025-08-28",
   "main": "src/index.ts",
+  "workers_dev": true,
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true,
+      "persist": true,
+    },
+  },
   "triggers": {
     "crons": ["0 20 * * *"],
   },

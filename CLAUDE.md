@@ -26,7 +26,7 @@ pnpm ワークスペースによるモノレポ構成。
 - `packages/db` - 共有 Drizzle スキーマ（`@jigsaw/db` としてインポート）
 - `packages/web` - メインのWebアプリ（Vike + React + Photon + Hono、Cloudflare Pages）
 - `packages/sync` - Scrapbox同期ワーカー（Cloudflare Workflows で R2 にデータ同期）
-- `packages/notify` - 通知ワーカー（未登録記事をDiscord Webhookで通知、JST 05:00 cron）
+- `packages/notify` - 通知ワーカー（未登録記事を Discord にボタン付きで通知し、押下 interaction を受けて登録/クリップ/除外を実行。JST 05:00 cron）
 - `packages/og` - OG画像生成ワーカー（Satori + Resvg）
 - `packages/home` - ホームページ用ワーカー
 
@@ -72,12 +72,11 @@ Vike + React + Photon + Hono で構成された Cloudflare Pages アプリケー
 ### API Routes
 
 - `server/routes/` 配下に Hono ハンドラを配置
-- `server/hono-entry.ts` でルート登録
+- `server/index.ts` でルート登録
 - 主要エンドポイント:
-  - `GET /api/article/register` - 記事登録（トークン認証）
-  - `GET /api/article/exclude` - ページ除外（トークン認証）
-  - `GET /api/article/clip` - クリップ追加（トークン認証）
   - `/rss` - RSS フィード
+
+記事登録 / クリップ / 除外は notify ワーカーの Discord ボタン経由で行う (`packages/notify`)。
 
 ### Path Alias
 
@@ -94,6 +93,7 @@ Vike + React + Photon + Hono で構成された Cloudflare Pages アプリケー
 
 - `DB` - D1 データベースバインディング
 - `R2` - R2 バケットバインディング
-- `REGISTER_SECRET` - トークン署名用シークレット
-- `DISCORD_WEBHOOK_URL` - Discord Webhook URL (notify ワーカー用)
+- `DISCORD_BOT_TOKEN` - Discord bot token (notify ワーカー用)
+- `DISCORD_CHANNEL_ID` - 通知先チャンネル ID (notify ワーカー用)
+- `DISCORD_PUBLIC_KEY` - Discord アプリの Public Key、interaction の署名検証用 (notify ワーカー用)
 - `SITE_URL` - サイトURL

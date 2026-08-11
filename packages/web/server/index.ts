@@ -1,7 +1,6 @@
 import { Hono } from "hono";
 import { apply, serve } from "@photonjs/hono";
 import type { Bindings } from "./types";
-import { api } from "./routes/api";
 import { redirects } from "./routes/redirects";
 import { rss } from "./routes/rss";
 
@@ -44,7 +43,6 @@ app.use("/pages/*", createCacheMiddleware(86400));
 app.use("/a/*", createCacheMiddleware(604800));
 app.use("/p/*", createCacheMiddleware(604800));
 
-app.route("/api", api);
 app.route("/", redirects);
 app.route("/", rss);
 

@@ -3,15 +3,19 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --persist-to ../../.wrangler/state"
+    "dev": "wrangler dev --persist-to ../../.wrangler/state",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@jigsaw/db": "workspace:*",
+    "discord-interactions": "^4.1.0",
     "drizzle-orm": "catalog:"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",
     "typescript": "catalog:",
+    "vitest": "catalog:",
     "wrangler": "catalog:"
   }
 }

@@ -3,8 +3,7 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/schema.ts",
-    "./token": "./src/token.ts"
+    ".": "./src/schema.ts"
   },
   "scripts": {
     "gen": "drizzle-kit generate"

@@ -13,10 +13,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      # バージョンは package.json の packageManager から解決する。
+      # ここで version を併記すると action-setup v6 は二重指定でエラーになる。
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
-        with:
-          version: 10
 
       - name: Setup Node.js
         uses: actions/setup-node@v6

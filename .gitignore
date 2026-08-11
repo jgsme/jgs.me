@@ -5,3 +5,4 @@ dist
 data
 .dev.vars
 .playwright-mcp
+.superpowers

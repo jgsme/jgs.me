@@ -1,6 +1,10 @@
 import type { Action, ActionRow, Interaction } from "./types";
 
-const ACTIONS: readonly string[] = ["register", "clip", "exclude"];
+const ACTIONS = [
+  "register",
+  "clip",
+  "exclude",
+] as const satisfies readonly Action[];
 
 export type Decision =
   | { kind: "pong" }
@@ -15,7 +19,7 @@ export function parseCustomId(
 
   const [prefix, action, rawId] = parts;
   if (prefix !== "a") return null;
-  if (!ACTIONS.includes(action)) return null;
+  if (!ACTIONS.includes(action as Action)) return null;
   if (!/^\d+$/.test(rawId)) return null;
 
   return { action: action as Action, pageId: Number(rawId) };

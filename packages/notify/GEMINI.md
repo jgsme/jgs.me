@@ -37,3 +37,14 @@ pnpm dev:notify
 ```
 
 This starts a local Wrangler server. You will need to provide the required secrets via a `.dev.vars` file for local testing.
+
+## Deployment
+
+This worker exposes `POST /interactions`, so a real deployment requires registering it with Discord, not just running `wrangler deploy`.
+
+1. Set the three secrets with `wrangler secret put`: `DISCORD_BOT_TOKEN`, `DISCORD_CHANNEL_ID`, `DISCORD_PUBLIC_KEY`.
+2. Run `wrangler deploy`. The output prints the worker's `https://w-notify.<subdomain>.workers.dev` URL — `<subdomain>` is account-specific and only known after this step.
+3. In the Discord Developer Portal, set the Interactions Endpoint URL to `https://w-notify.<subdomain>.workers.dev/interactions` and save.
+4. On save, Discord immediately probes the endpoint with a PING and with a deliberately invalid signature. Saving succeeds only if both signature verification and the PONG response are correct — a failed save means something above is wrong.
+
+`SITE_URL` is unrelated to this handshake; it's only used to build the article links embedded in the button rows.

@@ -131,15 +131,15 @@ export default {
       return new Response("invalid request signature", { status: 401 });
     }
 
-    const interaction = JSON.parse(rawBody) as Interaction;
-    const decision = decide(interaction);
-
-    if (decision.kind === "pong") return Response.json({ type: 1 });
-    if (decision.kind === "unknown") return ephemeral("知らないボタンだ");
-
-    const rows = interaction.message?.components ?? [];
-
     try {
+      const interaction = JSON.parse(rawBody) as Interaction;
+      const decision = decide(interaction);
+
+      if (decision.kind === "pong") return Response.json({ type: 1 });
+      if (decision.kind === "unknown") return ephemeral("知らないボタンだ");
+
+      const rows = interaction.message?.components ?? [];
+
       const result = await applyAction(
         drizzle(env.DB),
         decision.action,
@@ -156,8 +156,8 @@ export default {
         },
       });
     } catch (e) {
-      const detail = e instanceof Error ? e.message : String(e);
-      return ephemeral(`失敗した: ${detail}`);
+      console.error("applyAction failed", e);
+      return ephemeral("失敗した。しばらくしてもう一度押して");
     }
   },
 };

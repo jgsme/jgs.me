@@ -39,6 +39,8 @@ export type ActionResult =
 
 export type Interaction = {
   type: number;
-  data?: { custom_id?: string };
+  // followup を送るのに使う。deferred で返した後に @original を書き換える
+  token?: string;
+  data?: { custom_id?: string; name?: string };
   message?: { components?: ActionRow[] };
 };

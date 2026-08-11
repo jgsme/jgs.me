@@ -29,7 +29,9 @@ Required Cloudflare bindings:
 
 - `DB` - D1 database
 - `R2` - R2 bucket
+- `DISCORD_APPLICATION_ID` - Discord app application ID (for notify worker)
 - `DISCORD_BOT_TOKEN` - Discord bot token (for notify worker)
 - `DISCORD_CHANNEL_ID` - Target channel ID (for notify worker)
 - `DISCORD_PUBLIC_KEY` - Discord app public key, used to verify interaction signatures (for notify worker)
+- `COMMAND_REGISTER_TOKEN` - Shared secret guarding the slash command registration endpoint (`POST /register`, for notify worker)
 - `SITE_URL` - Site URL

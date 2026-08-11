@@ -9,6 +9,8 @@ import { eq, isNull, desc, and, sql, SQL } from "drizzle-orm";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 import { verifyKey } from "discord-interactions";
 import { applyAction } from "./actions";
+import { isAuthorized } from "./auth";
+import { buildCommandsPayload, pullResultMessage } from "./commands";
 import { decide, replaceRow } from "./interactions";
 import { buildMessages, resultLabel } from "./message";
 import type { DiscordMessage, Interaction, PageSummary } from "./types";
@@ -19,12 +21,16 @@ function notGlob(column: SQLiteColumn, pattern: string): SQL {
 
 type Env = {
   DB: D1Database;
+  DISCORD_APPLICATION_ID: string;
   DISCORD_BOT_TOKEN: string;
   DISCORD_CHANNEL_ID: string;
   DISCORD_PUBLIC_KEY: string;
+  COMMAND_REGISTER_TOKEN: string;
   SITE_URL: string;
   NOTIFY_WORKFLOW: Workflow;
 };
+
+const DISCORD_API = "https://discord.com/api/v10";
 
 const MAX_PAGES = 20;
 
@@ -55,7 +61,7 @@ async function getUnregisteredPages(d1: D1Database): Promise<PageSummary[]> {
 
 async function postMessage(env: Env, message: DiscordMessage): Promise<void> {
   const res = await fetch(
-    `https://discord.com/api/v10/channels/${env.DISCORD_CHANNEL_ID}/messages`,
+    `${DISCORD_API}/channels/${env.DISCORD_CHANNEL_ID}/messages`,
     {
       method: "POST",
       headers: {
@@ -85,6 +91,67 @@ function ephemeral(content: string): Response {
   return Response.json({ type: 4, data: { content, flags: 64 } });
 }
 
+// deferred (type 5) で先に返した後、interaction token で最初の返事を書き換える。
+// waitUntil の中で走るので、失敗してもログに落とすだけにする。
+async function editOriginalResponse(
+  env: Env,
+  interactionToken: string,
+  content: string,
+): Promise<void> {
+  const res = await fetch(
+    `${DISCORD_API}/webhooks/${env.DISCORD_APPLICATION_ID}/${interactionToken}/messages/@original`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    },
+  );
+
+  if (!res.ok) {
+    console.error(`followup failed: ${res.status} ${await res.text()}`);
+  }
+}
+
+// /pull の本体。cron と同じ経路 (取得 → 送信) を通してから件数を返す。
+async function runPull(env: Env, interactionToken: string): Promise<void> {
+  let message: string;
+
+  try {
+    const unregisteredPages = await getUnregisteredPages(env.DB);
+    await sendDiscordNotification(env, unregisteredPages);
+    message = pullResultMessage(unregisteredPages.length);
+  } catch (e) {
+    console.error("pull failed", e);
+    message = "失敗した。しばらくしてもう一度試して";
+  }
+
+  await editOriginalResponse(env, interactionToken, message);
+}
+
+// PUT は全置換なので何度叩いても冪等。
+async function registerCommands(env: Env): Promise<Response> {
+  const payload = buildCommandsPayload();
+  const res = await fetch(
+    `${DISCORD_API}/applications/${env.DISCORD_APPLICATION_ID}/commands`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error(`register failed: ${res.status} ${text}`);
+    return new Response(`register failed: ${res.status}`, { status: 502 });
+  }
+
+  return Response.json({ registered: payload.map((command) => command.name) });
+}
+
 export class NotifyWorkflow extends WorkflowEntrypoint<Env, unknown> {
   async run(_event: WorkflowEvent<unknown>, step: WorkflowStep) {
     const unregisteredPages = await step.do(
@@ -111,8 +178,23 @@ export default {
     await env.NOTIFY_WORKFLOW.create();
   },
 
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(
+    request: Request,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<Response> {
     const url = new URL(request.url);
+
+    if (request.method === "POST" && url.pathname === "/register") {
+      const authorized = isAuthorized(
+        request.headers.get("Authorization"),
+        env.COMMAND_REGISTER_TOKEN,
+      );
+      if (!authorized) return new Response("unauthorized", { status: 401 });
+
+      return registerCommands(env);
+    }
+
     if (url.pathname !== "/interactions" || request.method !== "POST") {
       return new Response("not found", { status: 404 });
     }
@@ -136,7 +218,16 @@ export default {
       const decision = decide(interaction);
 
       if (decision.kind === "pong") return Response.json({ type: 1 });
-      if (decision.kind === "unknown") return ephemeral("知らないボタンだ");
+      if (decision.kind === "unknown") return ephemeral("知らない操作だ");
+
+      if (decision.kind === "command") {
+        const interactionToken = interaction.token;
+        if (!interactionToken) return ephemeral("interaction token が無い");
+
+        // 送信は最大 4 通あって 3 秒に収まらないので deferred で先に返す。
+        ctx.waitUntil(runPull(env, interactionToken));
+        return Response.json({ type: 5, data: { flags: 64 } });
+      }
 
       const rows = interaction.message?.components ?? [];
 

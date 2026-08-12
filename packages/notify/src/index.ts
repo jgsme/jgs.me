@@ -40,7 +40,10 @@ const FOLLOWUP_ATTEMPTS = 2;
 const FOLLOWUP_RETRY_MS = 1000;
 const POST_ATTEMPTS = 5;
 
-const MAX_PAGES = 20;
+// 記事ごとに 1 通投げるので、この数がそのまま 1 回あたりの投稿数になる。
+// チャンネルのレート制限 (5 通 / 5 秒) に合わせてある。捌ききったら
+// /pull を叩けば次の 5 件が出てくる。
+const MAX_PAGES = 5;
 
 async function getUnregisteredPages(d1: D1Database): Promise<PageSummary[]> {
   const db = drizzle(d1);
@@ -71,9 +74,9 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// 記事ごとに 1 通投げるので最大 20 通が連続する。チャンネルのレート制限
-// (5 通 / 5 秒) に必ず当たるため、429 は Discord が返す待ち時間に従って
-// 投げ直す。固定 sleep を挟むより速く、かつ確実。
+// MAX_PAGES はレート制限の境界ちょうどなので、他の投稿と重なれば 429 は
+// 起こりうる。Discord が返す待ち時間に従って投げ直す。固定 sleep を挟むより
+// 速く、MAX_PAGES を増やしても壊れない。
 async function postMessage(env: Env, message: DiscordMessage): Promise<void> {
   for (let attempt = 1; attempt <= POST_ATTEMPTS; attempt++) {
     const res = await fetch(

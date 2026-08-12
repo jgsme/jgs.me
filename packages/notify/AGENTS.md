@@ -24,7 +24,7 @@ The `fetch` handler serves two routes; everything else returns 404.
 | `POST /interactions` | Discord Ed25519 signature                        | Button presses and the `/pull` slash command                                                                       |
 | `POST /register`     | `Authorization: Bearer <COMMAND_REGISTER_TOKEN>` | Registers the slash commands with Discord (`PUT /applications/{id}/commands`, a full replace, so it is idempotent) |
 
-`/pull` answers with a deferred response (`type: 5`) because posting up to twenty messages does not fit in Discord's 3-second budget. The work continues in `ctx.waitUntil` and the deferred reply is then edited to report how many pages were posted.
+`/pull` answers with a deferred response (`type: 5`) because posting several messages does not fit in Discord's 3-second budget. The work continues in `ctx.waitUntil` and the deferred reply is then edited to report how many pages were posted.
 
 ### Message layout (Components V2)
 
@@ -48,7 +48,9 @@ When a button is pressed the handler replies with `type: 7` and re-sends the com
 
 ### Rate limiting
 
-Posting one message per article means up to twenty back-to-back requests, which exceeds the channel limit of five messages per five seconds. `postMessage` retries on `429`, waiting exactly as long as Discord asks: `parseRetryAfterMs` in `src/rate-limit.ts` prefers the body's `retry_after` (seconds, fractional) and falls back to the `Retry-After` header. A full run therefore takes on the order of twenty seconds, which is well inside both the Workflow step and the 15-minute followup window.
+One message per article means `MAX_PAGES` back-to-back requests against a channel limit of five messages per five seconds. `MAX_PAGES` in `src/index.ts` is set to 5 to sit at that boundary, so a run normally does not get throttled at all; when the backlog is longer, running `/pull` again fetches the next five.
+
+The boundary is not a guarantee — other posts in the same channel can still push a run over — so `postMessage` retries on `429`, waiting exactly as long as Discord asks. `parseRetryAfterMs` in `src/rate-limit.ts` prefers the body's `retry_after` (seconds, fractional) and falls back to the `Retry-After` header. That also means raising `MAX_PAGES` later degrades to waiting rather than dropping messages.
 
 ## Building and Running
 

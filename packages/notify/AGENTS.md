@@ -24,30 +24,33 @@ The `fetch` handler serves two routes; everything else returns 404.
 | `POST /interactions` | Discord Ed25519 signature                        | Button presses and the `/pull` slash command                                                                       |
 | `POST /register`     | `Authorization: Bearer <COMMAND_REGISTER_TOKEN>` | Registers the slash commands with Discord (`PUT /applications/{id}/commands`, a full replace, so it is idempotent) |
 
-`/pull` answers with a deferred response (`type: 5`) because posting up to four messages does not fit in Discord's 3-second budget. The work continues in `ctx.waitUntil` and the deferred reply is then edited to report how many pages were posted.
+`/pull` answers with a deferred response (`type: 5`) because posting several messages does not fit in Discord's 3-second budget. The work continues in `ctx.waitUntil` and the deferred reply is then edited to report how many pages were posted.
 
 ### Message layout (Components V2)
 
-Notifications are sent with the `IS_COMPONENTS_V2` message flag (`1 << 15` = `32768`), which lets Text Display and Action Row alternate so each article reads as two lines — a linked title, then its buttons:
+Notifications are sent with the `IS_COMPONENTS_V2` message flag (`1 << 15` = `32768`), so each article reads as two lines — a linked title, then its buttons:
 
 ```
-未登録の記事が 20 件あるよ
-────────────────────────
 ページタイトルA
 [ 📝 記事 ][ 📎 クリップ ][ 🚫 除外 ]
-────────────────────────
-ページタイトルB
-[ 📝 記事 ][ 📎 クリップ ][ 🚫 除外 ]
 ```
+
+**One article per message.** Batching several into one message looks tidier, but Discord's client disables _every_ component in a message while any one of them is being handled, so pressing one button locks the other articles until the response lands. Separate messages keep them independent. There is no header message; `/pull` reports the count in its ephemeral reply, and the cron run just posts the articles.
 
 Two consequences of the flag are easy to trip over:
 
-- `content` and `embeds` stop working. The header is a Text Display, not `content`.
-- Discord counts **40 components per message, including nested ones**. One article costs 5 (Text Display + Action Row + 3 buttons) and each gap costs 1 separator, so with the header that is 6 articles per message (36). `ARTICLES_PER_MESSAGE` in `src/message.ts` encodes this, and `message.test.ts` asserts the budget holds.
+- `content` and `embeds` stop working. The title is a Text Display, not `content`.
+- Discord counts **40 components per message, including nested ones**. One article costs 5 (Text Display + Action Row + 3 buttons), so a single article per message leaves plenty of room — `MAX_COMPONENTS` in `src/message.ts` records the limit and `message.test.ts` asserts it holds.
 
 The title is a markdown link inside the Text Display, so there is no link button. Titles are escaped (`escapeLinkText`) because a `]` in a Scrapbox title would otherwise cut the link short.
 
-When a button is pressed the handler replies with `type: 7` and re-sends the whole component list with the pressed article's Action Row swapped for one disabled button. The flag has to be set on that response too, or Discord rejects the V2 components.
+When a button is pressed the handler replies with `type: 7` and re-sends the component list with the Action Row swapped for one disabled button. The flag has to be set on that response too, or Discord rejects the V2 components.
+
+### Rate limiting
+
+One message per article means `MAX_PAGES` back-to-back requests against a channel limit of five messages per five seconds. `MAX_PAGES` in `src/index.ts` is set to 5 to sit at that boundary, so a run normally does not get throttled at all; when the backlog is longer, running `/pull` again fetches the next five.
+
+The boundary is not a guarantee — other posts in the same channel can still push a run over — so `postMessage` retries on `429`, waiting exactly as long as Discord asks. `parseRetryAfterMs` in `src/rate-limit.ts` prefers the body's `retry_after` (seconds, fractional) and falls back to the `Retry-After` header. That also means raising `MAX_PAGES` later degrades to waiting rather than dropping messages.
 
 ## Building and Running
 

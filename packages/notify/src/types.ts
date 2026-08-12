@@ -26,13 +26,7 @@ export type TextDisplay = {
   content: string;
 };
 
-export type Separator = {
-  type: 14;
-  divider: boolean;
-  spacing: number;
-};
-
-export type MessageComponent = ActionRow | TextDisplay | Separator;
+export type MessageComponent = ActionRow | TextDisplay;
 
 // V2 では content / embeds が使えず、本文も components で表現する。
 export type DiscordMessage = {

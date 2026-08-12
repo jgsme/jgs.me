@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  ARTICLES_PER_MESSAGE,
   IS_COMPONENTS_V2,
   MAX_COMPONENTS,
   buildArticleComponents,
@@ -70,23 +69,34 @@ describe("buildMessages", () => {
     expect(buildMessages(pages(1), SITE)[0].flags).toBe(IS_COMPONENTS_V2);
   });
 
-  it("6 件までは 1 メッセージに収める", () => {
-    expect(buildMessages(pages(ARTICLES_PER_MESSAGE), SITE)).toHaveLength(1);
+  // 1 メッセージに複数記事を入れると、1 つ押した間その中の全ボタンが
+  // 無効化されて他の記事を触れなくなる。だから記事ごとに分ける。
+  it("記事 1 件につき 1 メッセージにする", () => {
+    expect(buildMessages(pages(1), SITE)).toHaveLength(1);
+    expect(buildMessages(pages(7), SITE)).toHaveLength(7);
+    expect(buildMessages(pages(20), SITE)).toHaveLength(20);
   });
 
-  it("7 件なら 6 件と 1 件の 2 メッセージに割れる", () => {
-    const messages = buildMessages(pages(7), SITE);
-    expect(messages).toHaveLength(2);
-    expect(
-      messages[0].components.filter((component) => component.type === 1),
-    ).toHaveLength(6);
-    expect(
-      messages[1].components.filter((component) => component.type === 1),
-    ).toHaveLength(1);
+  it("1 メッセージはタイトルとボタン行だけで構成する", () => {
+    const [message] = buildMessages(pages(1), SITE);
+    expect(message.components.map((component) => component.type)).toEqual([
+      10, // タイトル
+      1, // ボタン行
+    ]);
   });
 
-  it("20 件なら 4 メッセージに割れる", () => {
-    expect(buildMessages(pages(20), SITE)).toHaveLength(4);
+  it("各メッセージが対応する記事のボタンを持つ", () => {
+    const messages = buildMessages(pages(3), SITE);
+    const registerIds = messages.map((message) => {
+      const row = message.components[1];
+      return row.type === 1 ? row.components[0].custom_id : null;
+    });
+
+    expect(registerIds).toEqual([
+      "a:register:1",
+      "a:register:2",
+      "a:register:3",
+    ]);
   });
 
   it("どのメッセージも Discord のコンポーネント上限に収まる", () => {
@@ -95,39 +105,6 @@ describe("buildMessages", () => {
         MAX_COMPONENTS,
       );
     }
-  });
-
-  it("1 通目に総件数、2 通目以降はつづき表記を入れる", () => {
-    const messages = buildMessages(pages(7), SITE);
-    expect(messages[0].components[0]).toEqual({
-      type: 10,
-      content: "**未登録の記事が 7 件あるよ**",
-    });
-    expect(messages[1].components[0]).toEqual({
-      type: 10,
-      content: "**(つづき)**",
-    });
-  });
-
-  it("記事の間にだけ区切り線を入れる", () => {
-    const [message] = buildMessages(pages(2), SITE);
-    expect(message.components.map((component) => component.type)).toEqual([
-      10, // ヘッダ
-      10, // 1 件目のタイトル
-      1, // 1 件目のボタン
-      14, // 区切り線
-      10, // 2 件目のタイトル
-      1, // 2 件目のボタン
-    ]);
-  });
-
-  it("区切り線は線を表示する", () => {
-    const [message] = buildMessages(pages(2), SITE);
-    expect(message.components[3]).toEqual({
-      type: 14,
-      divider: true,
-      spacing: 1,
-    });
   });
 });
 

@@ -9,8 +9,6 @@ const article = (pageId: number): MessageComponent[] =>
 
 const row = (pageId: number): MessageComponent => article(pageId)[1];
 
-const separator: MessageComponent = { type: 14, divider: true, spacing: 1 };
-
 describe("parseCustomId", () => {
   it("操作ボタンの custom_id を分解する", () => {
     expect(parseCustomId("a:register:12")).toEqual({
@@ -130,15 +128,12 @@ describe("replaceRow", () => {
     expect(replaceRow(rows, 1, "別の文言")).toEqual(rows);
   });
 
-  it("タイトルと区切り線はそのまま残す", () => {
-    const components = [...article(1), separator, ...article(2)];
+  it("タイトルの Text Display はそのまま残す", () => {
+    const components = article(1);
     const out = replaceRow(components, 1, "✅ クリップした");
 
-    // ボタン行だけが置き換わり、Text Display と Separator は不変
-    expect(out.map((component) => component.type)).toEqual([10, 1, 14, 10, 1]);
+    // ボタン行だけが置き換わり、Text Display は不変
+    expect(out.map((component) => component.type)).toEqual([10, 1]);
     expect(out[0]).toEqual(components[0]);
-    expect(out[2]).toEqual(separator);
-    expect(out[3]).toEqual(components[3]);
-    expect(out[4]).toEqual(components[4]);
   });
 });

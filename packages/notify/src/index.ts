@@ -17,6 +17,7 @@ import {
 } from "./commands";
 import { decide, replaceRow } from "./interactions";
 import { IS_COMPONENTS_V2, buildMessages, resultLabel } from "./message";
+import { parseRetryAfterMs } from "./rate-limit";
 import type { DiscordMessage, Interaction, PageSummary } from "./types";
 
 function notGlob(column: SQLiteColumn, pattern: string): SQL {
@@ -37,6 +38,7 @@ type Env = {
 const DISCORD_API = "https://discord.com/api/v10";
 const FOLLOWUP_ATTEMPTS = 2;
 const FOLLOWUP_RETRY_MS = 1000;
+const POST_ATTEMPTS = 5;
 
 const MAX_PAGES = 20;
 
@@ -65,23 +67,39 @@ async function getUnregisteredPages(d1: D1Database): Promise<PageSummary[]> {
     .limit(MAX_PAGES);
 }
 
-async function postMessage(env: Env, message: DiscordMessage): Promise<void> {
-  const res = await fetch(
-    `${DISCORD_API}/channels/${env.DISCORD_CHANNEL_ID}/messages`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(message),
-    },
-  );
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Discord message failed: ${res.status} ${text}`);
+// 記事ごとに 1 通投げるので最大 20 通が連続する。チャンネルのレート制限
+// (5 通 / 5 秒) に必ず当たるため、429 は Discord が返す待ち時間に従って
+// 投げ直す。固定 sleep を挟むより速く、かつ確実。
+async function postMessage(env: Env, message: DiscordMessage): Promise<void> {
+  for (let attempt = 1; attempt <= POST_ATTEMPTS; attempt++) {
+    const res = await fetch(
+      `${DISCORD_API}/channels/${env.DISCORD_CHANNEL_ID}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(message),
+      },
+    );
+
+    if (res.ok) return;
+
+    if (res.status !== 429) {
+      const text = await res.text();
+      throw new Error(`Discord message failed: ${res.status} ${text}`);
+    }
+
+    const body = await res.json().catch(() => null);
+    await sleep(parseRetryAfterMs(body, res.headers.get("Retry-After")));
   }
+
+  throw new Error(`Discord message rate limited after ${POST_ATTEMPTS} tries`);
 }
 
 async function sendDiscordNotification(
@@ -123,9 +141,7 @@ async function editOriginalResponse(
       console.error(`followup attempt ${attempt} threw`, e);
     }
 
-    if (attempt < FOLLOWUP_ATTEMPTS) {
-      await new Promise((resolve) => setTimeout(resolve, FOLLOWUP_RETRY_MS));
-    }
+    if (attempt < FOLLOWUP_ATTEMPTS) await sleep(FOLLOWUP_RETRY_MS);
   }
 }
 

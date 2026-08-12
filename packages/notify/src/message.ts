@@ -11,11 +11,8 @@ import type {
 export const IS_COMPONENTS_V2 = 32768;
 
 // Discord は入れ子のボタンも 1 個として数えて 40 まで。
+// 1 記事 = Text Display + Action Row + ボタン 3 個 = 5 なので余裕がある。
 export const MAX_COMPONENTS = 40;
-
-// 1 記事 = Text Display + Action Row + ボタン 3 個 = 5、記事の間に区切り線 1。
-// ヘッダ 1 を足すと 6 記事で 36 になり、上限にちょうど収まる。
-export const ARTICLES_PER_MESSAGE = 6;
 
 const DONE_VERB: Record<Action, string> = {
   register: "記事に登録",
@@ -67,38 +64,16 @@ export function buildArticleComponents(
   ];
 }
 
-function separator(): MessageComponent {
-  return { type: 14, divider: true, spacing: 1 };
-}
-
+// 記事ごとに 1 メッセージに分ける。まとめると 1 つ押している間その
+// メッセージ内の全ボタンが無効化され、他の記事を触れなくなるため。
 export function buildMessages(
   pages: PageSummary[],
   siteUrl: string,
 ): DiscordMessage[] {
-  const messages: DiscordMessage[] = [];
-
-  for (let i = 0; i < pages.length; i += ARTICLES_PER_MESSAGE) {
-    const chunk = pages.slice(i, i + ARTICLES_PER_MESSAGE);
-    const header: MessageComponent = {
-      type: 10,
-      content:
-        i === 0
-          ? `**未登録の記事が ${pages.length} 件あるよ**`
-          : "**(つづき)**",
-    };
-
-    const body = chunk.flatMap((page, index) => [
-      ...(index === 0 ? [] : [separator()]),
-      ...buildArticleComponents(page, siteUrl),
-    ]);
-
-    messages.push({
-      flags: IS_COMPONENTS_V2,
-      components: [header, ...body],
-    });
-  }
-
-  return messages;
+  return pages.map((page) => ({
+    flags: IS_COMPONENTS_V2,
+    components: buildArticleComponents(page, siteUrl),
+  }));
 }
 
 export function resultLabel(action: Action, result: ActionResult): string {

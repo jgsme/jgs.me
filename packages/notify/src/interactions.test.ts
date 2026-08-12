@@ -76,8 +76,25 @@ describe("decide", () => {
     expect(decide({ type: 3 })).toEqual({ kind: "unknown" });
   });
 
-  it("slash command (type 2) は unknown", () => {
+  it("type 2 かつ既知のコマンド名は command", () => {
+    expect(decide({ type: 2, data: { name: "pull" } })).toEqual({
+      kind: "command",
+      name: "pull",
+    });
+  });
+
+  it("type 2 でも知らないコマンド名は unknown", () => {
+    expect(decide({ type: 2, data: { name: "drain" } })).toEqual({
+      kind: "unknown",
+    });
+  });
+
+  it("type 2 で name が無ければ unknown", () => {
     expect(decide({ type: 2 })).toEqual({ kind: "unknown" });
+  });
+
+  it("知らない type は unknown", () => {
+    expect(decide({ type: 5 })).toEqual({ kind: "unknown" });
   });
 });
 

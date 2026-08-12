@@ -93,7 +93,9 @@ Vike + React + Photon + Hono で構成された Cloudflare Pages アプリケー
 
 - `DB` - D1 データベースバインディング
 - `R2` - R2 バケットバインディング
+- `DISCORD_APPLICATION_ID` - Discord アプリの Application ID (notify ワーカー用)
 - `DISCORD_BOT_TOKEN` - Discord bot token (notify ワーカー用)
 - `DISCORD_CHANNEL_ID` - 通知先チャンネル ID (notify ワーカー用)
 - `DISCORD_PUBLIC_KEY` - Discord アプリの Public Key、interaction の署名検証用 (notify ワーカー用)
+- `COMMAND_REGISTER_TOKEN` - slash command 登録エンドポイント (`POST /register`) の共有シークレット (notify ワーカー用)
 - `SITE_URL` - サイトURL

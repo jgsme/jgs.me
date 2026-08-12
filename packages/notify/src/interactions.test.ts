@@ -1,21 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { decide, parseCustomId, replaceRow } from "./interactions";
-import type { ActionRow } from "./types";
+import { buildArticleComponents } from "./message";
+import type { MessageComponent } from "./types";
 
-const row = (pageId: number): ActionRow => ({
-  type: 1,
-  components: [
-    {
-      type: 2,
-      style: 1,
-      label: `📝 ページ${pageId}`,
-      custom_id: `a:register:${pageId}`,
-    },
-    { type: 2, style: 5, label: "🔗", url: `https://jgs.me/p/${pageId}` },
-    { type: 2, style: 2, label: "📎", custom_id: `a:clip:${pageId}` },
-    { type: 2, style: 4, label: "🚫", custom_id: `a:exclude:${pageId}` },
-  ],
-});
+// 実際に送るメッセージと同じ形 (Text Display → Action Row) を組み立てる。
+const article = (pageId: number): MessageComponent[] =>
+  buildArticleComponents({ id: pageId, title: `ページ${pageId}` }, "jgs.me");
+
+const row = (pageId: number): MessageComponent => article(pageId)[1];
+
+const separator: MessageComponent = { type: 14, divider: true, spacing: 1 };
 
 describe("parseCustomId", () => {
   it("操作ボタンの custom_id を分解する", () => {
@@ -101,7 +95,7 @@ describe("decide", () => {
 describe("replaceRow", () => {
   it("該当する行だけを disabled な 1 ボタンに置き換える", () => {
     const rows = [row(1), row(2), row(3)];
-    const out = replaceRow(rows, 2, "✅ ページ2 — クリップした");
+    const out = replaceRow(rows, 2, "✅ クリップした");
 
     expect(out).toHaveLength(3);
     expect(out[1]).toEqual({
@@ -110,7 +104,7 @@ describe("replaceRow", () => {
         {
           type: 2,
           style: 2,
-          label: "✅ ページ2 — クリップした",
+          label: "✅ クリップした",
           custom_id: "done:2",
           disabled: true,
         },
@@ -134,5 +128,17 @@ describe("replaceRow", () => {
   it("既に置き換わった行は再度置き換えない", () => {
     const rows = replaceRow([row(1), row(2)], 1, "済み");
     expect(replaceRow(rows, 1, "別の文言")).toEqual(rows);
+  });
+
+  it("タイトルと区切り線はそのまま残す", () => {
+    const components = [...article(1), separator, ...article(2)];
+    const out = replaceRow(components, 1, "✅ クリップした");
+
+    // ボタン行だけが置き換わり、Text Display と Separator は不変
+    expect(out.map((component) => component.type)).toEqual([10, 1, 14, 10, 1]);
+    expect(out[0]).toEqual(components[0]);
+    expect(out[2]).toEqual(separator);
+    expect(out[3]).toEqual(components[3]);
+    expect(out[4]).toEqual(components[4]);
   });
 });

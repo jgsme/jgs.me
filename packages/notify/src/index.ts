@@ -16,7 +16,7 @@ import {
   pullResultMessage,
 } from "./commands";
 import { decide, replaceRow } from "./interactions";
-import { buildMessages, resultLabel } from "./message";
+import { IS_COMPONENTS_V2, buildMessages, resultLabel } from "./message";
 import type { DiscordMessage, Interaction, PageSummary } from "./types";
 
 function notGlob(column: SQLiteColumn, pattern: string): SQL {
@@ -270,6 +270,8 @@ export default {
       return Response.json({
         type: 7,
         data: {
+          // 差し替え後も V2 のコンポーネントを送るのでフラグを立て直す。
+          flags: IS_COMPONENTS_V2,
           components: replaceRow(
             rows,
             decision.pageId,

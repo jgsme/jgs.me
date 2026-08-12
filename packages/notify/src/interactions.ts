@@ -1,5 +1,5 @@
 import { PULL_COMMAND } from "./commands";
-import type { Action, ActionRow, Interaction } from "./types";
+import type { Action, Interaction, MessageComponent } from "./types";
 
 const ACTIONS = [
   "register",
@@ -43,18 +43,20 @@ export function decide(interaction: Interaction): Decision {
   return { kind: "component", action: parsed.action, pageId: parsed.pageId };
 }
 
+// Components V2 のトップレベルには Text Display や Separator も混ざるので、
+// ボタン行 (type 1) だけを見て、該当する 1 行を結果表示に差し替える。
 export function replaceRow(
-  rows: ActionRow[],
+  components: MessageComponent[],
   pageId: number,
   label: string,
-): ActionRow[] {
-  return rows.map((row) => {
-    const hit = row.components.some(
-      (button) =>
-        "custom_id" in button &&
-        parseCustomId(button.custom_id)?.pageId === pageId,
+): MessageComponent[] {
+  return components.map((component) => {
+    if (component.type !== 1) return component;
+
+    const hit = component.components.some(
+      (button) => parseCustomId(button.custom_id)?.pageId === pageId,
     );
-    if (!hit) return row;
+    if (!hit) return component;
 
     return {
       type: 1,

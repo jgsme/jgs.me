@@ -26,6 +26,29 @@ The `fetch` handler serves two routes; everything else returns 404.
 
 `/pull` answers with a deferred response (`type: 5`) because posting up to four messages does not fit in Discord's 3-second budget. The work continues in `ctx.waitUntil` and the deferred reply is then edited to report how many pages were posted.
 
+### Message layout (Components V2)
+
+Notifications are sent with the `IS_COMPONENTS_V2` message flag (`1 << 15` = `32768`), which lets Text Display and Action Row alternate so each article reads as two lines — a linked title, then its buttons:
+
+```
+未登録の記事が 20 件あるよ
+────────────────────────
+ページタイトルA
+[ 📝 記事 ][ 📎 クリップ ][ 🚫 除外 ]
+────────────────────────
+ページタイトルB
+[ 📝 記事 ][ 📎 クリップ ][ 🚫 除外 ]
+```
+
+Two consequences of the flag are easy to trip over:
+
+- `content` and `embeds` stop working. The header is a Text Display, not `content`.
+- Discord counts **40 components per message, including nested ones**. One article costs 5 (Text Display + Action Row + 3 buttons) and each gap costs 1 separator, so with the header that is 6 articles per message (36). `ARTICLES_PER_MESSAGE` in `src/message.ts` encodes this, and `message.test.ts` asserts the budget holds.
+
+The title is a markdown link inside the Text Display, so there is no link button. Titles are escaped (`escapeLinkText`) because a `]` in a Scrapbox title would otherwise cut the link short.
+
+When a button is pressed the handler replies with `type: 7` and re-sends the whole component list with the pressed article's Action Row swapped for one disabled button. The flag has to be set on that response too, or Discord rejects the V2 components.
+
 ## Building and Running
 
 ### Prerequisites

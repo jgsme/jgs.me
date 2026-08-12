@@ -5,6 +5,9 @@ export type PageSummary = {
   title: string;
 };
 
+// Components V2 のトップレベルに置ける型のうち、このワーカーが使うものだけ。
+// https://docs.discord.com/developers/components/reference
+
 export type ActionButton = {
   type: 2;
   style: 1 | 2 | 4;
@@ -13,23 +16,28 @@ export type ActionButton = {
   disabled?: boolean;
 };
 
-export type LinkButton = {
-  type: 2;
-  style: 5;
-  label: string;
-  url: string;
-};
-
-export type Button = ActionButton | LinkButton;
-
 export type ActionRow = {
   type: 1;
-  components: Button[];
+  components: ActionButton[];
 };
 
-export type DiscordMessage = {
+export type TextDisplay = {
+  type: 10;
   content: string;
-  components: ActionRow[];
+};
+
+export type Separator = {
+  type: 14;
+  divider: boolean;
+  spacing: number;
+};
+
+export type MessageComponent = ActionRow | TextDisplay | Separator;
+
+// V2 では content / embeds が使えず、本文も components で表現する。
+export type DiscordMessage = {
+  flags: number;
+  components: MessageComponent[];
 };
 
 export type ActionResult =
@@ -42,5 +50,5 @@ export type Interaction = {
   // followup を送るのに使う。deferred で返した後に @original を書き換える
   token?: string;
   data?: { custom_id?: string; name?: string };
-  message?: { components?: ActionRow[] };
+  message?: { components?: MessageComponent[] };
 };

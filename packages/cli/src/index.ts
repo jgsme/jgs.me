@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import {
+  formatPartialResult,
   formatResult,
   hasRegistrations,
   parseChanges,
@@ -88,7 +89,8 @@ function main(): void {
     const id = parseTarget(arg);
     if (id === null) {
       invalid.push(arg);
-    } else {
+    } else if (!ids.includes(id)) {
+      // 同じ page を URL と裸の ID で 2 回渡されても 1 回として扱う
       ids.push(id);
     }
   }
@@ -101,9 +103,11 @@ function main(): void {
     process.exit(1);
   }
 
-  let rows;
+  let rows: Record<string, unknown>[];
+  let needsDelete: boolean;
   try {
     rows = parseRows(runSql(buildSelectSql(ids)));
+    needsDelete = hasRegistrations(rows);
   } catch (e) {
     console.error(message(e));
     console.error("削除は実行していない。");
@@ -117,7 +121,7 @@ function main(): void {
     excluded_page: 0,
   };
 
-  if (hasRegistrations(rows)) {
+  if (needsDelete) {
     for (const table of TARGET_TABLES) {
       try {
         changesByTable[table] = parseChanges(
@@ -126,8 +130,10 @@ function main(): void {
       } catch (e) {
         console.error(message(e));
         console.error(
-          `${table} の DELETE で失敗した。それより前のテーブルの削除は既に実行済みの可能性がある。`,
+          `${table} の DELETE で失敗した。この DELETE 自体と、それより前のテーブルの削除は既に実行済みの可能性がある。`,
         );
+        console.error("対象だった page:");
+        console.log(formatPartialResult(ids, rows));
         process.exitCode = 1;
         return;
       }

@@ -47,10 +47,18 @@ function rowId(row: Row): number {
   return id;
 }
 
+function presenceCount(row: Row, table: TargetTable): number {
+  const column = PRESENCE_COLUMN[table];
+  const count = Number(row[column]);
+  if (Number.isNaN(count)) {
+    throw new Error(`行から ${column} を読めなかった: ${raw(row)}`);
+  }
+  return count;
+}
+
+/** filter は全要素を評価するので、3 列すべてが検証される */
 function registeredTables(row: Row): TargetTable[] {
-  return TARGET_TABLES.filter(
-    (table) => Number(row[PRESENCE_COLUMN[table]]) > 0,
-  );
+  return TARGET_TABLES.filter((table) => presenceCount(row, table) > 0);
 }
 
 /** どの ID もどのテーブルにも入っていなければ false (DELETE を起動する必要がない) */
@@ -62,18 +70,22 @@ export function hasRegistrations(rows: Row[]): boolean {
   return rows.some((row) => registeredTables(row).length > 0);
 }
 
-export function formatResult(
+/**
+ * ID ごとの報告行を引数順で組み立てる。
+ * 同じ ID を 2 回渡されても 1 行にまとめる (行と changes の突き合わせが狂うため)。
+ * 形状が違う行は `hasRegistrations` より前に来ても落ちるよう、ここでも検証する。
+ */
+function describe(
   ids: number[],
   rows: Row[],
-  changesByTable: Record<TargetTable, number>,
-): string {
+): { lines: string[]; expected: number } {
   const byId = new Map<number, Row>();
   for (const row of rows) {
     byId.set(rowId(row), row);
   }
 
   let expected = 0;
-  const lines = ids.map((id) => {
+  const lines = [...new Set(ids)].map((id) => {
     const row = byId.get(id);
     if (row === undefined) {
       return `${id}: page が存在しない`;
@@ -86,6 +98,21 @@ export function formatResult(
     }
     return `${id} 「${title}」: ${deleted.join(", ")} を削除`;
   });
+
+  return { lines, expected };
+}
+
+/** DELETE が途中で失敗したとき用。合計行・警告行は出さない (changes が不完全なため) */
+export function formatPartialResult(ids: number[], rows: Row[]): string {
+  return describe(ids, rows).lines.join("\n");
+}
+
+export function formatResult(
+  ids: number[],
+  rows: Row[],
+  changesByTable: Record<TargetTable, number>,
+): string {
+  const { lines, expected } = describe(ids, rows);
 
   const actual = TARGET_TABLES.reduce(
     (sum, table) => sum + changesByTable[table],

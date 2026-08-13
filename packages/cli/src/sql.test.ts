@@ -21,8 +21,14 @@ describe("buildSelectSql", () => {
   });
 
   it("複数 ID をカンマ区切りで埋め込む", () => {
-    expect(buildSelectSql([6216, 6217])).toContain(
-      "FROM page p WHERE p.id IN (6216, 6217)",
+    expect(buildSelectSql([6216, 6217])).toBe(
+      [
+        "SELECT p.id, p.title,",
+        "  (SELECT COUNT(*) FROM article WHERE pageID = p.id) AS in_article,",
+        "  (SELECT COUNT(*) FROM clip WHERE pageID = p.id) AS in_clip,",
+        "  (SELECT COUNT(*) FROM excluded_page WHERE pageID = p.id) AS in_excluded",
+        "FROM page p WHERE p.id IN (6216, 6217)",
+      ].join("\n"),
     );
   });
 

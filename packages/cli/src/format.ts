@@ -1,67 +1,104 @@
-import { TARGET_TABLES } from "./sql.ts";
+import { PRESENCE_COLUMN, TARGET_TABLES, type TargetTable } from "./sql.ts";
 
-const STATEMENT_COUNT = 1 + TARGET_TABLES.length * 2;
+type Row = Record<string, unknown>;
 
-type D1Result = { results?: unknown[] };
+function raw(value: unknown): string {
+  return String(JSON.stringify(value)).slice(0, 500);
+}
 
-function unwrap(output: unknown): D1Result[] {
-  if (Array.isArray(output)) {
-    return output as D1Result[];
+function firstEntry(output: unknown): Row {
+  if (!Array.isArray(output)) {
+    throw new Error(`wrangler の出力が配列でない: ${raw(output)}`);
   }
-  if (output !== null && typeof output === "object") {
-    for (const value of Object.values(output)) {
-      if (Array.isArray(value)) {
-        return value as D1Result[];
-      }
-    }
+  const entry = output[0];
+  if (entry === null || typeof entry !== "object") {
+    throw new Error(`wrangler の出力に結果がない: ${raw(output)}`);
   }
-  throw new Error(
-    `unexpected wrangler output: ${JSON.stringify(output).slice(0, 500)}`,
+  return entry as Row;
+}
+
+export function parseRows(output: unknown): Row[] {
+  const results = firstEntry(output).results;
+  if (!Array.isArray(results)) {
+    throw new Error(`wrangler の出力に results がない: ${raw(output)}`);
+  }
+  return results as Row[];
+}
+
+export function parseChanges(output: unknown): number {
+  const meta = firstEntry(output).meta;
+  if (meta === null || typeof meta !== "object") {
+    throw new Error(`wrangler の出力に meta がない: ${raw(output)}`);
+  }
+  const changes = (meta as Row).changes;
+  if (typeof changes !== "number") {
+    throw new Error(
+      `wrangler の出力の meta.changes が数値でない: ${raw(output)}`,
+    );
+  }
+  return changes;
+}
+
+function rowId(row: Row): number {
+  const id = Number(row.id);
+  if (Number.isNaN(id)) {
+    throw new Error(`行から id を読めなかった: ${raw(row)}`);
+  }
+  return id;
+}
+
+function registeredTables(row: Row): TargetTable[] {
+  return TARGET_TABLES.filter(
+    (table) => Number(row[PRESENCE_COLUMN[table]]) > 0,
   );
 }
 
-function rowsOf(entry: D1Result | undefined): Record<string, unknown>[] {
-  const results = entry?.results;
-  if (!Array.isArray(results)) {
-    throw new Error(
-      `unexpected wrangler output: missing results: ${JSON.stringify(entry).slice(0, 500)}`,
-    );
+/** どの ID もどのテーブルにも入っていなければ false (DELETE を起動する必要がない) */
+export function hasRegistrations(rows: Row[]): boolean {
+  // 形状が違えば DELETE を撃つ前にここで落とす
+  for (const row of rows) {
+    rowId(row);
   }
-  return results as Record<string, unknown>[];
+  return rows.some((row) => registeredTables(row).length > 0);
 }
 
-export function formatResult(ids: number[], output: unknown): string {
-  const entries = unwrap(output);
-  if (entries.length < STATEMENT_COUNT) {
-    throw new Error(
-      `expected ${STATEMENT_COUNT} statement results, got ${entries.length}: ${JSON.stringify(entries).slice(0, 500)}`,
-    );
+export function formatResult(
+  ids: number[],
+  rows: Row[],
+  changesByTable: Record<TargetTable, number>,
+): string {
+  const byId = new Map<number, Row>();
+  for (const row of rows) {
+    byId.set(rowId(row), row);
   }
 
-  const titles = new Map<number, string>();
-  for (const row of rowsOf(entries[0])) {
-    titles.set(Number(row.id), String(row.title));
-  }
-
-  const hits = TARGET_TABLES.map((_, i) => {
-    const set = new Set<number>();
-    for (const row of rowsOf(entries[1 + i])) {
-      set.add(Number(row.pageID));
+  let expected = 0;
+  const lines = ids.map((id) => {
+    const row = byId.get(id);
+    if (row === undefined) {
+      return `${id}: page が存在しない`;
     }
-    return set;
+    const title = String(row.title);
+    const deleted = registeredTables(row);
+    expected += deleted.length;
+    if (deleted.length === 0) {
+      return `${id} 「${title}」: もともと未登録`;
+    }
+    return `${id} 「${title}」: ${deleted.join(", ")} を削除`;
   });
 
-  return ids
-    .map((id) => {
-      const title = titles.get(id);
-      if (title === undefined) {
-        return `${id}: page が存在しない`;
-      }
-      const deleted = TARGET_TABLES.filter((_, i) => hits[i].has(id));
-      if (deleted.length === 0) {
-        return `${id} 「${title}」: もともと未登録`;
-      }
-      return `${id} 「${title}」: ${deleted.join(", ")} を削除`;
-    })
-    .join("\n");
+  const actual = TARGET_TABLES.reduce(
+    (sum, table) => sum + changesByTable[table],
+    0,
+  );
+
+  if (expected !== actual) {
+    lines.push(
+      `→ 警告: ${expected} 行削除される見込みだったが、実際には ${actual} 行削除された`,
+    );
+  } else if (expected > 0) {
+    lines.push(`→ 計 ${expected} 行削除`);
+  }
+
+  return lines.join("\n");
 }

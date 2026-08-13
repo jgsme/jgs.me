@@ -1,11 +1,18 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { formatResult } from "./format.ts";
+import {
+  formatResult,
+  hasRegistrations,
+  parseChanges,
+  parseRows,
+} from "./format.ts";
 import { parseTarget } from "./parse.ts";
-import { buildSql } from "./sql.ts";
+import {
+  buildDeleteSql,
+  buildSelectSql,
+  TARGET_TABLES,
+  type TargetTable,
+} from "./sql.ts";
 
 const WEB_DIR = fileURLToPath(new URL("../../web", import.meta.url));
 const DATABASE_NAME = "w";
@@ -23,6 +30,50 @@ function usage(): never {
     ].join("\n"),
   );
   process.exit(1);
+}
+
+/** wrangler を 1 回起動して --json の出力をパースして返す。失敗は例外 */
+function runSql(sql: string): unknown {
+  const proc = spawnSync(
+    "pnpm",
+    [
+      "exec",
+      "wrangler",
+      "d1",
+      "execute",
+      DATABASE_NAME,
+      "--remote",
+      "--command",
+      sql,
+      "--json",
+    ],
+    {
+      cwd: WEB_DIR,
+      encoding: "utf8",
+      stdio: ["inherit", "pipe", "inherit"],
+    },
+  );
+
+  if (proc.error) {
+    throw new Error(`wrangler の起動に失敗した: ${proc.error.message}`);
+  }
+  if (proc.status !== 0) {
+    throw new Error(
+      `wrangler が失敗した (exit ${proc.status}):\n${proc.stdout ?? ""}`,
+    );
+  }
+
+  try {
+    return JSON.parse(proc.stdout);
+  } catch {
+    throw new Error(
+      `wrangler の出力を JSON として読めなかった:\n${proc.stdout}`,
+    );
+  }
+}
+
+function message(e: unknown): string {
+  return e instanceof Error ? e.message : String(e);
 }
 
 function main(): void {
@@ -50,66 +101,40 @@ function main(): void {
     process.exit(1);
   }
 
-  const dir = mkdtempSync(join(tmpdir(), "jgs-undo-"));
-  const sqlPath = join(dir, "undo.sql");
-
+  let rows;
   try {
-    writeFileSync(sqlPath, buildSql(ids));
-
-    const proc = spawnSync(
-      "pnpm",
-      [
-        "exec",
-        "wrangler",
-        "d1",
-        "execute",
-        DATABASE_NAME,
-        "--remote",
-        "--file",
-        sqlPath,
-        "--json",
-      ],
-      {
-        cwd: WEB_DIR,
-        encoding: "utf8",
-        stdio: ["inherit", "pipe", "inherit"],
-      },
-    );
-
-    if (proc.error) {
-      console.error(`wrangler の起動に失敗した: ${proc.error.message}`);
-      process.exitCode = 1;
-      return;
-    }
-
-    if (proc.status !== 0) {
-      process.stdout.write(proc.stdout ?? "");
-      process.exitCode = 1;
-      return;
-    }
-
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(proc.stdout);
-    } catch {
-      console.error("wrangler の出力を JSON として読めなかった:");
-      process.stdout.write(proc.stdout);
-      process.exitCode = 1;
-      return;
-    }
-
-    try {
-      console.log(formatResult(ids, parsed));
-    } catch (e) {
-      console.error(e instanceof Error ? e.message : String(e));
-      console.error("wrangler の生出力:");
-      process.stdout.write(proc.stdout);
-      process.exitCode = 1;
-      return;
-    }
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
+    rows = parseRows(runSql(buildSelectSql(ids)));
+  } catch (e) {
+    console.error(message(e));
+    console.error("削除は実行していない。");
+    process.exitCode = 1;
+    return;
   }
+
+  const changesByTable: Record<TargetTable, number> = {
+    article: 0,
+    clip: 0,
+    excluded_page: 0,
+  };
+
+  if (hasRegistrations(rows)) {
+    for (const table of TARGET_TABLES) {
+      try {
+        changesByTable[table] = parseChanges(
+          runSql(buildDeleteSql(table, ids)),
+        );
+      } catch (e) {
+        console.error(message(e));
+        console.error(
+          `${table} の DELETE で失敗した。それより前のテーブルの削除は既に実行済みの可能性がある。`,
+        );
+        process.exitCode = 1;
+        return;
+      }
+    }
+  }
+
+  console.log(formatResult(ids, rows, changesByTable));
 }
 
 main();

@@ -76,15 +76,18 @@ describe("formatResult", () => {
       /got 1.*"results":\[\]/,
     );
     expect(() =>
-      formatResult([1613], [
-        { results: [{ id: 1613, title: "x" }], success: true },
-        { success: true },
-        { results: [], success: true },
-        { results: [], success: true },
-        { results: [], success: true },
-        { results: [], success: true },
-        { results: [], success: true },
-      ]),
+      formatResult(
+        [1613],
+        [
+          { results: [{ id: 1613, title: "x" }], success: true },
+          { success: true },
+          { results: [], success: true },
+          { results: [], success: true },
+          { results: [], success: true },
+          { results: [], success: true },
+          { results: [], success: true },
+        ],
+      ),
     ).toThrow(/missing results.*"success":true/);
   });
 });

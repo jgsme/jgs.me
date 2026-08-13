@@ -19,14 +19,15 @@ This document provides context for the `jgs.me` personal website project.
 
 The project is a monorepo containing several packages within the `packages/` directory:
 
-| Package           | Description                                         |
-| ----------------- | --------------------------------------------------- |
-| `packages/web`    | The main web application serving the UI and API.    |
-| `packages/db`     | Shared Drizzle ORM schema for database access.      |
-| `packages/sync`   | A Cloudflare Worker to sync articles from Scrapbox. |
-| `packages/notify` | A Worker for sending Discord notifications.         |
-| `packages/og`     | A Worker for dynamic Open Graph image generation.   |
-| `packages/home`   | A Worker that serves the home page.                 |
+| Package           | Description                                                                                                     |
+| ----------------- | --------------------------------------------------------------------------------------------------------------- |
+| `packages/web`    | The main web application serving the UI and API.                                                                |
+| `packages/db`     | Shared Drizzle ORM schema for database access.                                                                  |
+| `packages/sync`   | A Cloudflare Worker to sync articles from Scrapbox.                                                             |
+| `packages/notify` | A Worker for sending Discord notifications.                                                                     |
+| `packages/og`     | A Worker for dynamic Open Graph image generation.                                                               |
+| `packages/home`   | A Worker that serves the home page.                                                                             |
+| `packages/cli`    | A CLI (`pnpm undo <url\|id>`) to undo a mis-clicked Discord button by deleting from article/clip/excluded_page. |
 
 The `web` package is the core, handling most user-facing functionality. It's a server-side rendered (SSR) React application using Vike, with a Hono backend for API routes, all running on Cloudflare Pages.
 
@@ -69,6 +70,14 @@ To run the test suite for the `web` package:
 
 ```bash
 pnpm --filter web test
+```
+
+### Undoing a mis-clicked Discord notification button
+
+If a Discord notification button was clicked by mistake, use the `undo` CLI to revert it. It deletes the given page(s) from `article`, `clip`, and `excluded_page`, returning them to the unregistered state.
+
+```bash
+pnpm undo <url|id> [<url|id>...]
 ```
 
 ## Development Conventions

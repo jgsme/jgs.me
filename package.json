@@ -11,7 +11,8 @@
     "dev:on-this-day": "pnpm --filter on-this-day dev",
     "dev:on-this-day-index": "pnpm --filter on-this-day-index dev",
     "format": "prettier . --write",
-    "format:check": "prettier . --check"
+    "format:check": "prettier . --check",
+    "undo": "pnpm --filter cli undo"
   },
   "devDependencies": {
     "prettier": "^3.9.4",

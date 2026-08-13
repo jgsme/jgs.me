@@ -6,6 +6,7 @@ import { articles, pages } from "@jigsaw/db";
 import { eq } from "drizzle-orm";
 import { useConfig } from "vike-react/useConfig";
 import { purifyScrapboxText } from "@/utils/purifyScrapboxText";
+import { routeTitleToPageTitle } from "@/utils/routeTitle";
 
 type Context = PageContextServer & {
   env: Bindings;
@@ -43,7 +44,7 @@ async function fetchPageText(
 
 const data = async (c: Context) => {
   const config = useConfig();
-  const title = decodeURIComponent(c.routeParams.title);
+  const title = routeTitleToPageTitle(c.routeParams.title);
   const db = getDB(c.env.DB);
 
   const pageInfo = await db

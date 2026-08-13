@@ -23,7 +23,9 @@ function unwrap(output: unknown): D1Result[] {
 function rowsOf(entry: D1Result | undefined): Record<string, unknown>[] {
   const results = entry?.results;
   if (!Array.isArray(results)) {
-    throw new Error("unexpected wrangler output: missing results");
+    throw new Error(
+      `unexpected wrangler output: missing results: ${JSON.stringify(entry).slice(0, 500)}`,
+    );
   }
   return results as Record<string, unknown>[];
 }
@@ -32,7 +34,7 @@ export function formatResult(ids: number[], output: unknown): string {
   const entries = unwrap(output);
   if (entries.length < STATEMENT_COUNT) {
     throw new Error(
-      `expected ${STATEMENT_COUNT} statement results, got ${entries.length}`,
+      `expected ${STATEMENT_COUNT} statement results, got ${entries.length}: ${JSON.stringify(entries).slice(0, 500)}`,
     );
   }
 

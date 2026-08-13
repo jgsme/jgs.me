@@ -75,7 +75,8 @@ function main(): void {
     if (proc.status !== 0) {
       process.stderr.write(proc.stderr ?? "");
       process.stdout.write(proc.stdout ?? "");
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
 
     let parsed: unknown;
@@ -84,7 +85,8 @@ function main(): void {
     } catch {
       console.error("wrangler の出力を JSON として読めなかった:");
       process.stdout.write(proc.stdout);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
 
     try {
@@ -93,7 +95,8 @@ function main(): void {
       console.error(e instanceof Error ? e.message : String(e));
       console.error("wrangler の生出力:");
       process.stdout.write(proc.stdout);
-      process.exit(1);
+      process.exitCode = 1;
+      return;
     }
   } finally {
     rmSync(dir, { recursive: true, force: true });

@@ -15,6 +15,9 @@ pnpm deploy       # Build and deploy to Cloudflare Pages
 
 # Database
 pnpm gen          # Generate Drizzle migrations (drizzle-kit generate)
+
+# CLI Tools
+pnpm undo <url|id> [<url|id>...]  # Discord 通知のボタン押し間違いを取り消す（article/clip/excluded_page から削除）
 ```
 
 ## Architecture
@@ -29,6 +32,7 @@ pnpm ワークスペースによるモノレポ構成。
 - `packages/notify` - 通知ワーカー（未登録記事を Discord にボタン付きで通知し、押下 interaction を受けて登録/クリップ/除外を実行。JST 05:00 cron）
 - `packages/og` - OG画像生成ワーカー（Satori + Resvg）
 - `packages/home` - ホームページ用ワーカー
+- `packages/cli` - undo CLI（`pnpm undo <url|id>` で Discord ボタンの押し間違いを取り消し、article/clip/excluded_page から削除）
 
 ### Web App (packages/web)
 

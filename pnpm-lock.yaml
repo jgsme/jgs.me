@@ -59,9 +59,6 @@ importers:
       vitest:
         specifier: 'catalog:'
         version: 4.1.10(@types/node@24.13.3)(vite@7.3.6(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.12))
-      wrangler:
-        specifier: 'catalog:'
-        version: 4.120.0(@cloudflare/workers-types@4.20260702.1)
 
   packages/db:
     dependencies:

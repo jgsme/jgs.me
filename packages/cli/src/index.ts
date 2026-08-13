@@ -69,11 +69,20 @@ function main(): void {
         sqlPath,
         "--json",
       ],
-      { cwd: WEB_DIR, encoding: "utf8" },
+      {
+        cwd: WEB_DIR,
+        encoding: "utf8",
+        stdio: ["inherit", "pipe", "inherit"],
+      },
     );
 
+    if (proc.error) {
+      console.error(`wrangler の起動に失敗した: ${proc.error.message}`);
+      process.exitCode = 1;
+      return;
+    }
+
     if (proc.status !== 0) {
-      process.stderr.write(proc.stderr ?? "");
       process.stdout.write(proc.stdout ?? "");
       process.exitCode = 1;
       return;

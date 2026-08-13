@@ -4,12 +4,12 @@
   "type": "module",
   "scripts": {
     "undo": "node src/index.ts",
-    "test": "vitest"
+    "test": "vitest",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
     "typescript": "catalog:",
-    "vitest": "catalog:",
-    "wrangler": "catalog:"
+    "vitest": "catalog:"
   }
 }

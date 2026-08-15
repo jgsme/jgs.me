@@ -18,7 +18,6 @@ pnpm workspace monorepo.
 | ----------------- | --------------------------- |
 | `packages/web`    | Main web app                |
 | `packages/db`     | Shared Drizzle schema       |
-| `packages/sync`   | Scrapbox sync worker        |
 | `packages/notify` | Discord notification worker |
 | `packages/og`     | OG image generation worker  |
 | `packages/home`   | Home page worker            |

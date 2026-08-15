@@ -23,7 +23,6 @@ The project is a monorepo containing several packages within the `packages/` dir
 | ----------------- | --------------------------------------------------------------------------------------------------------------- |
 | `packages/web`    | The main web application serving the UI and API.                                                                |
 | `packages/db`     | Shared Drizzle ORM schema for database access.                                                                  |
-| `packages/sync`   | A Cloudflare Worker to sync articles from Scrapbox.                                                             |
 | `packages/notify` | A Worker for sending Discord notifications.                                                                     |
 | `packages/og`     | A Worker for dynamic Open Graph image generation.                                                               |
 | `packages/home`   | A Worker that serves the home page.                                                                             |
@@ -51,7 +50,7 @@ pnpm install
 pnpm dev
 ```
 
-This will start the Vite development server for the `web` package. Other workers can be developed similarly using the `dev:<worker_name>` scripts (e.g., `pnpm dev:sync`).
+This will start the Vite development server for the `web` package. Other workers can be developed similarly using the `dev:<worker_name>` scripts (e.g., `pnpm dev:notify`).
 
 ### Building
 

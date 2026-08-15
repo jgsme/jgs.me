@@ -25,13 +25,13 @@ async function fetchPageText(
   title: string,
 ): Promise<string | null> {
   if (!sbID) {
-    console.log(`[R2 skip] title=${title} (no sbID in DB)`);
+    console.error(`[R2 skip] title=${title} (no sbID in DB)`);
     return null;
   }
 
   const obj = await r2.get(`${sbID}.json`);
   if (!obj) {
-    console.log(`[R2 miss] title=${title}, sbID=${sbID}`);
+    console.error(`[R2 miss] title=${title}, sbID=${sbID}`);
     return null;
   }
 

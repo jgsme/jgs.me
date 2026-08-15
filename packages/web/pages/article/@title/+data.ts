@@ -24,22 +24,19 @@ async function fetchPageText(
   sbID: string | null,
   title: string,
 ): Promise<string | null> {
-  if (sbID) {
-    const obj = await r2.get(`${sbID}.json`);
-    if (obj) {
-      const data = await obj.json<R2PageData>();
-      return data.lines.map((l) => l.text).join("\n");
-    }
-    console.log(`[R2 miss] title=${title}, sbID=${sbID}`);
-  } else {
-    console.log(`[R2 skip] title=${title} (no sbID in DB)`);
+  if (!sbID) {
+    console.error(`[R2 skip] title=${title} (no sbID in DB)`);
+    return null;
   }
 
-  const res = await fetch(
-    `https://scrapbox.io/api/pages/jigsaw/${encodeURIComponent(title)}/text`,
-  );
-  if (!res.ok) return null;
-  return res.text();
+  const obj = await r2.get(`${sbID}.json`);
+  if (!obj) {
+    console.error(`[R2 miss] title=${title}, sbID=${sbID}`);
+    return null;
+  }
+
+  const data = await obj.json<R2PageData>();
+  return data.lines.map((l) => l.text).join("\n");
 }
 
 const data = async (c: Context) => {

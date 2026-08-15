@@ -28,7 +28,6 @@ pnpm ワークスペースによるモノレポ構成。
 
 - `packages/db` - 共有 Drizzle スキーマ（`@jigsaw/db` としてインポート）
 - `packages/web` - メインのWebアプリ（Vike + React + Photon + Hono、Cloudflare Pages）
-- `packages/sync` - Scrapbox同期ワーカー（Cloudflare Workflows で R2 にデータ同期）
 - `packages/notify` - 通知ワーカー（未登録記事を Discord にボタン付きで通知し、押下 interaction を受けて登録/クリップ/除外を実行。JST 05:00 cron）
 - `packages/og` - OG画像生成ワーカー（Satori + Resvg）
 - `packages/home` - ホームページ用ワーカー
@@ -68,7 +67,8 @@ Vike + React + Photon + Hono で構成された Cloudflare Pages アプリケー
 
 - `pages/index/` - 記事一覧ページ（ページネーション対応、`?p=N`）
 - `pages/article/@title/` - 記事詳細ページ（ルート: `/pages/@title`）
-  - Scrapbox API からコンテンツ取得、`@progfay/scrapbox-parser` でパース
+  - R2 (`<sbID>.json`) からコンテンツ取得、`@progfay/scrapbox-parser` でパース
+  - R2 は Scrapbox 同期を廃止した時点の凍結アーカイブ。新規ページは増えない
 - `pages/a/@id/` - 共有URL用リダイレクト（`/a/{id}` → `/pages/{title}`）
 - `pages/search/` - 検索ページ
 - `pages/clips/` - クリップ一覧ページ

@@ -4,7 +4,7 @@ This document provides context for the `jgs.me` personal website project.
 
 ## Project Overview
 
-`jgs.me` is a personal website for managing and publishing articles from Scrapbox. It's a modern web application built on Cloudflare's edge infrastructure, utilizing a pnpm monorepo structure.
+`jgs.me` is a personal website for managing and publishing articles from a frozen Scrapbox export archive (Scrapbox sync was retired in August 2026). It's a modern web application built on Cloudflare's edge infrastructure, utilizing a pnpm monorepo structure.
 
 ### Key Technologies
 
@@ -19,15 +19,16 @@ This document provides context for the `jgs.me` personal website project.
 
 The project is a monorepo containing several packages within the `packages/` directory:
 
-| Package           | Description                                                                                                     |
-| ----------------- | --------------------------------------------------------------------------------------------------------------- |
-| `packages/web`    | The main web application serving the UI and API.                                                                |
-| `packages/db`     | Shared Drizzle ORM schema for database access.                                                                  |
-| `packages/sync`   | A Cloudflare Worker to sync articles from Scrapbox.                                                             |
-| `packages/notify` | A Worker for sending Discord notifications.                                                                     |
-| `packages/og`     | A Worker for dynamic Open Graph image generation.                                                               |
-| `packages/home`   | A Worker that serves the home page.                                                                             |
-| `packages/cli`    | A CLI (`pnpm undo <url\|id>`) to undo a mis-clicked Discord button by deleting from article/clip/excluded_page. |
+| Package                      | Description                                                                                                     |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `packages/web`               | The main web application serving the UI and API.                                                                |
+| `packages/db`                | Shared Drizzle ORM schema for database access.                                                                  |
+| `packages/notify`            | A Worker for sending Discord notifications.                                                                     |
+| `packages/og`                | A Worker for dynamic Open Graph image generation.                                                               |
+| `packages/home`              | A Worker that serves the home page.                                                                             |
+| `packages/on-this-day`       | A Worker that extracts "on this day" historical entries from archived Scrapbox pages in R2.                     |
+| `packages/on-this-day-index` | A Worker that builds the "on this day" search index and stores it in R2.                                        |
+| `packages/cli`               | A CLI (`pnpm undo <url\|id>`) to undo a mis-clicked Discord button by deleting from article/clip/excluded_page. |
 
 The `web` package is the core, handling most user-facing functionality. It's a server-side rendered (SSR) React application using Vike, with a Hono backend for API routes, all running on Cloudflare Pages.
 
@@ -51,7 +52,7 @@ pnpm install
 pnpm dev
 ```
 
-This will start the Vite development server for the `web` package. Other workers can be developed similarly using the `dev:<worker_name>` scripts (e.g., `pnpm dev:sync`).
+This will start the Vite development server for the `web` package. Other workers can be developed similarly using the `dev:<worker_name>` scripts (e.g., `pnpm dev:notify`).
 
 ### Building
 

@@ -114,16 +114,19 @@ export const ScrapboxNode: React.FC<{ node: NodeType }> = ({ node }) => {
         </code>
       );
 
-    case "icon":
-      return (
-        <img
-          src={`https://scrapbox.io/api/pages/jigsaw/${encodeURIComponent(
-            node.path,
-          )}/icon`}
-          alt={node.path}
-          className="inline w-6 h-6 rounded"
-        />
-      );
+    case "icon": {
+      if (node.pathType === "relative") {
+        return (
+          <a
+            href={`/pages/${encodeURIComponent(node.path)}`}
+            className="text-blue-600 hover:underline"
+          >
+            {node.path}
+          </a>
+        );
+      }
+      return <>{node.path}</>;
+    }
 
     case "quote":
       return (

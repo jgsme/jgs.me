@@ -6,7 +6,9 @@ describe("parseRows", () => {
     const rows = parseRows({
       rows: [{ pageID: 1, relatedPageID: 2, score: 0.7, adjusted: 0.1 }],
     });
-    expect(rows).toEqual([{ pageID: 1, relatedPageID: 2, score: 0.7, adjusted: 0.1 }]);
+    expect(rows).toEqual([
+      { pageID: 1, relatedPageID: 2, score: 0.7, adjusted: 0.1 },
+    ]);
   });
 
   it("rows が配列でなければ throw する", () => {
@@ -16,19 +18,25 @@ describe("parseRows", () => {
 
   it("整数でない pageID を弾く", () => {
     expect(() =>
-      parseRows({ rows: [{ pageID: 1.5, relatedPageID: 2, score: 0.7, adjusted: 0.1 }] }),
+      parseRows({
+        rows: [{ pageID: 1.5, relatedPageID: 2, score: 0.7, adjusted: 0.1 }],
+      }),
     ).toThrow();
   });
 
   it("有限でない score を弾く", () => {
     expect(() =>
-      parseRows({ rows: [{ pageID: 1, relatedPageID: 2, score: NaN, adjusted: 0.1 }] }),
+      parseRows({
+        rows: [{ pageID: 1, relatedPageID: 2, score: NaN, adjusted: 0.1 }],
+      }),
     ).toThrow();
   });
 
   it("自己参照を弾く", () => {
     expect(() =>
-      parseRows({ rows: [{ pageID: 1, relatedPageID: 1, score: 0.7, adjusted: 0.1 }] }),
+      parseRows({
+        rows: [{ pageID: 1, relatedPageID: 1, score: 0.7, adjusted: 0.1 }],
+      }),
     ).toThrow();
   });
 });

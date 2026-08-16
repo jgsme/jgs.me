@@ -1,4 +1,10 @@
-import { sqliteTable, text, integer, real, primaryKey } from "drizzle-orm/sqlite-core";
+import {
+  sqliteTable,
+  text,
+  integer,
+  real,
+  primaryKey,
+} from "drizzle-orm/sqlite-core";
 import { relations, sql } from "drizzle-orm";
 
 export const pages = sqliteTable("page", {

@@ -22,10 +22,10 @@ catalogs:
       specifier: ^4.12.27
       version: 4.13.1
     react:
-      specifier: ^19.2.7
+      specifier: ^19.2.8
       version: 19.2.8
     react-dom:
-      specifier: ^19.2.7
+      specifier: ^19.2.8
       version: 19.2.8
     typescript:
       specifier: ^5.9.3
@@ -287,10 +287,10 @@ importers:
         specifier: ^24.10.1
         version: 24.13.3
       '@types/react':
-        specifier: ^19.2.17
+        specifier: ^19.2.18
         version: 19.2.18
       '@types/react-dom':
-        specifier: ^19.2.3
+        specifier: ^19.2.4
         version: 19.2.4(@types/react@19.2.18)
       '@types/three':
         specifier: ^0.185.4

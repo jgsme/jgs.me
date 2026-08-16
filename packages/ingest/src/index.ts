@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
-import { articles, pages } from "@jigsaw/db";
+import { articles, pages, similarityRuns } from "@jigsaw/db";
 import { isAuthorized } from "./auth";
 
 export interface Env {
@@ -32,6 +32,19 @@ export default {
         .from(articles)
         .innerJoin(pages, eq(pages.id, articles.pageID));
       return Response.json({ targets: rows });
+    }
+
+    // 新しい計算世代を作る。current = false なので、この時点では表示に影響しない。
+    if (request.method === "POST" && url.pathname === "/similarity/runs") {
+      const body = (await request.json()) as { model?: unknown; params?: unknown };
+      if (typeof body.model !== "string" || body.model === "") {
+        return new Response("model is required", { status: 400 });
+      }
+      const [row] = await db
+        .insert(similarityRuns)
+        .values({ model: body.model, params: JSON.stringify(body.params ?? {}) })
+        .returning({ id: similarityRuns.id });
+      return Response.json({ runID: row!.id });
     }
 
     return notFound();

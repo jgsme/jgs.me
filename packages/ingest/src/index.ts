@@ -80,6 +80,37 @@ export default {
       return Response.json({ inserted: rows.length });
     }
 
+    // 表示の切り替え。ここまでは誰も新しい run を見ていないので、
+    // この 1 batch が唯一の「切り替わる瞬間」になる (欠損ウィンドウがない)。
+    const activateMatch = url.pathname.match(/^\/similarity\/runs\/(\d+)\/activate$/);
+    if (request.method === "POST" && activateMatch) {
+      const runID = Number(activateMatch[1]);
+
+      const exists = await env.DB.prepare(
+        "SELECT 1 FROM similarity_run WHERE id = ?",
+      )
+        .bind(runID)
+        .first();
+      if (!exists) return new Response("run not found", { status: 404 });
+
+      await env.DB.batch([
+        env.DB.prepare("UPDATE similarity_run SET current = 0 WHERE current = 1"),
+        env.DB.prepare("UPDATE similarity_run SET current = 1 WHERE id = ?").bind(runID),
+      ]);
+
+      // 世代の刈り取り。表示中の run は必ず最新側に残るので、表示には影響しない。
+      await env.DB.batch([
+        env.DB.prepare(
+          "DELETE FROM page_similarity WHERE runID NOT IN (SELECT id FROM similarity_run ORDER BY id DESC LIMIT 2)",
+        ),
+        env.DB.prepare(
+          "DELETE FROM similarity_run WHERE id NOT IN (SELECT id FROM similarity_run ORDER BY id DESC LIMIT 2)",
+        ),
+      ]);
+
+      return Response.json({ activated: runID, pruned: true });
+    }
+
     return notFound();
   },
 };

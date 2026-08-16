@@ -98,14 +98,16 @@ export default {
         env.DB.prepare("UPDATE similarity_run SET current = 1 WHERE id = ?").bind(runID),
       ]);
 
-      // 世代の刈り取り。表示中の run は必ず最新側に残るので、表示には影響しない。
+      // 世代の刈り取り。表示中の run は必ず最新側に残る…とは限らない
+      // (orphan な新しい run がある状態で古い run を activate する経路がある) ので、
+      // 今 activate した run を明示的に除外する。
       await env.DB.batch([
         env.DB.prepare(
-          "DELETE FROM page_similarity WHERE runID NOT IN (SELECT id FROM similarity_run ORDER BY id DESC LIMIT 2)",
-        ),
+          "DELETE FROM page_similarity WHERE runID <> ? AND runID NOT IN (SELECT id FROM similarity_run ORDER BY id DESC LIMIT 2)",
+        ).bind(runID),
         env.DB.prepare(
-          "DELETE FROM similarity_run WHERE id NOT IN (SELECT id FROM similarity_run ORDER BY id DESC LIMIT 2)",
-        ),
+          "DELETE FROM similarity_run WHERE id <> ? AND id NOT IN (SELECT id FROM similarity_run ORDER BY id DESC LIMIT 2)",
+        ).bind(runID),
       ]);
 
       return Response.json({ activated: runID, pruned: true });

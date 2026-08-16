@@ -15,7 +15,7 @@
     "undo": "pnpm --filter cli undo"
   },
   "devDependencies": {
-    "prettier": "^3.9.4",
+    "prettier": "^3.9.6",
     "wrangler": "catalog:"
   }
 }

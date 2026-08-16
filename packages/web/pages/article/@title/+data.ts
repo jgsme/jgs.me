@@ -2,11 +2,17 @@ import type { PageContextServer } from "vike/types";
 import type { Bindings } from "@/server";
 import { parse } from "@progfay/scrapbox-parser";
 import { getDB } from "@/db/getDB";
-import { articles, pages } from "@jigsaw/db";
-import { eq } from "drizzle-orm";
+import { articles, pageSimilarities, pages } from "@jigsaw/db";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { useConfig } from "vike-react/useConfig";
 import { purifyScrapboxText } from "@/utils/purifyScrapboxText";
+import { pickRandom } from "@/utils/pickRandom";
 import { routeTitleToPageTitle } from "@/utils/routeTitle";
+
+// bge-m3 の cosine は下駄が高く 0.5 未満がほぼ出ないため、絶対的な意味はない。
+// ノイズ切りの調整つまみ。0.60 で全 article の 7% が候補 0 件になる。
+const SIMILARITY_MIN = 0.6;
+const RELATED_COUNT = 5;
 
 type Context = PageContextServer & {
   env: Bindings;
@@ -54,6 +60,29 @@ const data = async (c: Context) => {
   const pageId = pageInfo[0]?.pageId ?? null;
   const sbID = pageInfo[0]?.sbID ?? null;
   const articleId = pageInfo[0]?.articleId ?? null;
+
+  // 関連記事。article でないページには出さない。
+  let related: { title: string }[] = [];
+  if (pageId !== null && articleId !== null) {
+    const candidates = await db
+      .select({ title: pages.title })
+      .from(pageSimilarities)
+      .innerJoin(pages, eq(pages.id, pageSimilarities.relatedPageID))
+      .where(
+        and(
+          eq(pageSimilarities.pageID, pageId),
+          gte(pageSimilarities.score, SIMILARITY_MIN),
+          eq(
+            pageSimilarities.runID,
+            sql`(SELECT id FROM similarity_run WHERE current = 1)`,
+          ),
+        ),
+      )
+      .orderBy(desc(pageSimilarities.adjusted))
+      .limit(20);
+    related = pickRandom(candidates, RELATED_COUNT);
+  }
+
   const text = await fetchPageText(c.env.R2, sbID, title);
 
   if (text === null) {
@@ -67,6 +96,7 @@ const data = async (c: Context) => {
       articleId,
       blocks: [],
       description: null,
+      related: [],
     };
   }
   const blocks = parse(text);
@@ -159,6 +189,7 @@ const data = async (c: Context) => {
     blocks: filteredBlocks,
     fromDate,
     description,
+    related,
   };
 };
 

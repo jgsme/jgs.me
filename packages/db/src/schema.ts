@@ -1,4 +1,10 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import {
+  sqliteTable,
+  text,
+  integer,
+  real,
+  primaryKey,
+} from "drizzle-orm/sqlite-core";
 import { relations, sql } from "drizzle-orm";
 
 export const pages = sqliteTable("page", {
@@ -96,4 +102,36 @@ export const onThisDayEntryRelations = relations(
       relationName: "on_this_day_target_page",
     }),
   }),
+);
+
+// 類似度の計算世代。書き込みは INSERT のみで、表示の切り替えは current の UPDATE 1 行で行う。
+// 途中まで入った run は current を立てなければ表示に出ないので、ロールバックが要らない。
+export const similarityRuns = sqliteTable("similarity_run", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  model: text("model").notNull(),
+  params: text("params").notNull(), // {"keep":50,"kr":10,"topN":20} を JSON 文字列で
+  created: text("created")
+    .notNull()
+    .default(sql`(CURRENT_TIMESTAMP)`),
+  current: integer("current", { mode: "boolean" }).notNull().default(false),
+});
+
+// rank を持たないのは、top N もしきい値も読み取り時に決めるため。
+// score は raw cosine (足切り用)、adjusted は CSLS 補正後 (並べ替え用)。
+export const pageSimilarities = sqliteTable(
+  "page_similarity",
+  {
+    runID: integer("runID")
+      .notNull()
+      .references(() => similarityRuns.id),
+    pageID: integer("pageID")
+      .notNull()
+      .references(() => pages.id),
+    relatedPageID: integer("relatedPageID")
+      .notNull()
+      .references(() => pages.id),
+    score: real("score").notNull(),
+    adjusted: real("adjusted").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.runID, t.pageID, t.relatedPageID] })],
 );

@@ -3,6 +3,7 @@ import { useData } from "vike-react/useData";
 import type data from "./+data";
 import { ScrapboxBlock } from "./components/ScrapboxBlock";
 import { CopyButton } from "./components/CopyButton";
+import { RelatedPages } from "./components/RelatedPages";
 
 type Data = Awaited<ReturnType<typeof data>>;
 
@@ -34,6 +35,7 @@ const Page = () => {
           <ScrapboxBlock key={i} block={block} />
         ))}
       </article>
+      <RelatedPages related={d.related} />
       {/^\d{4}$/.test(d.title) && (
         <div className="mt-12 flex justify-center">
           <a

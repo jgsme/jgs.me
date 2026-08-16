@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@jigsaw/db": "workspace:*",
-    "discord-interactions": "^4.1.0",
+    "discord-interactions": "^4.4.0",
     "drizzle-orm": "catalog:"
   },
   "devDependencies": {

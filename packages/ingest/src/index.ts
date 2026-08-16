@@ -2,6 +2,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { eq } from "drizzle-orm";
 import { articles, pages, similarityRuns } from "@jigsaw/db";
 import { isAuthorized } from "./auth";
+import { chunk, parseRows } from "./rows";
 
 export interface Env {
   DB: D1Database;
@@ -36,7 +37,12 @@ export default {
 
     // 新しい計算世代を作る。current = false なので、この時点では表示に影響しない。
     if (request.method === "POST" && url.pathname === "/similarity/runs") {
-      const body = (await request.json()) as { model?: unknown; params?: unknown };
+      let body: { model?: unknown; params?: unknown };
+      try {
+        body = (await request.json()) as { model?: unknown; params?: unknown };
+      } catch {
+        return new Response("invalid json", { status: 400 });
+      }
       if (typeof body.model !== "string" || body.model === "") {
         return new Response("model is required", { status: 400 });
       }
@@ -45,6 +51,33 @@ export default {
         .values({ model: body.model, params: JSON.stringify(body.params ?? {}) })
         .returning({ id: similarityRuns.id });
       return Response.json({ runID: row!.id });
+    }
+
+    // 1 statement あたりのバインド上限に収めるため 16 行 (16 × 5 列 = 80 パラメータ) ずつに割る。
+    // batch は 1 回の D1 呼び出しかつトランザクション。
+    // INSERT OR REPLACE なので同じリクエストを二度投げても壊れない (Windmill のリトライ対策)。
+    const rowsMatch = url.pathname.match(/^\/similarity\/runs\/(\d+)\/rows$/);
+    if (request.method === "POST" && rowsMatch) {
+      const runID = Number(rowsMatch[1]);
+      let rows;
+      try {
+        rows = parseRows(await request.json());
+      } catch (e) {
+        return new Response(String(e instanceof Error ? e.message : e), { status: 400 });
+      }
+      if (rows.length === 0) return Response.json({ inserted: 0 });
+
+      const stmts = chunk(rows, 16).map((group) =>
+        env.DB.prepare(
+          `INSERT OR REPLACE INTO page_similarity (runID, pageID, relatedPageID, score, adjusted) VALUES ${group
+            .map(() => "(?,?,?,?,?)")
+            .join(",")}`,
+        ).bind(
+          ...group.flatMap((r) => [runID, r.pageID, r.relatedPageID, r.score, r.adjusted]),
+        ),
+      );
+      await env.DB.batch(stmts);
+      return Response.json({ inserted: rows.length });
     }
 
     return notFound();

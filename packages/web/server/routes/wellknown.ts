@@ -9,6 +9,7 @@ const wellknown = new Hono<{ Bindings: Bindings }>();
 // Accept ヘッダと署名ヘッダを保つため、リクエストは加工しない。
 for (const path of [
   "/.well-known/webfinger",
+  "/.well-known/host-meta",
   "/.well-known/nodeinfo",
   "/nodeinfo/2.1",
 ]) {

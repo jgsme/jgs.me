@@ -27,17 +27,17 @@ type R2PageData = {
 
 async function fetchPageText(
   r2: R2Bucket,
-  sbID: string | null,
+  bodyKey: string,
   title: string,
 ): Promise<string | null> {
-  if (!sbID) {
-    console.error(`[R2 skip] title=${title} (no sbID in DB)`);
+  if (!bodyKey) {
+    console.error(`[R2 skip] title=${title} (no bodyKey in DB)`);
     return null;
   }
 
-  const obj = await r2.get(`${sbID}.json`);
+  const obj = await r2.get(`${bodyKey}.json`);
   if (!obj) {
-    console.error(`[R2 miss] title=${title}, sbID=${sbID}`);
+    console.error(`[R2 miss] title=${title}, bodyKey=${bodyKey}`);
     return null;
   }
 
@@ -51,14 +51,18 @@ const data = async (c: Context) => {
   const db = getDB(c.env.DB);
 
   const pageInfo = await db
-    .select({ pageId: pages.id, articleId: articles.id, sbID: pages.sbID })
+    .select({
+      pageId: pages.id,
+      articleId: articles.id,
+      bodyKey: pages.bodyKey,
+    })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
     .where(eq(pages.title, title))
     .limit(1);
 
   const pageId = pageInfo[0]?.pageId ?? null;
-  const sbID = pageInfo[0]?.sbID ?? null;
+  const bodyKey = pageInfo[0]?.bodyKey ?? "";
   const articleId = pageInfo[0]?.articleId ?? null;
 
   // 関連記事。article でないページには出さない。
@@ -83,7 +87,7 @@ const data = async (c: Context) => {
     related = pickRandom(candidates, RELATED_COUNT);
   }
 
-  const text = await fetchPageText(c.env.R2, sbID, title);
+  const text = await fetchPageText(c.env.R2, bodyKey, title);
 
   if (text === null) {
     config({

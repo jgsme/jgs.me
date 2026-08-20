@@ -6,4 +6,7 @@ export function getDB(d1: D1Database) {
 
 export type Env = {
   DB: D1Database;
+  KV: KVNamespace;
+  AP_PRIVATE_KEY: string;
+  AP_PUBLIC_KEY: string;
 };

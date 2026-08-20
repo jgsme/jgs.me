@@ -20,4 +20,10 @@
       "migrations_dir": "../db/drizzle",
     },
   ],
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "89b51739d36b4a32a7874a8066e11433",
+    },
+  ],
 }

@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { eq } from "drizzle-orm";
 import { followers } from "@jigsaw/db";
 import { getDB, type Env } from "../db";
-import { verifyDigest } from "../sig/digest";
+import { sha256Digest, verifyDigest } from "../sig/digest";
 import {
   cavageVerify,
   parseCavageHeader,
@@ -35,7 +35,14 @@ inbox.post("/ap/inbox", async (c) => {
 
   // 1. body の完全性。署名は Digest ヘッダを covered header に含むので、
   //    Digest 検証と署名検証が揃って初めて body が保証される。
-  if (!(await verifyDigest(body, req.headers.get("Digest")))) {
+  const digestHeader = req.headers.get("Digest");
+  if (!(await verifyDigest(body, digestHeader))) {
+    // body が届く途中で変質すると全ての検証が無意味になるので、
+    // 落ちた事実だけでなく突き合わせた値も残す。body 自体は出さない
+    // (DM が入りうる)。
+    console.log(
+      `[inbox] reject=digest header=${digestHeader} computed=${await sha256Digest(body)} len=${body.length}`,
+    );
     return c.text("invalid digest", 401);
   }
 
@@ -44,14 +51,21 @@ inbox.post("/ap/inbox", async (c) => {
   if (!date) return c.text("date is required", 401);
   const skew = Math.abs(Date.now() - new Date(date).getTime());
   if (Number.isNaN(skew) || skew > MAX_CLOCK_SKEW_MS) {
+    console.log(`[inbox] reject=date date=${date} skewMs=${skew}`);
     return c.text("date out of range", 401);
   }
 
   // 3. 相手の公開鍵を引く。
   const keyId = keyIdOf(req);
-  if (!keyId) return c.text("signature is required", 401);
+  if (!keyId) {
+    console.log("[inbox] reject=no-key-id");
+    return c.text("signature is required", 401);
+  }
   const key = await fetchPublicKey(keyId, c.env.KV);
-  if (!key) return c.text("cannot fetch public key", 401);
+  if (!key) {
+    console.log(`[inbox] reject=key-fetch keyId=${keyId}`);
+    return c.text("cannot fetch public key", 401);
+  }
 
   // 4. 署名検証。ここを通らないものは以降の処理に到達させない。
   const url = new URL(req.url);
@@ -77,7 +91,12 @@ inbox.post("/ap/inbox", async (c) => {
       })
     : await cavageVerify(target, key, sigHeader);
 
-  if (!verified) return c.text("invalid signature", 401);
+  if (!verified) {
+    console.log(
+      `[inbox] reject=signature keyId=${keyId} variant=${sigInput ? "rfc9421" : "cavage"}`,
+    );
+    return c.text("invalid signature", 401);
+  }
 
   // 5. 重複配送の排除。ネットワーク越しのリトライは普通に起きる。
   const activity = JSON.parse(body) as Record<string, any>;
@@ -99,7 +118,10 @@ inbox.post("/ap/inbox", async (c) => {
     if (typeof actorURI !== "string") return c.text("", 202);
 
     const remote = await fetchRemoteActor(actorURI, c.env.KV);
-    if (!remote) return c.text("cannot fetch actor", 400);
+    if (!remote) {
+      console.log(`[inbox] reject=actor-fetch actor=${actorURI}`);
+      return c.text("cannot fetch actor", 400);
+    }
 
     await db
       .insert(followers)

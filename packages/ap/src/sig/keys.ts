@@ -58,3 +58,17 @@ export async function exportPublicPem(key: CryptoKey): Promise<string> {
   const lines = bytesToB64(spki).match(/.{1,64}/g) ?? [];
   return `-----BEGIN PUBLIC KEY-----\n${lines.join("\n")}\n-----END PUBLIC KEY-----`;
 }
+
+// Secrets に PEM を貼るとき改行がスペースに潰れることが実際にあった。
+// actor の publicKeyPem は生のまま相手に渡り、ヘッダ行と改行が
+// 欠けていると Mastodon が鍵を読めない。入力がどう壊れていても
+// base64 本文だけ取り出して組み直す。
+export function normalizePublicPem(raw: string): string {
+  const body = raw
+    .replace(/-----BEGIN [A-Z ]+-----/, "")
+    .replace(/-----END [A-Z ]+-----/, "")
+    .replace(/\s+/g, "");
+  if (body.length === 0) throw new Error("empty PEM body");
+  const lines = body.match(/.{1,64}/g) ?? [];
+  return `-----BEGIN PUBLIC KEY-----\n${lines.join("\n")}\n-----END PUBLIC KEY-----`;
+}

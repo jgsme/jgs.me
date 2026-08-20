@@ -33,6 +33,6 @@
     },
   ],
   "vars": {
-    "MEDIA_BASE_URL": "https://media.w.jgs.me",
+    "MEDIA_BASE_URL": "https://r2.jgs.me",
   },
 }

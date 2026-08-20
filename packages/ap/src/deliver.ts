@@ -2,6 +2,7 @@ import { sha256Digest } from "./sig/digest";
 import { cavageSign, type SignTarget } from "./sig/cavage";
 import { rfc9421Sign } from "./sig/rfc9421";
 import { KEY_ID } from "./actor";
+import { USER_AGENT } from "./config";
 
 const AS2 = "application/activity+json";
 
@@ -46,6 +47,7 @@ export async function deliver(
       Date: date,
       Digest: digest,
       "Content-Type": AS2,
+      "User-Agent": USER_AGENT,
       Signature: cavage,
     },
     body,
@@ -67,6 +69,7 @@ export async function deliver(
       Date: date,
       Digest: digest,
       "Content-Type": AS2,
+      "User-Agent": USER_AGENT,
       "Signature-Input": rfc["Signature-Input"],
       Signature: rfc.Signature,
     },

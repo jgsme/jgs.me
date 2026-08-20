@@ -1,4 +1,5 @@
 import { importPublicKey } from "./sig/keys";
+import { USER_AGENT } from "./config";
 
 export type RemoteActor = {
   id: string;
@@ -29,13 +30,21 @@ export async function fetchRemoteActor(
   const cached = await kv.get(cacheKey, "json");
   if (cached) return cached as RemoteActor;
 
-  const res = await fetch(uri, { headers: { Accept: ACCEPT } });
-  if (!res.ok) return null;
+  const res = await fetch(uri, {
+    headers: { Accept: ACCEPT, "User-Agent": USER_AGENT },
+  });
+  if (!res.ok) {
+    console.log(`[remote] fetch failed uri=${uri} status=${res.status}`);
+    return null;
+  }
 
   const doc = (await res.json()) as Record<string, any>;
   const pem = doc?.publicKey?.publicKeyPem;
   const inbox = doc?.inbox;
-  if (typeof pem !== "string" || typeof inbox !== "string") return null;
+  if (typeof pem !== "string" || typeof inbox !== "string") {
+    console.log(`[remote] actor missing publicKeyPem/inbox uri=${uri}`);
+    return null;
+  }
 
   const actor: RemoteActor = {
     id: typeof doc.id === "string" ? doc.id : uri,

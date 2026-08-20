@@ -15,7 +15,9 @@ describe("鍵の生成と往復", () => {
   it("RSA-2048 の鍵ペアを作れる", async () => {
     const { privateKey, publicKey } = await generateKeyPair();
     expect(privateKey.algorithm.name).toBe("RSASSA-PKCS1-v1_5");
-    expect((publicKey.algorithm as RsaHashedKeyAlgorithm).modulusLength).toBe(2048);
+    expect((publicKey.algorithm as RsaHashedKeyAlgorithm).modulusLength).toBe(
+      2048,
+    );
   });
 
   it("公開鍵を SPKI PEM に書き出せる", async () => {

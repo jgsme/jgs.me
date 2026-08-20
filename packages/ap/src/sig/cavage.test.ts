@@ -101,7 +101,10 @@ describe("cavageSign / cavageVerify", () => {
 
   it("パスを差し替えると検証に落ちる", async () => {
     const h = await cavageSign(TARGET, priv, KEY_ID);
-    const tampered = { ...TARGET, url: "https://mastodon.social/users/other/inbox" };
+    const tampered = {
+      ...TARGET,
+      url: "https://mastodon.social/users/other/inbox",
+    };
     expect(await cavageVerify(tampered, pub, h)).toBe(false);
   });
 

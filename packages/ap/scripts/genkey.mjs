@@ -17,6 +17,10 @@ const wrap = (label, buf) => {
   return `-----BEGIN ${label}-----\n${b64.match(/.{1,64}/g).join("\n")}\n-----END ${label}-----`;
 };
 
-console.log(wrap("PRIVATE KEY", await crypto.subtle.exportKey("pkcs8", privateKey)));
+console.log(
+  wrap("PRIVATE KEY", await crypto.subtle.exportKey("pkcs8", privateKey)),
+);
 console.log();
-console.log(wrap("PUBLIC KEY", await crypto.subtle.exportKey("spki", publicKey)));
+console.log(
+  wrap("PUBLIC KEY", await crypto.subtle.exportKey("spki", publicKey)),
+);

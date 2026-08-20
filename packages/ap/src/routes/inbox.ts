@@ -3,7 +3,11 @@ import { eq } from "drizzle-orm";
 import { followers } from "@jigsaw/db";
 import { getDB, type Env } from "../db";
 import { verifyDigest } from "../sig/digest";
-import { cavageVerify, parseCavageHeader, type SignTarget } from "../sig/cavage";
+import {
+  cavageVerify,
+  parseCavageHeader,
+  type SignTarget,
+} from "../sig/cavage";
 import { rfc9421Verify } from "../sig/rfc9421";
 import { fetchPublicKey, fetchRemoteActor } from "../remote";
 import { importPrivateKey } from "../sig/keys";
@@ -109,7 +113,11 @@ inbox.post("/ap/inbox", async (c) => {
       })
       .onConflictDoUpdate({
         target: followers.id,
-        set: { inbox: remote.inbox, sharedInbox: remote.sharedInbox, state: "accepted" },
+        set: {
+          inbox: remote.inbox,
+          sharedInbox: remote.sharedInbox,
+          state: "accepted",
+        },
       });
 
     const priv = await importPrivateKey(c.env.AP_PRIVATE_KEY);

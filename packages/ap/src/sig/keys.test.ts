@@ -4,6 +4,7 @@ import {
   generateKeyPair,
   importPrivateKey,
   importPublicKey,
+  normalizePublicPem,
 } from "./keys";
 
 // Mastodon の実鍵 (https://mastodon.social/users/Mastodon#main-key) と同じ形式。
@@ -57,5 +58,44 @@ describe("鍵の生成と往復", () => {
 
   it("壊れた PEM は throw する", async () => {
     await expect(importPublicKey("not a pem")).rejects.toThrow();
+  });
+});
+
+// Secrets への投入時に改行が潰れることが実際に起きた。
+// actor の publicKeyPem は生で相手に渡るので、どう入っていても
+// 正しい PEM に直してから出す。
+describe("normalizePublicPem", () => {
+  it("正しい PEM はそのまま", async () => {
+    const { publicKey } = await generateKeyPair();
+    const pem = await exportPublicPem(publicKey);
+    expect(normalizePublicPem(pem)).toBe(pem);
+  });
+
+  it("改行がスペースに潰れた PEM を直せる", async () => {
+    const { publicKey } = await generateKeyPair();
+    const pem = await exportPublicPem(publicKey);
+    expect(normalizePublicPem(pem.replace(/\n/g, " "))).toBe(pem);
+  });
+
+  it("ヘッダとフッタが落ちた base64 だけでも直せる", async () => {
+    const { publicKey } = await generateKeyPair();
+    const pem = await exportPublicPem(publicKey);
+    const bodyOnly = pem
+      .replace("-----BEGIN PUBLIC KEY-----", "")
+      .replace("-----END PUBLIC KEY-----", "")
+      .replace(/\s+/g, " ")
+      .trim();
+    expect(normalizePublicPem(bodyOnly)).toBe(pem);
+  });
+
+  it("直した PEM は import できる", async () => {
+    const { publicKey } = await generateKeyPair();
+    const pem = await exportPublicPem(publicKey);
+    const fixed = normalizePublicPem(pem.replace(/\n/g, " "));
+    expect((await importPublicKey(fixed)).type).toBe("public");
+  });
+
+  it("空文字は throw する", () => {
+    expect(() => normalizePublicPem("")).toThrow();
   });
 });

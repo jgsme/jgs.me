@@ -17,7 +17,9 @@ export const pages = sqliteTable("page", {
     .notNull()
     .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
   image: text("image"),
-  sbID: text("sbID").notNull(),
+  // 本文オブジェクトの R2 キー。Scrapbox 由来は Scrapbox ID、
+  // diary 由来は mp-<uuid>。DB のカラム名は歴史的経緯で sbID のまま。
+  bodyKey: text("sbID").notNull(),
 });
 
 export const articles = sqliteTable("article", {
@@ -135,3 +137,73 @@ export const pageSimilarities = sqliteTable(
   },
   (t) => [primaryKey({ columns: [t.runID, t.pageID, t.relatedPageID] })],
 );
+
+// ActivityPub / AT Protocol の native 表現と ID マッピング。
+// 記事の実体は page と R2 が持ち、ここは federation 固有の情報だけを隔離する。
+// pivot 形式 (AS2) を都度導出できるよう、各プロトコルの原本をそのまま保存する。
+export const objects = sqliteTable("object", {
+  // 正準 URI。自分の記事は https://w.jgs.me/o/<page.id>、外部由来は相手の URI。
+  id: text("id").primaryKey(),
+  // 自分の記事のときだけ入る。外部から受信したオブジェクトは null。
+  pageID: integer("pageID").references(() => pages.id),
+  sourceProtocol: text("source_protocol").notNull(), // 'ap' | 'web' | 'atproto'
+  as2: text("as2"),
+  mf2: text("mf2"),
+  atproto: text("atproto"),
+  ourAs2: text("our_as2"),
+  deleted: integer("deleted", { mode: "boolean" }).notNull().default(false),
+  created: text("created")
+    .notNull()
+    .default(sql`(CURRENT_TIMESTAMP)`),
+  updated: text("updated")
+    .notNull()
+    .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+});
+
+// 同一オブジェクトの他プロトコルでの複製。
+// objectID には object.id が入る。それ以外の用途に流用しない。
+// cid は AT Protocol 専用。AS2 に CID を置く場所がなく、
+// pivot を往復させると空文字になるため独立したカラムで持つ。
+export const copies = sqliteTable(
+  "copy",
+  {
+    objectID: text("objectID").notNull(),
+    protocol: text("protocol").notNull(),
+    uri: text("uri").notNull(),
+    cid: text("cid"),
+  },
+  (t) => [primaryKey({ columns: [t.objectID, t.protocol] })],
+);
+
+// 受信した反応。ActivityPub 経由と Webmention 経由を同じテーブルに入れる。
+// 読者にとって「Mastodon の Like」と「IndieWeb の u-like-of」は同じものなので、
+// 表示層は source_protocol を見ない。
+export const reactions = sqliteTable("reaction", {
+  id: text("id").primaryKey(),
+  targetPageID: integer("targetPageID")
+    .notNull()
+    .references(() => pages.id),
+  sourceProtocol: text("source_protocol").notNull(), // 'ap' | 'web'
+  kind: text("kind").notNull(), // like | emoji | announce | reply | mention
+  emoji: text("emoji"),
+  actorName: text("actor_name"),
+  actorURL: text("actor_url"),
+  actorIcon: text("actor_icon"),
+  content: text("content"),
+  created: text("created")
+    .notNull()
+    .default(sql`(CURRENT_TIMESTAMP)`),
+  // Undo(Like) 等で取り消されたときに立てる。行は消さず履歴として残す。
+  undone: integer("undone", { mode: "boolean" }).notNull().default(false),
+});
+
+export const followers = sqliteTable("follower", {
+  id: text("id").primaryKey(), // follower の actor URI
+  protocol: text("protocol").notNull(),
+  inbox: text("inbox").notNull(),
+  sharedInbox: text("shared_inbox"),
+  state: text("state").notNull(), // 'pending' | 'accepted'
+  created: text("created")
+    .notNull()
+    .default(sql`(CURRENT_TIMESTAMP)`),
+});

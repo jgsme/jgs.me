@@ -3,15 +3,18 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/schema.ts"
+    ".": "./src/schema.ts",
+    "./body-key": "./src/bodyKey.ts"
   },
   "scripts": {
-    "gen": "drizzle-kit generate"
+    "gen": "drizzle-kit generate",
+    "test": "vitest run"
   },
   "dependencies": {
     "drizzle-orm": "catalog:"
   },
   "devDependencies": {
-    "drizzle-kit": "catalog:"
+    "drizzle-kit": "catalog:",
+    "vitest": "catalog:"
   }
 }

@@ -31,9 +31,11 @@ const Page = () => {
         </div>
       </div>
       <article className="space-y-1">
-        {d.blocks.map((block, i) => (
-          <ScrapboxBlock key={i} block={block} />
-        ))}
+        {d.bodyHtml !== null ? (
+          <div dangerouslySetInnerHTML={{ __html: d.bodyHtml }} />
+        ) : (
+          d.blocks.map((block, i) => <ScrapboxBlock key={i} block={block} />)
+        )}
       </article>
       <RelatedPages related={d.related} />
       {/^\d{4}$/.test(d.title) && (

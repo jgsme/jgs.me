@@ -60,7 +60,7 @@ export class OnThisDayWorkflow extends WorkflowEntrypoint<
         .select({
           id: pages.id,
           title: pages.title,
-          sbID: pages.sbID,
+          bodyKey: pages.bodyKey,
           updated: pages.updated,
         })
         .from(pages)
@@ -110,7 +110,7 @@ export class OnThisDayWorkflow extends WorkflowEntrypoint<
 
       await step.do(`batch-${i}-${runId}`, async () => {
         for (const page of batch) {
-          const obj = await this.env.R2.get(`${page.sbID}.json`);
+          const obj = await this.env.R2.get(`${page.bodyKey}.json`);
           if (!obj) continue;
 
           const data = await obj.json<PageData>();

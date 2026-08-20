@@ -3,6 +3,7 @@ import type { Bindings } from "@/server";
 import { parse } from "@progfay/scrapbox-parser";
 import { getDB } from "@/db/getDB";
 import { articles, pageSimilarities, pages } from "@jigsaw/db";
+import { isMicropubBodyKey, r2KeyOf } from "@jigsaw/db/body-key";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { useConfig } from "vike-react/useConfig";
 import { purifyScrapboxText } from "@/utils/purifyScrapboxText";
@@ -25,24 +26,44 @@ type R2PageData = {
   lines: { text: string }[];
 };
 
-async function fetchPageText(
+type Body = { kind: "scrapbox"; text: string } | { kind: "html"; html: string };
+
+async function fetchBody(
   r2: R2Bucket,
   bodyKey: string,
   title: string,
-): Promise<string | null> {
-  if (!bodyKey) {
+): Promise<Body | null> {
+  const key = r2KeyOf(bodyKey);
+  // 空文字は「本文が存在しない」。R2 を引きに行かない。
+  if (!key) {
     console.error(`[R2 skip] title=${title} (no bodyKey in DB)`);
     return null;
   }
 
-  const obj = await r2.get(`${bodyKey}.json`);
+  const obj = await r2.get(key);
   if (!obj) {
-    console.error(`[R2 miss] title=${title}, bodyKey=${bodyKey}`);
+    console.error(`[R2 miss] title=${title}, key=${key}`);
     return null;
   }
 
+  if (isMicropubBodyKey(bodyKey)) {
+    // Micropub 投入時にサニタイズ済み (計画2 Task 2)。表示時は再サニタイズしない。
+    return { kind: "html", html: await obj.text() };
+  }
+
   const data = await obj.json<R2PageData>();
-  return data.lines.map((l) => l.text).join("\n");
+  return {
+    kind: "scrapbox",
+    text: data.lines.map((l) => l.text).join("\n"),
+  };
+}
+
+// description 用。本文そのものではないのでタグを落とすだけで足りる。
+function stripTags(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 const data = async (c: Context) => {
@@ -87,9 +108,9 @@ const data = async (c: Context) => {
     related = pickRandom(candidates, RELATED_COUNT);
   }
 
-  const text = await fetchPageText(c.env.R2, bodyKey, title);
+  const body = await fetchBody(c.env.R2, bodyKey, title);
 
-  if (text === null) {
+  if (body === null) {
     config({
       title: `${title} - I am Electrical machine`,
     });
@@ -99,60 +120,95 @@ const data = async (c: Context) => {
       pageId,
       articleId,
       blocks: [],
+      bodyHtml: null,
       description: null,
       related: [],
     };
   }
-  const blocks = parse(text);
+
+  // Scrapbox 記法だけがパーサを通る。HTML はそのまま渡す。
+  const bodyHtml = body.kind === "html" ? body.html : null;
 
   let fromDate: string | null = null;
-  let skipLines = 0;
+  let filteredBlocks: ReturnType<typeof parse> = [];
+  let description = "";
 
-  const firstLineIndex = blocks.findIndex(
-    (b) => b.type === "line" && b.nodes.length > 0,
-  );
+  if (body.kind === "scrapbox") {
+    const blocks = parse(body.text);
+    let skipLines = 0;
 
-  if (firstLineIndex !== -1) {
-    const firstLine = blocks[firstLineIndex];
-    if (firstLine.type === "line" && firstLine.nodes.length > 0) {
-      const firstNode = firstLine.nodes[0];
+    const firstLineIndex = blocks.findIndex(
+      (b) => b.type === "line" && b.nodes.length > 0,
+    );
 
-      if (
-        firstNode.type === "plain" &&
-        firstNode.text.trim() === "from" &&
-        firstLine.nodes.length >= 2
+    if (firstLineIndex !== -1) {
+      const firstLine = blocks[firstLineIndex];
+      if (firstLine.type === "line" && firstLine.nodes.length > 0) {
+        const firstNode = firstLine.nodes[0];
+
+        if (
+          firstNode.type === "plain" &&
+          firstNode.text.trim() === "from" &&
+          firstLine.nodes.length >= 2
+        ) {
+          const secondNode = firstLine.nodes[1];
+          if (
+            secondNode.type === "link" &&
+            secondNode.pathType === "relative"
+          ) {
+            const match = secondNode.href.match(/^(\d{4})(\d{2})(\d{2})$/);
+            if (match) {
+              const [, year, month, day] = match;
+              fromDate = `${year}/${month}/${day}`;
+              skipLines = 2;
+            }
+          }
+        }
+      }
+    }
+
+    let dateLineIndex: number | null = null;
+    if (!fromDate) {
+      for (
+        let i = blocks.length - 1;
+        i >= Math.max(0, blocks.length - 5);
+        i--
       ) {
-        const secondNode = firstLine.nodes[1];
-        if (secondNode.type === "link" && secondNode.pathType === "relative") {
-          const match = secondNode.href.match(/^(\d{4})(\d{2})(\d{2})$/);
-          if (match) {
-            const [, year, month, day] = match;
-            fromDate = `${year}/${month}/${day}`;
-            skipLines = 2;
+        const block = blocks[i];
+        if (block.type !== "line") continue;
+        for (const node of block.nodes) {
+          if (node.type === "hashTag") {
+            const match = node.href.match(/^(\d{4})(\d{2})(\d{2})$/);
+            if (match) {
+              const [, year, month, day] = match;
+              fromDate = `${year}/${month}/${day}`;
+              dateLineIndex = i;
+              break;
+            }
           }
         }
+        if (fromDate) break;
       }
     }
-  }
 
-  let dateLineIndex: number | null = null;
-  if (!fromDate) {
-    for (let i = blocks.length - 1; i >= Math.max(0, blocks.length - 5); i--) {
-      const block = blocks[i];
-      if (block.type !== "line") continue;
-      for (const node of block.nodes) {
-        if (node.type === "hashTag") {
-          const match = node.href.match(/^(\d{4})(\d{2})(\d{2})$/);
-          if (match) {
-            const [, year, month, day] = match;
-            fromDate = `${year}/${month}/${day}`;
-            dateLineIndex = i;
-            break;
-          }
-        }
+    let lineCount = 0;
+    filteredBlocks = blocks.filter((block, index) => {
+      if (block.type === "title") return false;
+      if (block.type === "line" && skipLines > 0) {
+        lineCount++;
+        if (lineCount <= skipLines) return false;
       }
-      if (fromDate) break;
-    }
+      if (dateLineIndex !== null && index === dateLineIndex) return false;
+      return true;
+    });
+
+    const rawDescription = filteredBlocks
+      .filter((b) => b.type === "line")
+      .map((b) => (b.type === "line" ? b.nodes.map((n) => n.raw).join("") : ""))
+      .join("\n");
+    description = purifyScrapboxText(rawDescription).slice(0, 200);
+  } else {
+    description = stripTags(body.html).slice(0, 200);
   }
 
   if (!fromDate) {
@@ -162,23 +218,6 @@ const data = async (c: Context) => {
       fromDate = `${year}/${month}/${day}`;
     }
   }
-
-  let lineCount = 0;
-  const filteredBlocks = blocks.filter((block, index) => {
-    if (block.type === "title") return false;
-    if (block.type === "line" && skipLines > 0) {
-      lineCount++;
-      if (lineCount <= skipLines) return false;
-    }
-    if (dateLineIndex !== null && index === dateLineIndex) return false;
-    return true;
-  });
-
-  const rawDescription = filteredBlocks
-    .filter((b) => b.type === "line")
-    .map((b) => (b.type === "line" ? b.nodes.map((n) => n.raw).join("") : ""))
-    .join("\n");
-  const description = purifyScrapboxText(rawDescription).slice(0, 200);
 
   config({
     title: `${title} - I am Electrical machine`,
@@ -191,6 +230,7 @@ const data = async (c: Context) => {
     pageId,
     articleId,
     blocks: filteredBlocks,
+    bodyHtml,
     fromDate,
     description,
     related,

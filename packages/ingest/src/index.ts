@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { articles, pages, similarityRuns } from "@jigsaw/db";
 import { isAuthorized } from "./auth";
 import { chunk, parseRows } from "./rows";
+import { handleMicropubCreate } from "./micropub";
 
 export interface Env {
   DB: D1Database;
@@ -25,13 +26,20 @@ function notFound(): Response {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+
+    // Micropub は similarity とは別のトークンで認証する (ハンドラ内でチェックする)。
+    if (url.pathname === "/micropub" && request.method === "POST") {
+      return handleMicropubCreate(request, env);
+    }
+
+    // ここから下は similarity 用。共有シークレットで一括認証する。
     if (
       !isAuthorized(request.headers.get("Authorization"), env.SIMILARITY_TOKEN)
     ) {
       return unauthorized();
     }
 
-    const url = new URL(request.url);
     const db = drizzle(env.DB);
 
     // 類似度計算の対象。article として公開しているページだけを返す。

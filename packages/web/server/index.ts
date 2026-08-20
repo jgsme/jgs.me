@@ -3,6 +3,7 @@ import { apply, serve } from "@photonjs/hono";
 import type { Bindings } from "./types";
 import { redirects } from "./routes/redirects";
 import { rss } from "./routes/rss";
+import { wellknown } from "./routes/wellknown";
 
 export type { Bindings } from "./types";
 
@@ -45,6 +46,7 @@ app.use("/p/*", createCacheMiddleware(604800));
 
 app.route("/", redirects);
 app.route("/", rss);
+app.route("/", wellknown);
 
 apply(app);
 export default serve(app);

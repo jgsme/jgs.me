@@ -3,7 +3,11 @@ import { eq } from "drizzle-orm";
 import { articles, pages, similarityRuns } from "@jigsaw/db";
 import { isAuthorized } from "./auth";
 import { chunk, parseRows } from "./rows";
-import { handleMicropubCreate } from "./micropub";
+import {
+  handleMicropubConfig,
+  handleMicropubCreate,
+  handleMicropubMedia,
+} from "./micropub";
 
 export interface Env {
   DB: D1Database;
@@ -29,8 +33,14 @@ export default {
     const url = new URL(request.url);
 
     // Micropub は similarity とは別のトークンで認証する (ハンドラ内でチェックする)。
-    if (url.pathname === "/micropub" && request.method === "POST") {
-      return handleMicropubCreate(request, env);
+    if (url.pathname === "/micropub") {
+      if (request.method === "POST") return handleMicropubCreate(request, env);
+      if (request.method === "GET" && url.searchParams.get("q") === "config") {
+        return handleMicropubConfig(request, env);
+      }
+    }
+    if (url.pathname === "/micropub/media" && request.method === "POST") {
+      return handleMicropubMedia(request, env);
     }
 
     // ここから下は similarity 用。共有シークレットで一括認証する。

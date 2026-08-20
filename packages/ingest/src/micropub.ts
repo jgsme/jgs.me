@@ -102,3 +102,86 @@ export async function handleMicropubCreate(
     headers: { Location: articleURL(entry.name) },
   });
 }
+
+export async function handleMicropubConfig(
+  request: Request,
+  env: Env,
+): Promise<Response> {
+  if (!isAuthorized(request.headers.get("Authorization"), env.MICROPUB_TOKEN)) {
+    return new Response("unauthorized", { status: 401 });
+  }
+  return Response.json({
+    "media-endpoint": `${new URL(request.url).origin}/micropub/media`,
+  });
+}
+
+// 拡張子は Content-Type から決める。クライアントのファイル名を信用しない。
+const EXT_BY_TYPE: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/gif": "gif",
+  "image/webp": "webp",
+  "image/avif": "avif",
+};
+
+export async function handleMicropubMedia(
+  request: Request,
+  env: Env,
+): Promise<Response> {
+  if (!isAuthorized(request.headers.get("Authorization"), env.MICROPUB_TOKEN)) {
+    return new Response("unauthorized", { status: 401 });
+  }
+
+  let form: FormData;
+  try {
+    form = await request.formData();
+  } catch {
+    return Response.json(
+      {
+        error: "invalid_request",
+        error_description: "multipart/form-data required",
+      },
+      { status: 400 },
+    );
+  }
+
+  // workers-types の FormData.get は string | null と宣言されているが、
+  // 実行時にファイルパートは File が返る。型定義が実体に追いついていないだけなので、
+  // ここで実体に合わせて広げ直し、instanceof で本当に File かを確かめる。
+  const file = form.get("file") as unknown as File | string | null;
+  if (!(file instanceof File)) {
+    return Response.json(
+      { error: "invalid_request", error_description: "file part is required" },
+      { status: 400 },
+    );
+  }
+
+  const ext = EXT_BY_TYPE[file.type];
+  if (!ext) {
+    return Response.json(
+      {
+        error: "invalid_request",
+        error_description: `unsupported content type: ${file.type}`,
+      },
+      { status: 400 },
+    );
+  }
+
+  const bytes = await file.arrayBuffer();
+  // 内容から鍵を作る。同じ画像を二度上げても1つにまとまる。
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  const hex = [...new Uint8Array(digest)]
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  const key = `${hex}.${ext}`;
+
+  // 画像は本文とは別バケット (w-media)。
+  await env.MEDIA.put(key, bytes, {
+    httpMetadata: { contentType: file.type },
+  });
+
+  return new Response(null, {
+    status: 201,
+    headers: { Location: `${env.MEDIA_BASE_URL}/${key}` },
+  });
+}

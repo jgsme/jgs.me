@@ -3,10 +3,31 @@
 // 保存側で先に落としておけば自サイトの表示と配信内容が一致する。
 // 見出しは Mastodon 側で p+strong に変換されるが、自サイトでは意味を保つので残す。
 export const ALLOWED_TAGS = [
-  "p", "span", "br", "a", "del", "pre", "code",
-  "em", "strong", "b", "i", "u", "ul", "ol", "li", "blockquote",
-  "h1", "h2", "h3", "h4", "h5", "h6",
-  "img", "figure", "figcaption",
+  "p",
+  "span",
+  "br",
+  "a",
+  "del",
+  "pre",
+  "code",
+  "em",
+  "strong",
+  "b",
+  "i",
+  "u",
+  "ul",
+  "ol",
+  "li",
+  "blockquote",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "img",
+  "figure",
+  "figcaption",
 ] as const;
 
 // 非許可タグは原則「タグだけ外して中身のテキストは残す」が、
@@ -14,8 +35,15 @@ export const ALLOWED_TAGS = [
 // (JS / CSS / 別マークアップ言語) であり、剥き出しにすると
 // ページに意味不明な文字列が流れ込むため。
 export const DROP_WITH_CONTENT = [
-  "script", "style", "iframe", "object", "embed",
-  "svg", "math", "template", "noscript",
+  "script",
+  "style",
+  "iframe",
+  "object",
+  "embed",
+  "svg",
+  "math",
+  "template",
+  "noscript",
 ] as const;
 
 // style と on* は一切許さない。

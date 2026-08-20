@@ -101,7 +101,10 @@ describe("parseEntry", () => {
 
   it("値が配列でなければ throw (Micropub は全値が配列)", () => {
     expect(() =>
-      parseEntry({ ...VALID, properties: { ...VALID.properties, name: "文字列" } }),
+      parseEntry({
+        ...VALID,
+        properties: { ...VALID.properties, name: "文字列" },
+      }),
     ).toThrow("name is required");
   });
 

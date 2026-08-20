@@ -4,8 +4,22 @@ import { ALLOWED_ATTRS, ALLOWED_TAGS, DROP_WITH_CONTENT } from "./sanitize";
 describe("ALLOWED_TAGS", () => {
   it("Mastodon v4.2 が通すタグを全て含む", () => {
     for (const tag of [
-      "p", "span", "br", "a", "del", "pre", "code",
-      "em", "strong", "b", "i", "u", "ul", "ol", "li", "blockquote",
+      "p",
+      "span",
+      "br",
+      "a",
+      "del",
+      "pre",
+      "code",
+      "em",
+      "strong",
+      "b",
+      "i",
+      "u",
+      "ul",
+      "ol",
+      "li",
+      "blockquote",
     ]) {
       expect(ALLOWED_TAGS).toContain(tag);
     }
@@ -25,8 +39,18 @@ describe("ALLOWED_TAGS", () => {
 
   it("スクリプト実行につながるタグを含まない", () => {
     for (const tag of [
-      "script", "style", "iframe", "object", "embed",
-      "form", "input", "button", "link", "meta", "base", "svg",
+      "script",
+      "style",
+      "iframe",
+      "object",
+      "embed",
+      "form",
+      "input",
+      "button",
+      "link",
+      "meta",
+      "base",
+      "svg",
     ]) {
       expect(ALLOWED_TAGS).not.toContain(tag);
     }
@@ -36,8 +60,15 @@ describe("ALLOWED_TAGS", () => {
 describe("DROP_WITH_CONTENT", () => {
   it("中身のテキストごと落とすタグを含む", () => {
     for (const tag of [
-      "script", "style", "iframe", "object", "embed",
-      "svg", "math", "template", "noscript",
+      "script",
+      "style",
+      "iframe",
+      "object",
+      "embed",
+      "svg",
+      "math",
+      "template",
+      "noscript",
     ]) {
       expect(DROP_WITH_CONTENT).toContain(tag);
     }

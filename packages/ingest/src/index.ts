@@ -7,6 +7,12 @@ import { chunk, parseRows } from "./rows";
 export interface Env {
   DB: D1Database;
   SIMILARITY_TOKEN: string;
+  MICROPUB_TOKEN: string;
+  // 記事本文。Scrapbox アーカイブと同じバケット。
+  R2: R2Bucket;
+  // Micropub media endpoint の画像。
+  MEDIA: R2Bucket;
+  MEDIA_BASE_URL: string;
 }
 
 function unauthorized(): Response {

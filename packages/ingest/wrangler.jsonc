@@ -20,4 +20,19 @@
       "migrations_dir": "../db/drizzle",
     },
   ],
+  "r2_buckets": [
+    {
+      // 記事本文。Scrapbox アーカイブと同居する。
+      "binding": "R2",
+      "bucket_name": "w-data",
+    },
+    {
+      // Micropub media endpoint の画像。
+      "binding": "MEDIA",
+      "bucket_name": "w-media",
+    },
+  ],
+  "vars": {
+    "MEDIA_BASE_URL": "https://media.w.jgs.me",
+  },
 }

@@ -28,4 +28,10 @@
       "bucket_name": "w-data",
     },
   ],
+  "services": [
+    {
+      "binding": "AP",
+      "service": "w-ap",
+    },
+  ],
 }

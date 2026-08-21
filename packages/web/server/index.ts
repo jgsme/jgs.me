@@ -4,6 +4,7 @@ import type { Bindings } from "./types";
 import { redirects } from "./routes/redirects";
 import { rss } from "./routes/rss";
 import { wellknown } from "./routes/wellknown";
+import { objects } from "./routes/objects";
 
 export type { Bindings } from "./types";
 
@@ -47,6 +48,7 @@ app.use("/p/*", createCacheMiddleware(604800));
 app.route("/", redirects);
 app.route("/", rss);
 app.route("/", wellknown);
+app.route("/", objects);
 
 apply(app);
 export default serve(app);

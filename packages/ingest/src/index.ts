@@ -18,6 +18,7 @@ export interface Env {
   // Micropub media endpoint の画像。
   MEDIA: R2Bucket;
   MEDIA_BASE_URL: string;
+  AP: Fetcher;
 }
 
 function unauthorized(): Response {

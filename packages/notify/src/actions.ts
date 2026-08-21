@@ -51,3 +51,18 @@ export async function applyAction(
     }
   }
 }
+
+// 記事を公開したので ActivityPub のフォロワーへ配送する。
+// 失敗しても記事の登録自体は成功させる (配送は後から再実行できる)。
+// Service Binding の fetch はホスト名を見ない。パスだけが ap に届く。
+export async function publishToAP(ap: Fetcher, pageId: number): Promise<void> {
+  try {
+    await ap.fetch("https://ap.internal/internal/publish", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pageID: pageId, kind: "create" }),
+    });
+  } catch (e) {
+    console.error(`[publish] failed pageID=${pageId} ${String(e)}`);
+  }
+}

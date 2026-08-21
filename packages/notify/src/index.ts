@@ -8,7 +8,7 @@ import { pages, articles, excludedPages, clips } from "@jigsaw/db";
 import { eq, isNull, desc, and, sql, SQL } from "drizzle-orm";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 import { verifyKey } from "discord-interactions";
-import { applyAction } from "./actions";
+import { applyAction, publishToAP } from "./actions";
 import { isAuthorized } from "./auth";
 import {
   PULL_COMMAND,
@@ -33,6 +33,7 @@ type Env = {
   COMMAND_REGISTER_TOKEN: string;
   SITE_URL: string;
   NOTIFY_WORKFLOW: Workflow;
+  AP: Fetcher;
 };
 
 const DISCORD_API = "https://discord.com/api/v10";
@@ -286,6 +287,12 @@ export default {
         decision.action,
         decision.pageId,
       );
+
+      // interaction は 3 秒で返す必要があるので配送の起動は待たない。
+      if (decision.action === "register" && result.status === "ok") {
+        ctx.waitUntil(publishToAP(env.AP, decision.pageId));
+      }
+
       return Response.json({
         type: 7,
         data: {

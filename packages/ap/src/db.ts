@@ -4,9 +4,16 @@ export function getDB(d1: D1Database) {
   return drizzle(d1);
 }
 
+export type DeliveryMessage = {
+  inbox: string;
+  activity: unknown;
+};
+
 export type Env = {
   DB: D1Database;
   KV: KVNamespace;
+  R2: R2Bucket;
+  DELIVERY: Queue<DeliveryMessage>;
   AP_PRIVATE_KEY: string;
   AP_PUBLIC_KEY: string;
 };

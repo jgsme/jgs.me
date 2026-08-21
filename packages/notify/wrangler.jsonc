@@ -23,6 +23,13 @@
       "migrations_dir": "../db/drizzle",
     },
   ],
+  "services": [
+    {
+      // 記事公開を ActivityPub の fan-out に繋ぐ内部呼び出し。
+      "binding": "AP",
+      "service": "w-ap",
+    },
+  ],
   "workflows": [
     {
       "name": "notify-workflow",

@@ -10,7 +10,11 @@ export async function runWebmention(
       await processWebmention(msg.body, env);
       msg.ack();
     } catch (e) {
-      console.error(`[webmention] error ${String(e)}`);
+      // どの source からのどの target が落ちたかを残す。これが無いと
+      // DLQ を引くまで対象が分からない。
+      console.error(
+        `[webmention] error source=${msg.body.source} target=${msg.body.target} ${String(e)}`,
+      );
       msg.retry();
     }
   }

@@ -59,6 +59,10 @@
         "max_batch_size": 5,
         "max_batch_timeout": 10,
         "max_retries": 2,
+        // 落ちた Webmention は他人からの寄与なので捨てない。consumer は
+        // 付けない。読みたくなったら wrangler queues consumer http add で
+        // pull consumer を後付けして HTTP で引ける。
+        "dead_letter_queue": "ap-webmention-dlq",
       },
     ],
   },

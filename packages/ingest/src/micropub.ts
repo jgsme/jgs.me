@@ -101,7 +101,7 @@ export async function handleMicropubCreate(
   // 失敗しても投入自体は成功させる (配送は後から再実行できる)。
   // Service Binding の fetch はホスト名を見ない。パスだけが ap に届く。
   try {
-    await env.AP.fetch("https://internal/internal/publish", {
+    await env.AP.fetch("https://ap.internal/internal/publish", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ pageID: page.id, kind: "create" }),

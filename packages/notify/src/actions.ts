@@ -57,7 +57,7 @@ export async function applyAction(
 // Service Binding の fetch はホスト名を見ない。パスだけが ap に届く。
 export async function publishToAP(ap: Fetcher, pageId: number): Promise<void> {
   try {
-    await ap.fetch("https://internal/internal/publish", {
+    await ap.fetch("https://ap.internal/internal/publish", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ pageID: pageId, kind: "create" }),

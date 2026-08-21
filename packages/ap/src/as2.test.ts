@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { summarize, toArticle } from "./as2";
+import { summarize, toArticle, toISO } from "./as2";
 import { ACTOR_URI } from "./actor";
 
 const PAGE = {
@@ -28,6 +28,44 @@ describe("summarize", () => {
 
   it("空の HTML では空文字を返す", () => {
     expect(summarize("")).toBe("");
+  });
+
+  it("ブロックの境目で語をつなげない", () => {
+    expect(summarize("<p>あ</p><p>い</p>")).toBe("あ い");
+  });
+
+  it("リストも項目が連結しない", () => {
+    expect(summarize("<ul><li>あ</li><li>い</li></ul>")).toBe("あ い");
+  });
+
+  it("HTML エンティティを戻す (CW 欄はプレーンテキスト)", () => {
+    expect(summarize("<p>&lt;b&gt; &amp; x</p>")).toBe("<b> & x");
+  });
+
+  it("&amp;lt; を二重にデコードしない", () => {
+    expect(summarize("<p>&amp;lt;</p>")).toBe("&lt;");
+  });
+});
+
+describe("toISO", () => {
+  it("D1 の CURRENT_TIMESTAMP 形式を UTC の ISO8601 にする", () => {
+    expect(toISO("2020-04-02 09:34:00")).toBe("2020-04-02T09:34:00.000Z");
+  });
+
+  it("既に ISO8601 ならそのまま", () => {
+    expect(toISO("2026-08-01T12:00:00.000Z")).toBe("2026-08-01T12:00:00.000Z");
+  });
+
+  it("秒までの ISO8601 もミリ秒付きに揃える", () => {
+    expect(toISO("2026-08-01T12:00:00Z")).toBe("2026-08-01T12:00:00.000Z");
+  });
+
+  it("空文字はそのまま", () => {
+    expect(toISO("")).toBe("");
+  });
+
+  it("日付として読めない値は捏造せずそのまま返す", () => {
+    expect(toISO("not-a-date")).toBe("not-a-date");
   });
 });
 
@@ -75,5 +113,19 @@ describe("toArticle", () => {
 
   it("@context に ActivityStreams が入る", () => {
     expect(a["@context"]).toContain("https://www.w3.org/ns/activitystreams");
+  });
+
+  it("D1 由来の日時を xsd:dateTime に正規化する", () => {
+    const b = toArticle(
+      {
+        id: 1,
+        title: "t",
+        created: "2020-04-02 09:34:00",
+        updated: "2023-04-04 03:37:35",
+      },
+      "<p>x</p>",
+    );
+    expect(b.published).toBe("2020-04-02T09:34:00.000Z");
+    expect(b.updated).toBe("2023-04-04T03:37:35.000Z");
   });
 });

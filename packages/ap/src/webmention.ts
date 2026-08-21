@@ -19,15 +19,23 @@ export async function fetchSource(source: string): Promise<FetchResult> {
     const guard = guardURL(current);
     if (!guard.ok) return { ok: false, reason: `guard:${guard.reason}` };
 
-    const res = await fetch(guard.url.href, {
-      redirect: "manual",
-      headers: {
-        Accept: "text/html, */*;q=0.5",
-        // UA なしのリクエストを別ホストへ 301 するサーバが実在する (config.ts)。
-        "User-Agent": USER_AGENT,
-      },
-      signal: AbortSignal.timeout(10_000),
-    });
+    // 名前解決できないホストやタイムアウトで fetch は throw する。ここで
+    // 握らないと consumer が msg.retry() を呼び、死んだ source に対して
+    // max_retries ぶん無駄に投げ直すことになる。
+    let res: Response;
+    try {
+      res = await fetch(guard.url.href, {
+        redirect: "manual",
+        headers: {
+          Accept: "text/html, */*;q=0.5",
+          // UA なしのリクエストを別ホストへ 301 するサーバが実在する (config.ts)。
+          "User-Agent": USER_AGENT,
+        },
+        signal: AbortSignal.timeout(10_000),
+      });
+    } catch (e) {
+      return { ok: false, reason: `fetch-error:${String(e)}` };
+    }
 
     if (res.status >= 300 && res.status < 400) {
       const loc = res.headers.get("Location");

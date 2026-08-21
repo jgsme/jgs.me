@@ -16,4 +16,6 @@ export type Env = {
   DELIVERY: Queue<DeliveryMessage>;
   AP_PRIVATE_KEY: string;
   AP_PUBLIC_KEY: string;
+  // 空文字なら通知しない。設定漏れでリクエストが失敗し続けるのを避ける。
+  DISCORD_REACTION_WEBHOOK: string;
 };

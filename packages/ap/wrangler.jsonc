@@ -33,4 +33,21 @@
       "bucket_name": "w-data",
     },
   ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "DELIVERY",
+        "queue": "ap-delivery",
+      },
+    ],
+    "consumers": [
+      {
+        "queue": "ap-delivery",
+        "max_batch_size": 10,
+        "max_batch_timeout": 5,
+        "max_retries": 3,
+        "dead_letter_queue": "ap-delivery-dlq",
+      },
+    ],
+  },
 }

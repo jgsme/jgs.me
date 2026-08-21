@@ -38,8 +38,8 @@ const Page = () => {
           d.blocks.map((block, i) => <ScrapboxBlock key={i} block={block} />)
         )}
       </article>
-      <RelatedPages related={d.related} />
       <Reactions reactions={d.reactions} />
+      <RelatedPages related={d.related} />
       {/^\d{4}$/.test(d.title) && (
         <div className="mt-12 flex justify-center">
           <a

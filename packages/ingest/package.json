@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "echo 'no build step: wrangler がバンドルする'",
     "dev": "wrangler dev --persist-to ../../.wrangler/state",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"

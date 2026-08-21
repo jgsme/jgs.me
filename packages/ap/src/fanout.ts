@@ -9,8 +9,7 @@ export const MAX_AGE_DAYS = 14;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export type FanoutDecision =
-  | { deliver: true }
-  | { deliver: false; reason: "too-old" };
+  { deliver: true } | { deliver: false; reason: "too-old" };
 
 export function decideFanout(
   published: string,

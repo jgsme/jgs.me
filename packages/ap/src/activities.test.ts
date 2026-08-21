@@ -60,7 +60,9 @@ describe("wrapUpdate", () => {
   });
 
   it("id は updated の値を含む (編集ごとに別 activity になる)", () => {
-    expect(a.id).toBe("https://w.jgs.me/o/1234#update-2026-08-02T09:30:00.000Z");
+    expect(a.id).toBe(
+      "https://w.jgs.me/o/1234#update-2026-08-02T09:30:00.000Z",
+    );
   });
 });
 

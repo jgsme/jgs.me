@@ -15,9 +15,9 @@ describe("wantsActivityJson", () => {
   });
 
   it("複数の Accept に混ざっていても true", () => {
-    expect(wantsActivityJson("text/html, application/activity+json;q=0.9")).toBe(
-      true,
-    );
+    expect(
+      wantsActivityJson("text/html, application/activity+json;q=0.9"),
+    ).toBe(true);
   });
 
   it("ブラウザの Accept なら false", () => {

@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { eq } from "drizzle-orm";
-import { followers } from "@jigsaw/db";
+import { articles, followers, pages, reactions } from "@jigsaw/db";
 import { getDB, type Env } from "../db";
 import { sha256Digest, verifyDigest } from "../sig/digest";
 import {
@@ -13,6 +13,14 @@ import { fetchPublicKey, fetchRemoteActor } from "../remote";
 import { importPrivateKey } from "../sig/keys";
 import { deliver } from "../deliver";
 import { ACTOR_URI } from "../actor";
+import { SITE_URL } from "../config";
+import {
+  kindOf,
+  pageIDFromObjectURI,
+  reactionIDOf,
+  targetURIOf,
+} from "../reactions";
+import { notifyDiscord } from "../notify";
 
 const DEDUPE_TTL = 60 * 60 * 24; // 24h
 // 相手の時計とのずれを許す幅。Mastodon も同程度の幅で判定している。
@@ -157,13 +165,127 @@ inbox.post("/ap/inbox", async (c) => {
     return c.text("", 202);
   }
 
-  // 7. Undo(Follow) → follower から消す。
-  if (activity.type === "Undo" && activity.object?.type === "Follow") {
+  // 7. Undo は Follow の取り消しと反応の取り消しの両方に使われる。
+  if (activity.type === "Undo") {
+    const inner = activity.object;
     const actorURI =
       typeof activity.actor === "string" ? activity.actor : activity.actor?.id;
-    if (typeof actorURI === "string") {
-      await db.delete(followers).where(eq(followers.id, actorURI));
+
+    if (inner?.type === "Follow") {
+      if (typeof actorURI === "string") {
+        await db.delete(followers).where(eq(followers.id, actorURI));
+      }
+      return c.text("", 202);
     }
+
+    // Like / EmojiReact / Announce の取り消し。
+    // 行は消さず undone を立てる。履歴として残す。
+    const innerID = typeof inner?.id === "string" ? inner.id : null;
+    if (innerID) {
+      await db
+        .update(reactions)
+        .set({ undone: true })
+        .where(eq(reactions.id, innerID));
+      console.log(`[inbox] undone reaction=${innerID}`);
+    }
+    return c.text("", 202);
+  }
+
+  // 8. Delete → 相手が投稿を消したら、それに対応する反応も消す。
+  //    Undo と違い「最初から無かった」扱いなので行ごと消す。
+  if (activity.type === "Delete") {
+    const objID =
+      typeof activity.object === "string"
+        ? activity.object
+        : typeof activity.object?.id === "string"
+          ? activity.object.id
+          : null;
+    if (objID) {
+      await db.delete(reactions).where(eq(reactions.id, objID));
+      console.log(`[inbox] deleted reaction=${objID}`);
+    }
+    return c.text("", 202);
+  }
+
+  // 9. Like / EmojiReact / Announce / Create(inReplyTo) を反応として記録する。
+  const kind = kindOf(activity);
+  if (kind) {
+    const targetURI = targetURIOf(activity);
+    const pageID = targetURI ? pageIDFromObjectURI(targetURI, SITE_URL) : null;
+    // 自サイトの記事を指していない反応は受け取らない。
+    if (pageID === null) {
+      console.log(`[inbox] reaction for unknown target=${targetURI}`);
+      return c.text("", 202);
+    }
+
+    // reaction.targetPageID は page(id) への FK。存在しない id を insert すると
+    // FK 違反で inbox が 500 を返し、相手がリトライを続ける。URI の形だけでは
+    // 実在を保証できないので、公開済み (article に行がある) かをここで確認する。
+    // 計画6 の resolveTarget と同じ条件。
+    const published = await db
+      .select({ id: pages.id })
+      .from(pages)
+      .innerJoin(articles, eq(articles.pageID, pages.id))
+      .where(eq(pages.id, pageID))
+      .limit(1);
+    if (!published[0]) {
+      console.log(`[inbox] reaction for unpublished page=${pageID}`);
+      return c.text("", 202);
+    }
+
+    const reactionID = reactionIDOf(activity);
+    if (!reactionID) return c.text("", 202);
+
+    const actorURI =
+      typeof activity.actor === "string" ? activity.actor : activity.actor?.id;
+    const remote =
+      typeof actorURI === "string"
+        ? await fetchRemoteActor(actorURI, c.env.KV)
+        : null;
+
+    const content =
+      kind === "reply" && typeof activity.object?.content === "string"
+        ? activity.object.content
+        : null;
+
+    await db
+      .insert(reactions)
+      .values({
+        id: reactionID,
+        targetPageID: pageID,
+        sourceProtocol: "ap",
+        kind,
+        emoji:
+          kind === "emoji" && typeof activity.content === "string"
+            ? activity.content
+            : null,
+        actorName: remote?.name ?? actorURI ?? null,
+        actorURL: remote?.id ?? actorURI ?? null,
+        actorIcon: remote?.icon ?? null,
+        content,
+        created: new Date().toISOString(),
+        undone: false,
+      })
+      // 同じ activity が二度届いても1行に保つ。
+      .onConflictDoNothing({ target: reactions.id });
+
+    const who = remote?.name ?? actorURI ?? "誰か";
+    const label =
+      kind === "emoji"
+        ? `${activity.content ?? "リアクション"} を付けた`
+        : kind === "like"
+          ? "いいねした"
+          : kind === "announce"
+            ? "ブーストした"
+            : "返信した";
+    await notifyDiscord(
+      c.env.DISCORD_REACTION_WEBHOOK,
+      `${who} が ${SITE_URL}/o/${pageID} を${label}`,
+    );
+
+    console.log(
+      `[inbox] reaction kind=${kind} pageID=${pageID} id=${reactionID}`,
+    );
     return c.text("", 202);
   }
 

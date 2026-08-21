@@ -26,4 +26,11 @@
       "id": "89b51739d36b4a32a7874a8066e11433",
     },
   ],
+  "r2_buckets": [
+    {
+      // 記事本文。Scrapbox アーカイブと同居する。
+      "binding": "R2",
+      "bucket_name": "w-data",
+    },
+  ],
 }

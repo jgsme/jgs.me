@@ -4,6 +4,7 @@ import type data from "./+data";
 import { ScrapboxBlock } from "./components/ScrapboxBlock";
 import { CopyButton } from "./components/CopyButton";
 import { RelatedPages } from "./components/RelatedPages";
+import { Reactions } from "./components/Reactions";
 
 type Data = Awaited<ReturnType<typeof data>>;
 
@@ -38,6 +39,7 @@ const Page = () => {
         )}
       </article>
       <RelatedPages related={d.related} />
+      <Reactions reactions={d.reactions} />
       {/^\d{4}$/.test(d.title) && (
         <div className="mt-12 flex justify-center">
           <a

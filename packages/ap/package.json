@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@jigsaw/db": "workspace:*",
+    "@progfay/scrapbox-parser": "catalog:",
     "drizzle-orm": "catalog:",
     "hono": "catalog:"
   },

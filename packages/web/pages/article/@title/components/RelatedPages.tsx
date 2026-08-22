@@ -15,21 +15,25 @@ export const RelatedPages: React.FC<{
           <li key={r.title}>
             <a
               href={`/pages/${encodeURIComponent(r.title)}`}
-              className="flex flex-col aspect-square overflow-hidden rounded border border-black/10 bg-white transition-shadow hover:shadow-md"
+              className="relative block aspect-square overflow-hidden rounded bg-neutral-300 transition-shadow hover:shadow-md"
             >
-              {/* Scrapbox のカードと同じで、タイトルが上・画像が残りを埋める。
-                  画像が無いときはタイトルだけがカード全体に広がる。 */}
-              <div className="shrink-0 px-2 pt-2 mb-1 text-sm font-bold leading-snug line-clamp-3 break-words">
-                {r.title}
-              </div>
               {r.image && (
                 <img
                   src={thumbURL(r.image)}
                   alt=""
-                  className="min-h-0 grow w-full object-cover"
+                  className="absolute inset-0 h-full w-full object-cover"
                   loading="lazy"
                 />
               )}
+              {/* グラデは画像の上に重ねる帯。pt を厚めに取って、画像が明るくても
+                  タイトルの下地が確保される。 */}
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/55 to-transparent px-2 pt-10 pb-2">
+                {/* line-clamp は overflow を padding box で切るので、padding を
+                    持つ外側と分ける。同じ要素に付けると 4 行目が下に覗く。 */}
+                <div className="line-clamp-3 text-sm font-bold leading-snug text-white break-words">
+                  {r.title}
+                </div>
+              </div>
             </a>
           </li>
         ))}

@@ -1,5 +1,5 @@
 import { PUBLIC, type AS2Article } from "./as2";
-import { ACTOR_URI } from "./actor";
+import { ACTOR_CONTEXT, ACTOR_URI, type ActorDocument } from "./actor";
 
 const CONTEXT = "https://www.w3.org/ns/activitystreams";
 
@@ -65,5 +65,35 @@ export function wrapDelete(objectURI: string): DeleteActivity {
     actor: ACTOR_URI,
     to: [PUBLIC],
     object: { id: objectURI, type: "Tombstone" },
+  };
+}
+
+export type UpdateActorActivity = {
+  "@context": (string | Record<string, string>)[];
+  id: string;
+  type: "Update";
+  actor: string;
+  to: string[];
+  object: ActorDocument;
+};
+
+// プロフィールを変えても、相手は actor をキャッシュしているため
+// 再取得するまで反映されない (おおむね1日)。即時反映させるにはこれを配る。
+// 受信側は activity id で重複排除するので、送るたびに id が変わる必要がある。
+// now を引数で受けるのは、このモジュールを純粋関数のまま保つため。
+export function wrapActorUpdate(
+  actor: ActorDocument,
+  now: string,
+): UpdateActorActivity {
+  return {
+    // object に publicKey が入るため、top-level の @context だけを見る
+    // 実装でも鍵の語彙が引けるように actor と同じものを使う。
+    "@context": ACTOR_CONTEXT,
+    id: `${ACTOR_URI}#update-${now}`,
+    type: "Update",
+    actor: ACTOR_URI,
+    to: [PUBLIC],
+    // S2S の Update は完全置換。actor document 全体を詰める。
+    object: actor,
   };
 }

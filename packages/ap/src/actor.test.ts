@@ -51,6 +51,47 @@ describe("buildActor", () => {
   it("manuallyApprovesFollowers は false (Follow を自動で Accept する)", () => {
     expect(a.manuallyApprovesFollowers).toBe(false);
   });
+
+  it("icon がアイコン画像を Image オブジェクトで指す", () => {
+    expect(a.icon).toEqual({
+      type: "Image",
+      mediaType: "image/png",
+      url: "https://r2.jgs.me/avatar.png",
+    });
+  });
+
+  it("image がヘッダ画像を Image オブジェクトで指す", () => {
+    expect(a.image).toEqual({
+      type: "Image",
+      mediaType: "image/png",
+      url: "https://r2.jgs.me/header.png",
+    });
+  });
+
+  it("attachment に PropertyValue が並ぶ", () => {
+    expect(a.attachment.length).toBeGreaterThan(0);
+    for (const item of a.attachment) {
+      expect(item.type).toBe("PropertyValue");
+      expect(typeof item.name).toBe("string");
+      expect(typeof item.value).toBe("string");
+    }
+  });
+
+  it("attachment に自サイトへのリンクが含まれる", () => {
+    const site = a.attachment.find((x) => x.value.includes("w.jgs.me"));
+    expect(site).toBeDefined();
+  });
+
+  // PropertyValue は schema.org 由来で AS2 の語彙に無い。Mastodon は
+  // @context に無くても読むが、JSON-LD を厳密に処理する実装では
+  // 定義の無い項目が落ちる。
+  it("@context に PropertyValue の定義が入る", () => {
+    const defs = a["@context"].find((x) => typeof x === "object");
+    expect(defs).toMatchObject({
+      PropertyValue: "schema:PropertyValue",
+      value: "schema:value",
+    });
+  });
 });
 
 describe("buildWebfinger", () => {

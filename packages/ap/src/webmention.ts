@@ -7,8 +7,7 @@ import { SITE_URL, USER_AGENT } from "./config";
 import { notifyDiscord } from "./notify";
 
 export type FetchResult =
-  | { ok: true; html: string; finalURL: string }
-  | { ok: false; reason: string };
+  { ok: true; html: string; finalURL: string } | { ok: false; reason: string };
 
 // リダイレクトを自動で追わせない。各 hop で宛先を再検査するため、
 // redirect: "manual" にして自前でループを回す。
@@ -87,8 +86,7 @@ function safeDecode(s: string): string {
 }
 
 export type ParsedTarget =
-  | { by: "id"; id: number }
-  | { by: "title"; title: string };
+  { by: "id"; id: number } | { by: "title"; title: string };
 
 // target の URL から、どの記事を指しているかだけを読む。DB は引かない。
 // 受け付けるのは /o/<n> / /p/<n> / /pages/<title> の3つ (spec §9)。

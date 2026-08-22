@@ -2,8 +2,7 @@ export const MAX_REDIRECTS = 5;
 export const MAX_BODY_BYTES = 1_000_000;
 
 export type GuardResult =
-  | { ok: true; url: URL }
-  | { ok: false; reason: "parse" | "scheme" | "host" };
+  { ok: true; url: URL } | { ok: false; reason: "parse" | "scheme" | "host" };
 
 const ALLOWED_SCHEMES = ["http:", "https:"];
 

@@ -33,6 +33,9 @@
       "bucket_name": "w-data",
     },
   ],
+  "vars": {
+    "BSKY_HANDLE": "jgs.me",
+  },
   "queues": {
     "producers": [
       {
@@ -46,6 +49,10 @@
       {
         "binding": "WM_SEND",
         "queue": "ap-wm-send",
+      },
+      {
+        "binding": "BSKY",
+        "queue": "ap-bsky",
       },
     ],
     "consumers": [
@@ -75,6 +82,14 @@
         "max_batch_size": 5,
         "max_batch_timeout": 10,
         "max_retries": 2,
+      },
+      {
+        // Bluesky の書き込みは 5,000 ポイント/時 (CREATE は 3 ポイント) で
+        // 急ぐ必要がない。1件ずつ処理して失敗の切り分けを楽にする。
+        "queue": "ap-bsky",
+        "max_batch_size": 1,
+        "max_batch_timeout": 10,
+        "max_retries": 3,
       },
     ],
   },

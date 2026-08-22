@@ -15,14 +15,23 @@ export const RelatedPages: React.FC<{
           <li key={r.title}>
             <a
               href={`/pages/${encodeURIComponent(r.title)}`}
-              className="relative block aspect-square overflow-hidden rounded bg-neutral-300 transition-shadow hover:shadow-md"
+              className="relative block aspect-square overflow-hidden rounded bg-[#82221c] transition-shadow hover:shadow-md"
             >
-              {r.image && (
+              {r.image ? (
                 <img
                   src={thumbURL(r.image)}
                   alt=""
                   className="absolute inset-0 h-full w-full object-cover"
                   loading="lazy"
+                />
+              ) : (
+                // サムネが無いページ。OG 画像 (1200x630) は幅いっぱいにタイトルを
+                // 置くレイアウトなので、正方形に切ると文字が両端で切れて読めない。
+                // 地をブランド色にしてマークを薄く敷くだけにする。
+                <img
+                  src="/mark.svg"
+                  alt=""
+                  className="absolute left-1/2 top-1/2 w-1/3 -translate-x-1/2 -translate-y-1/2 opacity-25"
                 />
               )}
               {/* グラデは画像の上に重ねる帯。pt を厚めに取って、画像が明るくても

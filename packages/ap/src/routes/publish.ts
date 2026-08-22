@@ -71,6 +71,29 @@ publish.post("/internal/publish", async (c) => {
     }
   }
 
+  // 配信の可否は AP フォロワの有無と独立に決める。Bluesky への投稿は
+  // フォロワーが 0 人でも行うため、followers を引く前に判定する。
+  // delete は本文が無く 14 日の抑制も掛けないので対象外。
+  if (kind !== "delete") {
+    // kind !== "delete" なら上で必ず埋まっている (無ければ 404 を返している)。
+    const decision = decideFanout(page!.created, new Date());
+    if (!decision.deliver) {
+      // 配信しなかったことは必ず残す。silent に落とさない。
+      console.log(
+        `[publish] skipped pageID=${pageID} kind=${kind} reason=${decision.reason} created=${page!.created}`,
+      );
+      return c.json({ queued: 0, skipped: decision.reason });
+    }
+
+    // Bluesky にも流す。14 日の抑制は ActivityPub と同じ理由で掛ける。
+    // update を流さないのは、ATProto の更新がレコードの置き換えになり
+    // copy.cid の管理が別途必要になるため。ここでは新規投稿だけを扱う。
+    if (kind === "create") {
+      await c.env.BSKY.send({ pageID });
+      console.log(`[publish] bsky queued pageID=${pageID}`);
+    }
+  }
+
   const targets = await db
     .select({
       id: followers.id,
@@ -90,18 +113,7 @@ publish.post("/internal/publish", async (c) => {
   if (kind === "delete") {
     activity = wrapDelete(objectURI(pageID));
   } else {
-    // kind !== "delete" なら上で必ず埋まっている (無ければ 404 を返している)。
-    const p = page!;
-    const decision = decideFanout(p.created, new Date());
-    if (!decision.deliver) {
-      // 配信しなかったことは必ず残す。silent に落とさない。
-      console.log(
-        `[publish] skipped pageID=${pageID} kind=${kind} reason=${decision.reason} created=${p.created}`,
-      );
-      return c.json({ queued: 0, skipped: decision.reason });
-    }
-
-    const article = toArticle(p, content);
+    const article = toArticle(page!, content);
     activity = kind === "create" ? wrapCreate(article) : wrapUpdate(article);
   }
 

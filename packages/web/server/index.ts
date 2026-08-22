@@ -6,6 +6,7 @@ import { redirects } from "./routes/redirects";
 import { rss } from "./routes/rss";
 import { wellknown } from "./routes/wellknown";
 import { objects } from "./routes/objects";
+import { reactions } from "./routes/reactions";
 import { cacheKeyFor } from "./cacheKey";
 
 export type { Bindings } from "./types";
@@ -54,6 +55,7 @@ app.route("/", redirects);
 app.route("/", rss);
 app.route("/", wellknown);
 app.route("/", objects);
+app.route("/", reactions);
 
 apply(app);
 export default serve(app);

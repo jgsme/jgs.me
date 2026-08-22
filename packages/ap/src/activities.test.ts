@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { toArticle } from "./as2";
-import { wrapCreate, wrapDelete, wrapUpdate } from "./activities";
-import { ACTOR_URI } from "./actor";
+import {
+  wrapActorUpdate,
+  wrapCreate,
+  wrapDelete,
+  wrapUpdate,
+} from "./activities";
+import { ACTOR_URI, buildActor } from "./actor";
 
 const ARTICLE = toArticle(
   {
@@ -86,5 +91,53 @@ describe("wrapDelete", () => {
 
   it("to は Public", () => {
     expect(a.to).toEqual(["https://www.w3.org/ns/activitystreams#Public"]);
+  });
+});
+
+describe("wrapActorUpdate", () => {
+  const ACTOR = buildActor(
+    "-----BEGIN PUBLIC KEY-----\nAAAA\n-----END PUBLIC KEY-----",
+  );
+  const a = wrapActorUpdate(ACTOR, "2026-08-21T12:00:00.000Z");
+
+  it("type は Update", () => {
+    expect(a.type).toBe("Update");
+  });
+
+  it("actor と object.id が同じ (自分自身の更新)", () => {
+    expect(a.actor).toBe(ACTOR_URI);
+    expect(a.object.id).toBe(ACTOR_URI);
+  });
+
+  it("object に actor document 全体が入る (S2S の Update は完全置換)", () => {
+    expect(a.object.icon).toBeDefined();
+    expect(a.object.image).toBeDefined();
+    expect(a.object.publicKey.publicKeyPem).toContain("BEGIN PUBLIC KEY");
+  });
+
+  it("id は now を含む (送るたびに別 activity になる)", () => {
+    expect(a.id).toBe(
+      "https://w.jgs.me/ap/actor#update-2026-08-21T12:00:00.000Z",
+    );
+  });
+
+  it("同じ now なら同じ id (決定的)", () => {
+    expect(wrapActorUpdate(ACTOR, "2026-08-21T12:00:00.000Z").id).toBe(a.id);
+  });
+
+  it("違う now なら違う id", () => {
+    expect(wrapActorUpdate(ACTOR, "2026-08-21T13:00:00.000Z").id).not.toBe(
+      a.id,
+    );
+  });
+
+  it("to は Public", () => {
+    expect(a.to).toEqual(["https://www.w3.org/ns/activitystreams#Public"]);
+  });
+
+  // object に publicKey が入るため、top-level の @context だけを見る
+  // 実装でも鍵の語彙が引けるようにする。
+  it("@context に security/v1 が入る", () => {
+    expect(a["@context"]).toContain("https://w3id.org/security/v1");
   });
 });

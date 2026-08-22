@@ -47,21 +47,24 @@ export type WebfingerDocument = {
   links: { rel: string; type?: string; href: string }[];
 };
 
+// actor document と、それを包む Update(Person) の両方で使う。
+export const ACTOR_CONTEXT: (string | Record<string, string>)[] = [
+  "https://www.w3.org/ns/activitystreams",
+  // publicKey / publicKeyPem の語彙はここで定義される。
+  // 欠けていると Mastodon が鍵を読めない。
+  "https://w3id.org/security/v1",
+  // attachment に入れる PropertyValue の語彙。Mastodon は無くても
+  // 読むが、JSON-LD を厳密に処理する実装では定義の無い項目が落ちる。
+  {
+    schema: "http://schema.org#",
+    PropertyValue: "schema:PropertyValue",
+    value: "schema:value",
+  },
+];
+
 export function buildActor(publicKeyPem: string): ActorDocument {
   return {
-    "@context": [
-      "https://www.w3.org/ns/activitystreams",
-      // publicKey / publicKeyPem の語彙はここで定義される。
-      // 欠けていると Mastodon が鍵を読めない。
-      "https://w3id.org/security/v1",
-      // attachment に入れる PropertyValue の語彙。Mastodon は無くても
-      // 読むが、JSON-LD を厳密に処理する実装では定義の無い項目が落ちる。
-      {
-        schema: "http://schema.org#",
-        PropertyValue: "schema:PropertyValue",
-        value: "schema:value",
-      },
-    ],
+    "@context": ACTOR_CONTEXT,
     id: ACTOR_URI,
     type: "Person",
     preferredUsername: USERNAME,

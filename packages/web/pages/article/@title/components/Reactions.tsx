@@ -1,21 +1,45 @@
 import React from "react";
+import { useEffect, useState } from "react";
+import type { ReactionJSON } from "@/server/routes/reactions";
 
-type Reaction = {
-  id: string;
-  kind: string;
-  emoji: string | null;
-  actorName: string | null;
-  actorURL: string | null;
-  actorIcon: string | null;
-  content: string | null;
-  created: string;
-};
+type Reaction = ReactionJSON;
 
-// ActivityPub 経由と Webmention 経由を区別しない。
-// 読者にとって「Mastodon の Like」と「IndieWeb の u-like-of」は同じもの。
-export function Reactions({ reactions }: { reactions: Reaction[] }) {
+// 記事本体は SSR されて /pages/* が s-maxage=86400 でエッジに載る。反応をそこに
+// 含めるとキャッシュが切れるまで増えないので、この島だけクライアントで取り直す。
+// clientOnly 経由で読まれる前提 (+Page.tsx) なので default export。
+export default function Reactions({ pageId }: { pageId: number | null }) {
+  const [reactions, setReactions] = useState<Reaction[]>([]);
+
+  useEffect(() => {
+    if (pageId === null) return;
+
+    // 表示中にアンマウントされたら state を触らない。
+    let alive = true;
+    const ac = new AbortController();
+
+    (async () => {
+      try {
+        const res = await fetch(`/api/reactions/${pageId}`, {
+          signal: ac.signal,
+        });
+        if (!res.ok) return;
+        const json = (await res.json()) as { reactions: Reaction[] };
+        if (alive) setReactions(json.reactions);
+      } catch {
+        // 反応が取れなくても記事は読める。黙って出さない。
+      }
+    })();
+
+    return () => {
+      alive = false;
+      ac.abort();
+    };
+  }, [pageId]);
+
   if (reactions.length === 0) return null;
 
+  // ActivityPub 経由と Webmention 経由を区別しない。
+  // 読者にとって「Mastodon の Like」と「IndieWeb の u-like-of」は同じもの。
   const replies = reactions.filter((r) => r.kind === "reply");
   const others = reactions.filter((r) => r.kind !== "reply");
 

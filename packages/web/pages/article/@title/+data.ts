@@ -2,7 +2,7 @@ import type { PageContextServer } from "vike/types";
 import type { Bindings } from "@/server";
 import { parse } from "@progfay/scrapbox-parser";
 import { getDB } from "@/db/getDB";
-import { articles, pageSimilarities, pages, reactions } from "@jigsaw/db";
+import { articles, pageSimilarities, pages } from "@jigsaw/db";
 import { isMicropubBodyKey, r2KeyOf } from "@jigsaw/db/body-key";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { useConfig } from "vike-react/useConfig";
@@ -108,31 +108,6 @@ const data = async (c: Context) => {
     related = pickRandom(candidates, RELATED_COUNT);
   }
 
-  // 反応。ActivityPub 経由 (計画5) と Webmention 経由 (計画6) が同じ行に入る。
-  // 取り消されたもの (undone) は出さない。
-  const reactionRows =
-    pageId !== null
-      ? await db
-          .select({
-            id: reactions.id,
-            kind: reactions.kind,
-            emoji: reactions.emoji,
-            actorName: reactions.actorName,
-            actorURL: reactions.actorURL,
-            actorIcon: reactions.actorIcon,
-            content: reactions.content,
-            created: reactions.created,
-          })
-          .from(reactions)
-          .where(
-            and(
-              eq(reactions.targetPageID, pageId),
-              eq(reactions.undone, false),
-            ),
-          )
-          .orderBy(desc(reactions.created))
-      : [];
-
   const body = await fetchBody(c.env.R2, bodyKey, title);
 
   if (body === null) {
@@ -148,7 +123,6 @@ const data = async (c: Context) => {
       bodyHtml: null,
       description: null,
       related: [],
-      reactions: [],
     };
   }
 
@@ -260,7 +234,6 @@ const data = async (c: Context) => {
     fromDate,
     description,
     related,
-    reactions: reactionRows,
   };
 };
 

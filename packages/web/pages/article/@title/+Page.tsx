@@ -4,7 +4,13 @@ import type data from "./+data";
 import { ScrapboxBlock } from "./components/ScrapboxBlock";
 import { CopyButton } from "./components/CopyButton";
 import { RelatedPages } from "./components/RelatedPages";
-import { Reactions } from "./components/Reactions";
+import { clientOnly } from "vike-react/clientOnly";
+
+// 反応は SSR に載せない。記事ページは s-maxage=86400 でエッジに載るため、
+// 含めるとキャッシュが切れるまで反応が増えない。島として切り出してクライアントで
+// /api/reactions/:pageID を引く。モジュールスコープで一度だけ呼ぶ (レンダーごとに
+// 呼ぶと import が繰り返される)。
+const ReactionsIsland = clientOnly(() => import("./components/Reactions"));
 
 type Data = Awaited<ReturnType<typeof data>>;
 
@@ -66,7 +72,7 @@ const Page = () => {
         </div>
       </article>
 
-      <Reactions reactions={d.reactions} />
+      <ReactionsIsland pageId={d.pageId} />
       <RelatedPages related={d.related} />
       {/^\d{4}$/.test(d.title) && (
         <div className="mt-12 flex justify-center">

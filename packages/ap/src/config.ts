@@ -16,3 +16,12 @@ export function objectURI(pageID: number): string {
 export function articleURL(title: string): string {
   return `${SITE_URL}/pages/${encodeURIComponent(title)}`;
 }
+
+// SNS に貼る用の短い URL。ブラウザからは /pages/<title> に 302 される。
+// /pages/<title> を直に貼ると改題で壊れるが、これは page.id 由来なので
+// 改題しても生き続ける。数字は OG 画像の /p/<n>.png と同じ page.id。
+// article.id を使う /a/<n> は「公開登録した順の連番」で page.id とはズレる。
+// packages/ap は一貫して page.id で動いているのでこちらに揃える。
+export function shareURL(pageID: number): string {
+  return `${SITE_URL}/p/${pageID}`;
+}

@@ -33,6 +33,9 @@
       "bucket_name": "w-data",
     },
   ],
+  "vars": {
+    "BSKY_HANDLE": "jgs.me",
+  },
   "queues": {
     "producers": [
       {

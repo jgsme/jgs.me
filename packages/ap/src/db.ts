@@ -31,4 +31,6 @@ export type Env = {
   AP_PUBLIC_KEY: string;
   // 空文字なら通知しない。設定漏れでリクエストが失敗し続けるのを避ける。
   DISCORD_REACTION_WEBHOOK: string;
+  BSKY_HANDLE: string;
+  BSKY_APP_PASSWORD: string;
 };

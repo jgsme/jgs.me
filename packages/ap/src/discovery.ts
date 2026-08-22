@@ -18,6 +18,19 @@ export function parseLinkHeader(header: string | null): string | null {
   return null;
 }
 
+// rel が webmention を含み、かつ href 属性を持つ要素だけが endpoint の候補。
+// href 属性が「無い」<link>/<a> は HTML 上リンクではないので候補にせず、
+// 後続の要素を探し続ける (webmention.rocks discovery test 20)。
+// href="" は「このページ自身が endpoint」を意味する有効な値なので、
+// 属性が無いのと同一視してはいけない。
+export function endpointCandidate(
+  rel: string | null,
+  href: string | null,
+): string | null {
+  if (!rel || !rel.split(/\s+/).includes("webmention")) return null;
+  return href;
+}
+
 // 仕様が定める優先順位:
 //   HTTP Link ヘッダ → <link rel="webmention"> → <a rel="webmention">
 // 最初に見つかったものを使う。
@@ -58,9 +71,12 @@ export async function discoverEndpoint(target: string): Promise<string | null> {
       .on("link, a", {
         element(el) {
           if (found !== null) return;
-          const rel = el.getAttribute("rel");
-          if (!rel || !rel.split(/\s+/).includes("webmention")) return;
-          found = el.getAttribute("href") ?? "";
+          const href = endpointCandidate(
+            el.getAttribute("rel"),
+            el.getAttribute("href"),
+          );
+          if (href === null) return;
+          found = href;
         },
       })
       .transform(res)

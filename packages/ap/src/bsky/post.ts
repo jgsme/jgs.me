@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { articles, copies, pages } from "@jigsaw/db";
 import { getDB, type Env } from "../db";
-import { SITE_URL, USER_AGENT, articleURL, objectURI } from "../config";
+import { SITE_URL, USER_AGENT, objectURI, shareURL } from "../config";
 import { resolveContent } from "../content";
 import { buildPostRecord } from "./record";
 import { uploadOgThumb } from "./blob";
@@ -54,7 +54,8 @@ export async function postToBsky(pageID: number, env: Env): Promise<void> {
   }
 
   const html = await resolveContent(page.bodyKey, env.R2, SITE_URL, page.title);
-  const url = articleURL(page.title);
+  // SNS に貼るのは /p/<n>。/pages/<title> は改題で壊れる。
+  const url = shareURL(page.id);
   const thumb = await uploadOgThumb(pageID, env);
 
   const record = buildPostRecord({

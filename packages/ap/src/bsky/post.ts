@@ -3,9 +3,7 @@ import { articles, copies, pages } from "@jigsaw/db";
 import { getDB, type Env } from "../db";
 import { SITE_URL, USER_AGENT, articleURL, objectURI } from "../config";
 import { resolveContent } from "../content";
-import { summarize } from "../as2";
-import { MAX_GRAPHEMES, htmlToText, truncateGraphemes } from "./text";
-import { linkFacets } from "./facets";
+import { buildPostRecord } from "./record";
 import { uploadOgThumb } from "./blob";
 import { ENTRYWAY, getSession, invalidateSession } from "./session";
 
@@ -57,36 +55,15 @@ export async function postToBsky(pageID: number, env: Env): Promise<void> {
 
   const html = await resolveContent(page.bodyKey, env.R2, SITE_URL, page.title);
   const url = articleURL(page.title);
-
-  // 本文を 300 grapheme に収める。切り詰めは grapheme cluster 単位。
-  const plain = htmlToText(html);
-  const { text: bodyText, truncated } = truncateGraphemes(
-    plain,
-    MAX_GRAPHEMES - 1, // 末尾の … の分
-  );
-  const text = truncated ? `${bodyText}…` : bodyText;
-
   const thumb = await uploadOgThumb(pageID, env);
 
-  const record: Record<string, unknown> = {
-    $type: "app.bsky.feed.post",
-    text,
-    createdAt: page.created,
-    langs: ["ja"],
-    embed: {
-      $type: "app.bsky.embed.external",
-      external: {
-        uri: url,
-        title: page.title,
-        description: summarize(html, 200),
-        ...(thumb ? { thumb } : {}),
-      },
-    },
-  };
-
-  // 本文中に記事 URL が現れる場合だけ facet を張る。
-  const facets = linkFacets(text, [{ uri: url, label: url }]);
-  if (facets.length > 0) record.facets = facets;
+  const record = buildPostRecord({
+    title: page.title,
+    created: page.created,
+    html,
+    url,
+    thumb,
+  });
 
   const session = await getSession(env);
   let res = await createRecord(session.accessJwt, session.did, record);

@@ -3,6 +3,8 @@ import { USER_AGENT } from "./config";
 import { fetchRemoteActor } from "./remote";
 import { deliver } from "./deliver";
 import { generateKeyPair } from "./sig/keys";
+import { discoverEndpoint } from "./discovery";
+import { sendWebmention } from "./send";
 
 // Cloudflare Workers の fetch は User-Agent を送らない。mstdn.jp は
 // Cloudflare の背後で UA なしのリクエストを別ホストへ 301 する設定に
@@ -101,5 +103,55 @@ describe("deliver", () => {
         USER_AGENT,
       );
     }
+  });
+});
+
+describe("discoverEndpoint", () => {
+  it("User-Agent を付けて discovery する", async () => {
+    const calls: RequestInit[] = [];
+    vi.stubGlobal("fetch", async (_u: string, init: RequestInit) => {
+      calls.push(init);
+      return new Response("", {
+        status: 200,
+        headers: { Link: '<https://ex.com/wm>; rel="webmention"' },
+      });
+    });
+
+    const endpoint = await discoverEndpoint("https://ex.com/post");
+    expect(endpoint).toBe("https://ex.com/wm");
+    const headers = calls[0]!.headers as Record<string, string>;
+    expect(headers["User-Agent"]).toBe(USER_AGENT);
+  });
+});
+
+describe("sendWebmention", () => {
+  it("discovery と送信の両方に User-Agent を付ける", async () => {
+    const calls: RequestInit[] = [];
+    vi.stubGlobal("fetch", async (_u: string, init: RequestInit) => {
+      calls.push(init);
+      if (calls.length === 1) {
+        return new Response("", {
+          status: 200,
+          headers: { Link: '<https://ex.com/wm>; rel="webmention"' },
+        });
+      }
+      return new Response("", { status: 201 });
+    });
+
+    await sendWebmention({
+      source: "https://w.jgs.me/pages/foo",
+      target: "https://ex.com/post",
+    });
+
+    expect(calls).toHaveLength(2);
+    for (const c of calls) {
+      expect((c.headers as Record<string, string>)["User-Agent"]).toBe(
+        USER_AGENT,
+      );
+    }
+    expect(calls[1]!.method).toBe("POST");
+    expect(String(calls[1]!.body)).toBe(
+      "source=https%3A%2F%2Fw.jgs.me%2Fpages%2Ffoo&target=https%3A%2F%2Fex.com%2Fpost",
+    );
   });
 });

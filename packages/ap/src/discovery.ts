@@ -1,3 +1,4 @@
+import { USER_AGENT } from "./config";
 import { MAX_REDIRECTS, guardURL } from "./urlguard";
 
 // Link: <https://ex.com/wm>; rel="webmention"
@@ -29,7 +30,10 @@ export async function discoverEndpoint(target: string): Promise<string | null> {
 
     const res = await fetch(guard.url.href, {
       redirect: "manual",
-      headers: { Accept: "text/html, */*;q=0.5" },
+      headers: {
+        Accept: "text/html, */*;q=0.5",
+        "User-Agent": USER_AGENT,
+      },
       signal: AbortSignal.timeout(10_000),
     });
 

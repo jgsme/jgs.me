@@ -1,3 +1,4 @@
+import { USER_AGENT } from "./config";
 import { guardURL } from "./urlguard";
 import { discoverEndpoint } from "./discovery";
 import type { SendMessage } from "./db";
@@ -24,7 +25,10 @@ export async function sendWebmention(msg: SendMessage): Promise<void> {
 
   const res = await fetch(guard.url.href, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "User-Agent": USER_AGENT,
+    },
     body: body.toString(),
     redirect: "manual",
     signal: AbortSignal.timeout(10_000),

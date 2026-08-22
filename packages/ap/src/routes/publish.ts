@@ -5,7 +5,14 @@ import { getDB, type Env } from "../db";
 import { SITE_URL, articleURL, objectURI } from "../config";
 import { resolveContent } from "../content";
 import { toArticle, type PageRow } from "../as2";
-import { wrapCreate, wrapDelete, wrapUpdate } from "../activities";
+import {
+  wrapActorUpdate,
+  wrapCreate,
+  wrapDelete,
+  wrapUpdate,
+} from "../activities";
+import { buildActor } from "../actor";
+import { normalizePublicPem } from "../sig/keys";
 import { decideFanout } from "../fanout";
 import { extractOutlinks } from "../outlinks";
 
@@ -127,6 +134,39 @@ publish.post("/internal/publish", async (c) => {
   console.log(
     `[publish] queued pageID=${pageID} kind=${kind} inboxes=${inboxes.length}`,
   );
+  return c.json({ queued: inboxes.length });
+});
+
+// プロフィール (アイコン / ヘッダ / summary / attachment) を変えたときに
+// フォロワーへ即時反映させる。相手は actor をキャッシュしていて、
+// stale と判断するまで (おおむね1日) 再取得しない。
+// /internal/publish に kind を足す形にしないのは、あちらが pageID 必須の
+// 記事向けエンドポイントで引数の形が違うため。
+publish.post("/internal/refresh-actor", async (c) => {
+  const db = getDB(c.env.DB);
+
+  const targets = await db
+    .select({ inbox: followers.inbox, sharedInbox: followers.sharedInbox })
+    .from(followers)
+    .where(eq(followers.state, "accepted"));
+
+  if (targets.length === 0) {
+    console.log("[refresh-actor] no followers");
+    return c.json({ queued: 0 });
+  }
+
+  const activity = wrapActorUpdate(
+    buildActor(normalizePublicPem(c.env.AP_PUBLIC_KEY)),
+    new Date().toISOString(),
+  );
+
+  const inboxes = [...new Set(targets.map((t) => t.sharedInbox ?? t.inbox))];
+
+  await c.env.DELIVERY.sendBatch(
+    inboxes.map((inbox) => ({ body: { inbox, activity } })),
+  );
+
+  console.log(`[refresh-actor] queued inboxes=${inboxes.length}`);
   return c.json({ queued: inboxes.length });
 });
 

@@ -25,3 +25,11 @@ export function articleURL(title: string): string {
 export function shareURL(pageID: number): string {
   return `${SITE_URL}/p/${pageID}`;
 }
+
+// プロフィール画像は R2 (w-media) に固定名で置く。Micropub の media
+// endpoint はハッシュ名 (<sha256>.<ext>) を使うので衝突しない。
+// 受信側はこの URL をフェッチして自前で再ホストするため、差し替えても
+// 相手側の反映には Update(Person) の配送が要る。
+export const MEDIA_BASE_URL = "https://r2.jgs.me";
+export const AVATAR_URL = `${MEDIA_BASE_URL}/avatar.png`;
+export const HEADER_URL = `${MEDIA_BASE_URL}/header.png`;

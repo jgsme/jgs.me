@@ -1,5 +1,6 @@
 import React from "react";
 import { useData } from "vike-react/useData";
+import { thumbURL } from "@/utils/thumbURL";
 import type data from "./+data";
 
 const Page = () => {
@@ -13,11 +14,7 @@ const Page = () => {
             <a href={`/pages/${encodeURIComponent(clip.title ?? "")}`}>
               {clip.image ? (
                 <img
-                  src={
-                    clip.image.includes("gyazo.com")
-                      ? clip.image.replace("/raw", "/thumb/400")
-                      : clip.image
-                  }
+                  src={thumbURL(clip.image)}
                   alt={clip.title ?? ""}
                   className="mb-2 rounded mx-auto h-[300px] object-contain"
                   loading="lazy"

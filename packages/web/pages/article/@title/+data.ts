@@ -87,10 +87,10 @@ const data = async (c: Context) => {
   const articleId = pageInfo[0]?.articleId ?? null;
 
   // 関連記事。article でないページには出さない。
-  let related: { title: string }[] = [];
+  let related: { title: string; image: string | null }[] = [];
   if (pageId !== null && articleId !== null) {
     const candidates = await db
-      .select({ title: pages.title })
+      .select({ title: pages.title, image: pages.image })
       .from(pageSimilarities)
       .innerJoin(pages, eq(pages.id, pageSimilarities.relatedPageID))
       .where(

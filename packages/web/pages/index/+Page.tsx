@@ -1,5 +1,6 @@
 import React from "react";
 import { useData } from "vike-react/useData";
+import { thumbURL } from "@/utils/thumbURL";
 import type data from "./+data";
 import { SearchForm } from "../components/SearchForm";
 import { TodayLink } from "../components/TodayLink";
@@ -23,11 +24,7 @@ const Page = () => {
             <a href={`/pages/${encodeURIComponent(article.title ?? "")}`}>
               {article.image ? (
                 <img
-                  src={
-                    article.image.includes("gyazo.com")
-                      ? article.image.replace("/raw", "/thumb/400")
-                      : article.image
-                  }
+                  src={thumbURL(article.image)}
                   alt={article.title ?? ""}
                   className="mb-2 rounded mx-auto h-[300px] object-contain"
                   loading="lazy"

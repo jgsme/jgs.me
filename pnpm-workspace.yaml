@@ -7,7 +7,7 @@ catalog:
   react: ^19.2.7
   react-dom: ^19.2.7
   "@progfay/scrapbox-parser": ^10.1.1
-  "@cloudflare/workers-types": ^4.20260702.1
+  "@cloudflare/workers-types": ^5.20260822.1
   typescript: ^5.9.3
   vitest: ^4.1.10
   wrangler: ^4.122.0

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseLinkHeader } from "./discovery";
+import { endpointCandidate, parseLinkHeader } from "./discovery";
 
 describe("parseLinkHeader", () => {
   it("rel=webmention の href を取る", () => {
@@ -48,5 +48,38 @@ describe("parseLinkHeader", () => {
 
   it("ヘッダが無ければ null", () => {
     expect(parseLinkHeader(null)).toBeNull();
+  });
+});
+
+describe("endpointCandidate", () => {
+  it("rel=webmention と href が揃っていれば href を返す", () => {
+    expect(endpointCandidate("webmention", "/wm")).toBe("/wm");
+  });
+
+  it("複数の rel 値に混ざっていても取る", () => {
+    expect(endpointCandidate("something webmention", "/wm")).toBe("/wm");
+  });
+
+  // href="" は「このページ自身が endpoint」を意味する有効な値。
+  it("href が空文字なら空文字を返す (ページ自身が endpoint)", () => {
+    expect(endpointCandidate("webmention", "")).toBe("");
+  });
+
+  // webmention.rocks discovery test 20。href 属性を持たない <link> は
+  // HTML 上リンクではないので候補にせず、後続の要素を探し続ける。
+  it("href 属性が無ければ候補にしない", () => {
+    expect(endpointCandidate("webmention", null)).toBeNull();
+  });
+
+  it("rel に webmention を含む別の語 (webmentions) は取らない", () => {
+    expect(endpointCandidate("webmentions", "/wm")).toBeNull();
+  });
+
+  it("rel が無ければ候補にしない", () => {
+    expect(endpointCandidate(null, "/wm")).toBeNull();
+  });
+
+  it("rel が空文字なら候補にしない", () => {
+    expect(endpointCandidate("", "/wm")).toBeNull();
   });
 });

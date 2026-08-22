@@ -20,6 +20,10 @@ export type SendMessage = {
   target: string;
 };
 
+export type BskyMessage = {
+  pageID: number;
+};
+
 export type Env = {
   DB: D1Database;
   KV: KVNamespace;
@@ -27,6 +31,7 @@ export type Env = {
   DELIVERY: Queue<DeliveryMessage>;
   WEBMENTION: Queue<WebmentionMessage>;
   WM_SEND: Queue<SendMessage>;
+  BSKY: Queue<BskyMessage>;
   AP_PRIVATE_KEY: string;
   AP_PUBLIC_KEY: string;
   // 空文字なら通知しない。設定漏れでリクエストが失敗し続けるのを避ける。

@@ -1,4 +1,5 @@
 import type { Env } from "../db";
+import { USER_AGENT } from "../config";
 
 const ENTRYWAY = "https://bsky.social";
 const CACHE_KEY = "bsky:session";
@@ -19,7 +20,10 @@ export async function getSession(env: Env): Promise<Session> {
 
   const res = await fetch(`${ENTRYWAY}/xrpc/com.atproto.server.createSession`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "User-Agent": USER_AGENT,
+    },
     body: JSON.stringify({
       identifier: env.BSKY_HANDLE,
       password: env.BSKY_APP_PASSWORD,

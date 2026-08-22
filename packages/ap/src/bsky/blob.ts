@@ -1,4 +1,5 @@
 import type { Env } from "../db";
+import { USER_AGENT } from "../config";
 import { ENTRYWAY, getSession } from "./session";
 
 // app.bsky.embed.external#external.thumb の上限。
@@ -33,7 +34,7 @@ export async function uploadOgThumb(
   if (cached) return cached as BlobRef;
 
   const src = ogURL(pageID);
-  const res = await fetch(src);
+  const res = await fetch(src, { headers: { "User-Agent": USER_AGENT } });
   if (!res.ok) {
     console.log(`[bsky] og fetch failed pageID=${pageID} status=${res.status}`);
     return null;
@@ -54,6 +55,7 @@ export async function uploadOgThumb(
     headers: {
       Authorization: `Bearer ${session.accessJwt}`,
       "Content-Type": "image/png",
+      "User-Agent": USER_AGENT,
     },
     body: bytes,
   });

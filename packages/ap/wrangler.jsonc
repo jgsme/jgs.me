@@ -3,7 +3,11 @@
   "name": "w-ap",
   "compatibility_date": "2025-08-28",
   "main": "src/index.ts",
-  "workers_dev": true,
+  // 公開する口は全て web (w.jgs.me) が service binding で転送する
+  // (server/routes/wellknown.ts, objects.ts)。ActivityPub は identity domain の
+  // ホスト名でしか成立しないので workers.dev で受ける意味が無く、
+  // 開けたままだと /internal/* が無認証のまま外から叩ける。
+  "workers_dev": false,
   "observability": {
     "logs": {
       "enabled": true,

@@ -43,6 +43,10 @@
         "binding": "WEBMENTION",
         "queue": "ap-webmention",
       },
+      {
+        "binding": "WM_SEND",
+        "queue": "ap-wm-send",
+      },
     ],
     "consumers": [
       {
@@ -63,6 +67,14 @@
         // 付けない。読みたくなったら wrangler queues consumer http add で
         // pull consumer を後付けして HTTP で引ける。
         "dead_letter_queue": "ap-webmention-dlq",
+      },
+      {
+        // discovery と送信で外部へ 2 回 fetch する。遅い相手に引きずられる
+        // ので受信側と同じく batch を小さく保つ。
+        "queue": "ap-wm-send",
+        "max_batch_size": 5,
+        "max_batch_timeout": 10,
+        "max_retries": 2,
       },
     ],
   },

@@ -4,6 +4,13 @@ const GA_ID = "G-SJB62M7N1F";
 export function Head() {
   return (
     <>
+      {/* 全ページで宣言する。記事以外の URL に送られた Webmention も、
+          target が公開記事でなければ Queue 側で落ちるだけで害はない。 */}
+      <link rel="webmention" href="https://w.jgs.me/webmention" />
+
+      {/* IndieAuth の所有証明の土台。actor 側から指し返すのは別途。 */}
+      <link rel="me" href="https://w.jgs.me/ap/actor" />
+
       <script
         async
         src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}

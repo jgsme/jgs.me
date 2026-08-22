@@ -20,24 +20,52 @@ const Page = () => {
     );
   }
 
+  // fromDate は "YYYY/MM/DD" か null (+data.ts)。dt-published は機械可読な値が
+  // 要るので "-" 区切りに直して datetime に入れる。日付が取れない記事もあるため、
+  // null なら dt-published ごと出さない。
+  const publishedISO = d.fromDate ? d.fromDate.replaceAll("/", "-") : null;
+  const canonical = `https://w.jgs.me/pages/${encodeURIComponent(d.title)}`;
+
   return (
     <main className="max-w-3xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold">{d.title}</h1>
-        <div className="flex gap-2">
-          {d.fromDate && (
-            <p className="text-neutral-500 text-sm mt-1">{d.fromDate}</p>
-          )}
-          <CopyButton articleId={d.articleId} />
+      {/* h-entry はタイトル・日付・本文を全部含む。反応と関連記事はこの外。
+          中に入れると mf2 パーサが反応側の要素を記事のプロパティとして読む。 */}
+      <article className="h-entry">
+        <div className="mb-8">
+          <h1 className="p-name text-2xl font-bold">{d.title}</h1>
+          <div className="flex gap-2">
+            {d.fromDate && (
+              <p className="text-neutral-500 text-sm mt-1">
+                <time className="dt-published" dateTime={publishedISO!}>
+                  {d.fromDate}
+                </time>
+              </p>
+            )}
+            <CopyButton articleId={d.articleId} />
+          </div>
         </div>
-      </div>
-      <article className="space-y-1">
-        {d.bodyHtml !== null ? (
-          <div dangerouslySetInnerHTML={{ __html: d.bodyHtml }} />
-        ) : (
-          d.blocks.map((block, i) => <ScrapboxBlock key={i} block={block} />)
-        )}
+
+        {/* hidden な要素も mf2 パーサは読む。表示を変えずに機械可読性だけ足せる。 */}
+        <a className="u-url" href={canonical} hidden>
+          {d.title}
+        </a>
+        <span className="p-author h-card" hidden>
+          <a className="u-url" href="https://w.jgs.me/">
+            <span className="p-name">jigsaw</span>
+          </a>
+        </span>
+
+        {/* 本文全体を e-content で包む。中の HTML / Scrapbox の分岐はそのまま。
+            分岐ごとに付けると diary 由来だけ nested になる。 */}
+        <div className="e-content space-y-1">
+          {d.bodyHtml !== null ? (
+            <div dangerouslySetInnerHTML={{ __html: d.bodyHtml }} />
+          ) : (
+            d.blocks.map((block, i) => <ScrapboxBlock key={i} block={block} />)
+          )}
+        </div>
       </article>
+
       <Reactions reactions={d.reactions} />
       <RelatedPages related={d.related} />
       {/^\d{4}$/.test(d.title) && (

@@ -12,6 +12,8 @@ for (const path of [
   "/.well-known/host-meta",
   "/.well-known/nodeinfo",
   "/nodeinfo/2.1",
+  // Webmention の受信口。ap 側で 202 を返して検証を Queue に逃がす。
+  "/webmention",
 ]) {
   wellknown.all(path, (c) => c.env.AP.fetch(c.req.raw));
 }

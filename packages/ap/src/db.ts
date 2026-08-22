@@ -9,11 +9,17 @@ export type DeliveryMessage = {
   activity: unknown;
 };
 
+export type WebmentionMessage = {
+  source: string;
+  target: string;
+};
+
 export type Env = {
   DB: D1Database;
   KV: KVNamespace;
   R2: R2Bucket;
   DELIVERY: Queue<DeliveryMessage>;
+  WEBMENTION: Queue<WebmentionMessage>;
   AP_PRIVATE_KEY: string;
   AP_PUBLIC_KEY: string;
   // 空文字なら通知しない。設定漏れでリクエストが失敗し続けるのを避ける。

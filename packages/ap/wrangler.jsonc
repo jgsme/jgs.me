@@ -39,6 +39,10 @@
         "binding": "DELIVERY",
         "queue": "ap-delivery",
       },
+      {
+        "binding": "WEBMENTION",
+        "queue": "ap-webmention",
+      },
     ],
     "consumers": [
       {
@@ -47,6 +51,18 @@
         "max_batch_timeout": 5,
         "max_retries": 3,
         "dead_letter_queue": "ap-delivery-dlq",
+      },
+      {
+        // source の取得は外部への fetch なので遅い相手に引きずられる。
+        // batch を小さめにして1バッチが長引かないようにする。
+        "queue": "ap-webmention",
+        "max_batch_size": 5,
+        "max_batch_timeout": 10,
+        "max_retries": 2,
+        // 落ちた Webmention は他人からの寄与なので捨てない。consumer は
+        // 付けない。読みたくなったら wrangler queues consumer http add で
+        // pull consumer を後付けして HTTP で引ける。
+        "dead_letter_queue": "ap-webmention-dlq",
       },
     ],
   },

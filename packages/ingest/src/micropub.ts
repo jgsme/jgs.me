@@ -1,11 +1,11 @@
 import { drizzle } from "drizzle-orm/d1";
 import { and, eq } from "drizzle-orm";
 import { articles, objects, pages } from "@jigsaw/db";
-import { newMicropubBodyKey, r2KeyOf } from "@jigsaw/db/body-key";
+import { newSbBodyKey, r2KeyOf, bodyFormatOf } from "@jigsaw/db/body-key";
 import { isAuthorized } from "./auth";
 import { parseEntry } from "./mf2";
 import { applyUpdate, parseUpdateAction } from "./mf2update";
-import { sanitizeHtml } from "./sanitize";
+import { buildSbBody } from "./body";
 import { parseTargetURL } from "./target";
 import type { Env } from "./index";
 
@@ -78,19 +78,19 @@ async function handleMicropubCreate(
     );
   }
 
-  const body = await sanitizeHtml(entry.contentHtml);
+  const body = buildSbBody(entry.name, entry.content);
   const created = entry.published || new Date().toISOString();
 
   // 本文を先に R2 へ書く。page 行が指す先を必ず存在させる (spec §6)。
   // 逆順だと「本文が引けない page」が生まれる。
   // R2 だけ書けて D1 が失敗した場合は、参照されない孤児オブジェクトが残るだけ。
-  const bodyKey = newMicropubBodyKey();
+  const bodyKey = newSbBodyKey();
   const r2Key = r2KeyOf(bodyKey);
   if (!r2Key) {
     return Response.json({ error: "server_error" }, { status: 500 });
   }
   await env.R2.put(r2Key, body, {
-    httpMetadata: { contentType: "text/html; charset=utf-8" },
+    httpMetadata: { contentType: "text/plain; charset=utf-8" },
   });
 
   const db = drizzle(env.DB);
@@ -309,6 +309,18 @@ async function handleMicropubUpdate(
     );
   }
 
+  // Micropub で作られていないページ (Scrapbox アーカイブ) を書き換えない。
+  // .json のキーに Scrapbox 記法の生テキストを書き込むと本文が壊れる。
+  if (bodyFormatOf(target.bodyKey) !== "micropub-sb") {
+    return Response.json(
+      {
+        error: "invalid_request",
+        error_description: `page was not created via micropub: ${target.title}`,
+      },
+      { status: 400 },
+    );
+  }
+
   const r2Key = r2KeyOf(target.bodyKey);
   if (!r2Key) {
     return Response.json({ error: "server_error" }, { status: 500 });
@@ -316,9 +328,10 @@ async function handleMicropubUpdate(
 
   // 本文は同じキーに上書きする。読み側は R2 を直読みするので即座に入れ替わる。
   // 新しいキーを振ると、参照されない古いオブジェクトが残るだけで得が無い。
-  const body = await sanitizeHtml(entry.contentHtml);
+  // 1行目の題はマージ後の name で書き直す (改題に追随する)。
+  const body = buildSbBody(entry.name, entry.content);
   await env.R2.put(r2Key, body, {
-    httpMetadata: { contentType: "text/html; charset=utf-8" },
+    httpMetadata: { contentType: "text/plain; charset=utf-8" },
   });
 
   const now = new Date().toISOString();

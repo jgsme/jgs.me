@@ -63,12 +63,15 @@ function parseCardBlock(content: string): Card | null {
 }
 
 function cardToHtml(card: Card): string {
+  // Mastodon の status sanitizer は figure/figcaption/img を通さないので、
+  // ブロック要素が消えて裸のテキストになってしまう。p + br に寄せる。
+  // img は落ちる実装が多いが、通す実装もあるので残す。
   const img = card.image
-    ? `<a href="${esc(card.url)}"><img src="${esc(card.image)}" alt=""></a>`
+    ? `<a href="${esc(card.url)}"><img src="${esc(card.image)}" alt=""></a><br>`
     : "";
   const title = esc(card.title ?? card.url);
   const siteName = card.siteName ? ` — ${esc(card.siteName)}` : "";
-  return `<figure>${img}<figcaption><a href="${esc(card.url)}">${title}</a>${siteName}</figcaption></figure>`;
+  return `<p>${img}<a href="${esc(card.url)}">${title}</a>${siteName}</p>`;
 }
 
 function nodeToHtml(node: Node, siteUrl: string): string {

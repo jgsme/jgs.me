@@ -115,18 +115,16 @@ const CARD =
   't\ncode:card\n {"url":"https://example.com/a","title":"タイトル","siteName":"example.com","image":"https://r2.jgs.me/x.png"}';
 
 describe("code:card", () => {
-  it("figure + img + figcaption にする", () => {
+  it("Mastodon が通す p + img + br + a にする", () => {
     expect(h(CARD)).toBe(
-      '<figure><a href="https://example.com/a"><img src="https://r2.jgs.me/x.png" alt=""></a>' +
-        '<figcaption><a href="https://example.com/a">タイトル</a> — example.com</figcaption></figure>',
+      '<p><a href="https://example.com/a"><img src="https://r2.jgs.me/x.png" alt=""></a><br>' +
+        '<a href="https://example.com/a">タイトル</a> — example.com</p>',
     );
   });
 
-  it("画像が無ければ img を省く", () => {
+  it("画像が無ければ img と br を省く", () => {
     const out = h('t\ncode:card\n {"url":"https://example.com/a","title":"T"}');
-    expect(out).toBe(
-      '<figure><figcaption><a href="https://example.com/a">T</a></figcaption></figure>',
-    );
+    expect(out).toBe('<p><a href="https://example.com/a">T</a></p>');
   });
 
   it("title が無ければ url を出す", () => {

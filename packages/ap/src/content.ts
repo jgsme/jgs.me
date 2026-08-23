@@ -1,4 +1,4 @@
-import { isMicropubBodyKey, r2KeyOf } from "@jigsaw/db/body-key";
+import { bodyFormatOf, r2KeyOf } from "@jigsaw/db/body-key";
 import { scrapboxToHtml } from "./scrapbox";
 
 type R2PageData = {
@@ -7,8 +7,9 @@ type R2PageData = {
   lines: { text: string }[];
 };
 
-// 本文は Scrapbox 由来も diary 由来もすべて R2 にある (spec §6)。
-// bodyKey の prefix で中身の形式が決まる。
+// 本文は Scrapbox アーカイブ由来も Micropub 由来もすべて R2 にあり、
+// どちらも Scrapbox 記法で1行目が題 (spec §6)。
+// bodyKey の prefix で R2 上の入れ物 (.json / .sb) が決まる。
 export async function resolveContent(
   bodyKey: string,
   r2: R2Bucket,
@@ -24,9 +25,8 @@ export async function resolveContent(
     return "";
   }
 
-  if (isMicropubBodyKey(bodyKey)) {
-    // Micropub 投入時にサニタイズ済み (計画2 Task 2)。
-    return await obj.text();
+  if (bodyFormatOf(bodyKey) === "micropub-sb") {
+    return scrapboxToHtml(await obj.text(), siteUrl);
   }
 
   const data = await obj.json<R2PageData>();

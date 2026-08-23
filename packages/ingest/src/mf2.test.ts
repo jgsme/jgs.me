@@ -5,7 +5,7 @@ const VALID = {
   type: ["h-entry"],
   properties: {
     name: ["記事タイトル"],
-    content: [{ html: "<p>本文</p>" }],
+    content: ["本文の1行目\n本文の2行目"],
     published: ["2026-08-17T12:00:00+09:00"],
     category: ["tag1", "tag2"],
   },
@@ -15,7 +15,7 @@ describe("parseEntry", () => {
   it("h-entry の必須項目を取り出す", () => {
     const e = parseEntry(VALID);
     expect(e.name).toBe("記事タイトル");
-    expect(e.contentHtml).toBe("<p>本文</p>");
+    expect(e.content).toBe("本文の1行目\n本文の2行目");
     expect(e.categories).toEqual(["tag1", "tag2"]);
   });
 
@@ -24,12 +24,21 @@ describe("parseEntry", () => {
     expect(e.published).toBe("2026-08-17T03:00:00.000Z");
   });
 
-  it("content が素の文字列でも受け取る", () => {
+  it("content は素の文字列 (Scrapbox 記法) として受け取る", () => {
     const e = parseEntry({
       ...VALID,
-      properties: { ...VALID.properties, content: ["ただのテキスト"] },
+      properties: { ...VALID.properties, content: ["[リンク] を含む行"] },
     });
-    expect(e.contentHtml).toBe("ただのテキスト");
+    expect(e.content).toBe("[リンク] を含む行");
+  });
+
+  it("content が html 形式なら断る", () => {
+    expect(() =>
+      parseEntry({
+        ...VALID,
+        properties: { ...VALID.properties, content: [{ html: "<p>本文</p>" }] },
+      }),
+    ).toThrow(/html/);
   });
 
   it("category が無ければ空配列", () => {

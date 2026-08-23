@@ -67,8 +67,11 @@ Vike + React + Photon + Hono で構成された Cloudflare Pages アプリケー
 
 - `pages/index/` - 記事一覧ページ（ページネーション対応、`?p=N`）
 - `pages/article/@title/` - 記事詳細ページ（ルート: `/pages/@title`）
-  - R2 (`<sbID>.json`) からコンテンツ取得、`@progfay/scrapbox-parser` でパース
-  - R2 は Scrapbox 同期を廃止した時点の凍結アーカイブ。新規ページは増えない
+  - R2 からコンテンツ取得、`@progfay/scrapbox-parser` でパース。本文の形式は2つ
+    (Scrapbox アーカイブ由来の `<scrapbox-id>.json`、Micropub (diary) 由来の
+    `<sb-uuid>.sb`。どちらも1行目が題)
+  - Scrapbox 同期は廃止済みで `.json` は増えないが、Micropub 経由 (`packages/ingest`)
+    でページ自体は増え続ける
 - `pages/a/@id/` - 共有URL用リダイレクト（`/a/{id}` → `/pages/{title}`）
 - `pages/search/` - 検索ページ
 - `pages/clips/` - クリップ一覧ページ

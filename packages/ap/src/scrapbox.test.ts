@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { scrapboxToHtml } from "./scrapbox";
+import { isSafeUrl, scrapboxToHtml } from "./scrapbox";
 
 const SITE = "https://w.jgs.me";
 const h = (text: string) => scrapboxToHtml(text, SITE);
@@ -73,5 +73,40 @@ describe("scrapboxToHtml", () => {
 
   it("タイトル行だけなら空文字", () => {
     expect(h("タイトルのみ")).toBe("");
+  });
+
+  it("画像を img にする", () => {
+    expect(h("t\n[https://example.com/a.png]")).toBe(
+      '<p><img src="https://example.com/a.png" alt=""></p>',
+    );
+  });
+
+  it("強調画像 ([[url]]) も img にする", () => {
+    expect(h("t\n[[https://example.com/a.png]]")).toBe(
+      '<p><img src="https://example.com/a.png" alt=""></p>',
+    );
+  });
+
+  it("ハッシュタグを自サイトへのリンクにする", () => {
+    expect(h("t\n#タグ")).toBe(
+      '<p><a href="https://w.jgs.me/pages/%E3%82%BF%E3%82%B0">#タグ</a></p>',
+    );
+  });
+
+  it("[[太字]] も strong にする (strong ノード)", () => {
+    expect(h("t\n[[太字]]")).toBe("<p><strong>太字</strong></p>");
+  });
+
+  it("番号リストは本文が消えず N. 中身のまま残る (numberList は raw を出す)", () => {
+    expect(h("t\n 1. 項目")).toBe("<ul><li>1. 項目</li></ul>");
+  });
+
+  it("安全でない href はリンクにせずラベルのテキストとして残す", () => {
+    // scrapbox-parser は http(s) 以外を pathType: absolute として拾わないため、
+    // ここでは isSafeUrl を直接検証する
+    expect(isSafeUrl("javascript:alert(1)")).toBe(false);
+    expect(isSafeUrl("data:text/html,x")).toBe(false);
+    expect(isSafeUrl("https://example.com")).toBe(true);
+    expect(isSafeUrl("http://example.com")).toBe(true);
   });
 });

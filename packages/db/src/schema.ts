@@ -17,8 +17,10 @@ export const pages = sqliteTable("page", {
     .notNull()
     .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
   image: text("image"),
-  // 本文オブジェクトの R2 キー。Scrapbox 由来は Scrapbox ID、
-  // diary 由来は mp-<uuid>。DB のカラム名は歴史的経緯で sbID のまま。
+  // 本文オブジェクトの R2 キー。Scrapbox 由来は Scrapbox ID (R2 上は
+  // <bodyKey>.json)、diary (Micropub) 由来は sb-<uuid> (R2 上は
+  // <bodyKey>.sb、1行目が題の Scrapbox 記法プレーンテキスト)。
+  // DB のカラム名は歴史的経緯で sbID のまま。
   bodyKey: text("sbID").notNull(),
 });
 

@@ -1,11 +1,11 @@
 import { drizzle } from "drizzle-orm/d1";
 import { and, eq } from "drizzle-orm";
 import { articles, objects, pages } from "@jigsaw/db";
-import { newMicropubBodyKey, r2KeyOf } from "@jigsaw/db/body-key";
+import { newSbBodyKey, r2KeyOf, bodyFormatOf } from "@jigsaw/db/body-key";
 import { isAuthorized } from "./auth";
 import { parseEntry } from "./mf2";
 import { applyUpdate, parseUpdateAction } from "./mf2update";
-import { sanitizeHtml } from "./sanitize";
+import { buildSbBody } from "./body";
 import { parseTargetURL } from "./target";
 import type { Env } from "./index";
 
@@ -22,6 +22,34 @@ function articleURL(title: string): string {
 // purge に渡すのは site-relative なパス (web の parsePurgePaths が絶対 URL を弾く)。
 function articlePath(title: string): string {
   return `/pages/${encodeURIComponent(title)}`;
+}
+
+export interface CreateR2Put {
+  bodyKey: string;
+  r2Key: string;
+  body: string;
+  contentType: string;
+}
+
+// create が R2 に書く内容 (key / body / contentType) をここで組み立てる。
+// 1行目に題、2行目以降に本文という不変条件は buildSbBody が作る。
+// handleMicropubCreate がこの関数を経由せず entry.content を直接
+// env.R2.put に渡すよう書き換えると、この不変条件が壊れて本文の1行目が
+// 黙って消える (spec が最大のリスクと呼ぶ箇所)。この関数を通すことで
+// その配線をユニットテストで固定できる。
+export function buildCreateR2Put(
+  name: string,
+  content: string,
+): CreateR2Put | null {
+  const bodyKey = newSbBodyKey();
+  const r2Key = r2KeyOf(bodyKey);
+  if (!r2Key) return null;
+  return {
+    bodyKey,
+    r2Key,
+    body: buildSbBody(name, content),
+    contentType: "text/plain; charset=utf-8",
+  };
 }
 
 // POST /micropub は action で分岐する。action が無ければ create (spec 既定)。
@@ -78,19 +106,17 @@ async function handleMicropubCreate(
     );
   }
 
-  const body = await sanitizeHtml(entry.contentHtml);
   const created = entry.published || new Date().toISOString();
 
   // 本文を先に R2 へ書く。page 行が指す先を必ず存在させる (spec §6)。
   // 逆順だと「本文が引けない page」が生まれる。
   // R2 だけ書けて D1 が失敗した場合は、参照されない孤児オブジェクトが残るだけ。
-  const bodyKey = newMicropubBodyKey();
-  const r2Key = r2KeyOf(bodyKey);
-  if (!r2Key) {
+  const put = buildCreateR2Put(entry.name, entry.content);
+  if (!put) {
     return Response.json({ error: "server_error" }, { status: 500 });
   }
-  await env.R2.put(r2Key, body, {
-    httpMetadata: { contentType: "text/html; charset=utf-8" },
+  await env.R2.put(put.r2Key, put.body, {
+    httpMetadata: { contentType: put.contentType },
   });
 
   const db = drizzle(env.DB);
@@ -101,7 +127,7 @@ async function handleMicropubCreate(
     .insert(pages)
     .values({
       title: entry.name,
-      bodyKey,
+      bodyKey: put.bodyKey,
       created,
       updated: created,
     })
@@ -255,7 +281,8 @@ async function handleMicropubUpdate(
     );
   }
 
-  // 更新は保存してある mf2 を土台にする。R2 の HTML から properties は復元できない。
+  // 更新は保存してある mf2 を土台にする。R2 の .sb (Scrapbox 記法の生テキスト)
+  // から properties は復元できない。
   const [stored] = await drizzle(env.DB)
     .select({ mf2: objects.mf2 })
     .from(objects)
@@ -309,6 +336,18 @@ async function handleMicropubUpdate(
     );
   }
 
+  // Micropub で作られていないページ (Scrapbox アーカイブ) を書き換えない。
+  // .json のキーに Scrapbox 記法の生テキストを書き込むと本文が壊れる。
+  if (bodyFormatOf(target.bodyKey) !== "micropub-sb") {
+    return Response.json(
+      {
+        error: "invalid_request",
+        error_description: `page was not created via micropub: ${target.title}`,
+      },
+      { status: 400 },
+    );
+  }
+
   const r2Key = r2KeyOf(target.bodyKey);
   if (!r2Key) {
     return Response.json({ error: "server_error" }, { status: 500 });
@@ -316,9 +355,10 @@ async function handleMicropubUpdate(
 
   // 本文は同じキーに上書きする。読み側は R2 を直読みするので即座に入れ替わる。
   // 新しいキーを振ると、参照されない古いオブジェクトが残るだけで得が無い。
-  const body = await sanitizeHtml(entry.contentHtml);
+  // 1行目の題はマージ後の name で書き直す (改題に追随する)。
+  const body = buildSbBody(entry.name, entry.content);
   await env.R2.put(r2Key, body, {
-    httpMetadata: { contentType: "text/html; charset=utf-8" },
+    httpMetadata: { contentType: "text/plain; charset=utf-8" },
   });
 
   const now = new Date().toISOString();

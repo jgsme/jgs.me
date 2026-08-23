@@ -137,7 +137,30 @@ export const ScrapboxNode: React.FC<{ node: NodeType }> = ({ node }) => {
         </blockquote>
       );
 
+    case "strong":
+      return (
+        <strong>
+          {node.nodes.map((n, i) => (
+            <ScrapboxNode key={i} node={n} />
+          ))}
+        </strong>
+      );
+
+    case "numberList":
+      // NumberListNode は行ブロックではなく inline node なので ol には畳めない。
+      // packages/ap/src/scrapbox.ts の numberList の扱いと同じく "N. 中身" として inline で出す
+      return (
+        <>
+          {node.number}.{" "}
+          {node.nodes.map((n, i) => (
+            <ScrapboxNode key={i} node={n} />
+          ))}
+        </>
+      );
+
     default:
-      return null;
+      // helpfeel / formula / strongImage / strongIcon / googleMap / commandLine / blank など
+      // 未対応のノード。本文が黙って消えないよう、必ず raw をテキストとして残す
+      return <>{node.raw}</>;
   }
 };

@@ -61,14 +61,11 @@ const Page = () => {
           </a>
         </span>
 
-        {/* 本文全体を e-content で包む。中の HTML / Scrapbox の分岐はそのまま。
-            分岐ごとに付けると diary 由来だけ nested になる。 */}
+        {/* 本文全体を e-content で包む。 */}
         <div className="e-content space-y-1">
-          {d.bodyHtml !== null ? (
-            <div dangerouslySetInnerHTML={{ __html: d.bodyHtml }} />
-          ) : (
-            d.blocks.map((block, i) => <ScrapboxBlock key={i} block={block} />)
-          )}
+          {d.blocks.map((block, i) => (
+            <ScrapboxBlock key={i} block={block} />
+          ))}
         </div>
       </article>
 

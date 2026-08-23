@@ -10,6 +10,18 @@ function esc(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+const SAFE_SCHEMES = ["http:", "https:"];
+
+// esc() は & < > " を潰すだけでスキームは見ないため、href に直接使うと
+// javascript: 等が <a href="..."> にそのまま乗ってしまう。http/https だけを通す。
+export function isSafeUrl(href: string): boolean {
+  try {
+    return SAFE_SCHEMES.includes(new URL(href).protocol);
+  } catch {
+    return false;
+  }
+}
+
 function nodeToHtml(node: Node, siteUrl: string): string {
   switch (node.type) {
     case "plain":
@@ -20,12 +32,23 @@ function nodeToHtml(node: Node, siteUrl: string): string {
     case "link": {
       if (node.pathType === "absolute") {
         const label = node.content ? esc(node.content) : esc(node.href);
+        if (!isSafeUrl(node.href)) {
+          // 安全でない href はリンクにせず、本文が消えないようテキストとして残す。
+          return label;
+        }
         return `<a href="${esc(node.href)}">${label}</a>`;
       }
       // 内部リンクは自サイトの記事ページを指す。
       const href = `${siteUrl}/pages/${encodeURIComponent(node.href)}`;
       return `<a href="${href}">${esc(node.href)}</a>`;
     }
+    case "hashTag": {
+      const href = `${siteUrl}/pages/${encodeURIComponent(node.href)}`;
+      return `<a href="${href}">#${esc(node.href)}</a>`;
+    }
+    case "image":
+    case "strongImage":
+      return `<img src="${esc(node.src)}" alt="">`;
     case "decoration": {
       const inner = node.nodes.map((n) => nodeToHtml(n, siteUrl)).join("");
       // 強調は装飾文字が "*-1" 〜 "*-10" に正規化されるため prefix で見る。
@@ -41,7 +64,7 @@ function nodeToHtml(node: Node, siteUrl: string): string {
     case "quote":
       return `<blockquote>${node.nodes.map((n) => nodeToHtml(n, siteUrl)).join("")}</blockquote>`;
     default:
-      // hashTag / icon / formula など未対応のものは生テキストで出す。
+      // icon / formula / numberList など未対応のものは生テキストで出す。
       return esc(node.raw);
   }
 }

@@ -110,3 +110,33 @@ describe("scrapboxToHtml", () => {
     expect(isSafeUrl("http://example.com")).toBe(true);
   });
 });
+
+const CARD =
+  't\ncode:card\n {"url":"https://example.com/a","title":"タイトル","siteName":"example.com","image":"https://r2.jgs.me/x.png"}';
+
+describe("code:card", () => {
+  it("figure + img + figcaption にする", () => {
+    expect(h(CARD)).toBe(
+      '<figure><a href="https://example.com/a"><img src="https://r2.jgs.me/x.png" alt=""></a>' +
+        '<figcaption><a href="https://example.com/a">タイトル</a> — example.com</figcaption></figure>',
+    );
+  });
+
+  it("画像が無ければ img を省く", () => {
+    const out = h('t\ncode:card\n {"url":"https://example.com/a","title":"T"}');
+    expect(out).toBe(
+      '<figure><figcaption><a href="https://example.com/a">T</a></figcaption></figure>',
+    );
+  });
+
+  it("title が無ければ url を出す", () => {
+    const out = h('t\ncode:card\n {"url":"https://example.com/a"}');
+    expect(out).toContain(">https://example.com/a</a>");
+  });
+
+  it("壊れた card は普通のコードブロックとして出す", () => {
+    expect(h("t\ncode:card\n これは JSON ではない")).toBe(
+      "<pre><code>これは JSON ではない</code></pre>",
+    );
+  });
+});

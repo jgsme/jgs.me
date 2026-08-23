@@ -1,5 +1,6 @@
 import React from "react";
 import type { Block as BlockType } from "@progfay/scrapbox-parser";
+import { parseCardBlock } from "./card";
 import { ScrapboxNode } from "./ScrapboxNode";
 
 export const ScrapboxBlock: React.FC<{ block: BlockType }> = ({ block }) => {
@@ -25,12 +26,52 @@ export const ScrapboxBlock: React.FC<{ block: BlockType }> = ({ block }) => {
       );
     }
 
-    case "codeBlock":
+    case "codeBlock": {
+      if (block.fileName === "card") {
+        const card = parseCardBlock(block.content);
+        if (card) {
+          return (
+            <figure className="my-4">
+              <a
+                href={card.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex flex-col border border-neutral-300 rounded overflow-hidden hover:bg-neutral-50"
+              >
+                {card.image && (
+                  <img
+                    src={card.image}
+                    alt=""
+                    className="w-full h-auto object-cover"
+                    loading="lazy"
+                  />
+                )}
+                <span className="block p-4">
+                  <span className="block font-bold text-blue-600">
+                    {card.title ?? card.url}
+                  </span>
+                  {card.description && (
+                    <span className="block text-sm text-neutral-600 mt-1">
+                      {card.description}
+                    </span>
+                  )}
+                  {card.siteName && (
+                    <span className="block text-xs text-neutral-400 mt-1">
+                      {card.siteName}
+                    </span>
+                  )}
+                </span>
+              </a>
+            </figure>
+          );
+        }
+      }
       return (
         <pre className="bg-neutral-100 p-4 rounded overflow-x-auto my-4">
           <code className="text-sm font-mono">{block.content}</code>
         </pre>
       );
+    }
 
     case "table":
       return (

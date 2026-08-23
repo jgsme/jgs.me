@@ -1,5 +1,6 @@
 import { drizzle } from "drizzle-orm/d1";
-import { pages } from "@jigsaw/db";
+import { and, eq } from "drizzle-orm";
+import { articles, objects, pages } from "@jigsaw/db";
 import { newMicropubBodyKey, r2KeyOf } from "@jigsaw/db/body-key";
 import { isAuthorized } from "./auth";
 import { parseEntry } from "./mf2";
@@ -166,24 +167,33 @@ async function resolveTarget(
     };
   }
 
-  const select =
-    "SELECT page.id AS id, page.title AS title, page.sbID AS bodyKey FROM page";
-  const rows =
+  const db = drizzle(env.DB);
+  const columns = {
+    id: pages.id,
+    title: pages.title,
+    bodyKey: pages.bodyKey,
+  };
+  // 同題が 2 件以上あるかを知りたいので limit は 2。
+  const results =
     target.kind === "page"
-      ? await env.DB.prepare(`${select} WHERE page.id = ? LIMIT 2`)
-          .bind(target.pageID)
-          .all<{ id: number; title: string; bodyKey: string }>()
+      ? await db
+          .select(columns)
+          .from(pages)
+          .where(eq(pages.id, target.pageID))
+          .limit(2)
       : target.kind === "article"
-        ? await env.DB.prepare(
-            `${select} JOIN article ON article.pageID = page.id WHERE article.id = ? LIMIT 2`,
-          )
-            .bind(target.articleID)
-            .all<{ id: number; title: string; bodyKey: string }>()
-        : await env.DB.prepare(`${select} WHERE page.title = ? LIMIT 2`)
-            .bind(target.title)
-            .all<{ id: number; title: string; bodyKey: string }>();
+        ? await db
+            .select(columns)
+            .from(pages)
+            .innerJoin(articles, eq(articles.pageID, pages.id))
+            .where(eq(articles.id, target.articleID))
+            .limit(2)
+        : await db
+            .select(columns)
+            .from(pages)
+            .where(eq(pages.title, target.title))
+            .limit(2);
 
-  const results = rows.results ?? [];
   if (results.length === 0) {
     return { ok: false, status: 404, description: `not found: ${url}` };
   }
@@ -246,11 +256,13 @@ async function handleMicropubUpdate(
   }
 
   // 更新は保存してある mf2 を土台にする。R2 の HTML から properties は復元できない。
-  const stored = await env.DB.prepare(
-    "SELECT mf2 FROM object WHERE pageID = ? AND source_protocol = 'web' LIMIT 1",
-  )
-    .bind(target.pageID)
-    .first<{ mf2: string | null }>();
+  const [stored] = await drizzle(env.DB)
+    .select({ mf2: objects.mf2 })
+    .from(objects)
+    .where(
+      and(eq(objects.pageID, target.pageID), eq(objects.sourceProtocol, "web")),
+    )
+    .limit(1);
 
   if (!stored?.mf2) {
     return Response.json(
@@ -342,11 +354,11 @@ async function handleMicropubUpdate(
     // 旧 URL は DB から引けなくなるが、キャッシュに残った本文は出続ける。
     paths.push(articlePath(target.title));
   }
-  const article = await env.DB.prepare(
-    "SELECT id FROM article WHERE pageID = ? LIMIT 1",
-  )
-    .bind(target.pageID)
-    .first<{ id: number }>();
+  const [article] = await drizzle(env.DB)
+    .select({ id: articles.id })
+    .from(articles)
+    .where(eq(articles.pageID, target.pageID))
+    .limit(1);
   if (article) paths.push(`/a/${article.id}`);
 
   await purge(env, paths);
@@ -389,11 +401,13 @@ export async function handleMicropubSource(
     );
   }
 
-  const stored = await env.DB.prepare(
-    "SELECT mf2 FROM object WHERE pageID = ? AND source_protocol = 'web' LIMIT 1",
-  )
-    .bind(target.pageID)
-    .first<{ mf2: string | null }>();
+  const [stored] = await drizzle(env.DB)
+    .select({ mf2: objects.mf2 })
+    .from(objects)
+    .where(
+      and(eq(objects.pageID, target.pageID), eq(objects.sourceProtocol, "web")),
+    )
+    .limit(1);
 
   if (!stored?.mf2) {
     return Response.json(

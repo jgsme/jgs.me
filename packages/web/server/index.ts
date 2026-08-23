@@ -7,6 +7,7 @@ import { rss } from "./routes/rss";
 import { wellknown } from "./routes/wellknown";
 import { objects } from "./routes/objects";
 import { reactions } from "./routes/reactions";
+import { internal } from "./routes/internal";
 import { cacheKeyFor } from "./cacheKey";
 
 export type { Bindings } from "./types";
@@ -56,6 +57,7 @@ app.route("/", rss);
 app.route("/", wellknown);
 app.route("/", objects);
 app.route("/", reactions);
+app.route("/", internal);
 
 apply(app);
 export default serve(app);

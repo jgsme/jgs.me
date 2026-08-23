@@ -76,10 +76,8 @@ describe("toArticle", () => {
     expect(a.id).toBe("https://w.jgs.me/o/1234");
   });
 
-  it("url は人間向けの /pages/<title>", () => {
-    expect(a.url).toBe(
-      "https://w.jgs.me/pages/%E3%83%86%E3%82%B9%E3%83%88%E8%A8%98%E4%BA%8B",
-    );
+  it("url は /p/<page.id>。改題しても変わらず、Bluesky に貼る URL と揃う", () => {
+    expect(a.url).toBe("https://w.jgs.me/p/1234");
   });
 
   it("type は Article (long-form 対応実装で全文表示させるため)", () => {

@@ -37,7 +37,10 @@ export interface CreateR2Put {
 // env.R2.put に渡すよう書き換えると、この不変条件が壊れて本文の1行目が
 // 黙って消える (spec が最大のリスクと呼ぶ箇所)。この関数を通すことで
 // その配線をユニットテストで固定できる。
-export function buildCreateR2Put(name: string, content: string): CreateR2Put | null {
+export function buildCreateR2Put(
+  name: string,
+  content: string,
+): CreateR2Put | null {
   const bodyKey = newSbBodyKey();
   const r2Key = r2KeyOf(bodyKey);
   if (!r2Key) return null;

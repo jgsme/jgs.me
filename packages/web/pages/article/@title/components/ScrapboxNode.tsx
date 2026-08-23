@@ -151,7 +151,8 @@ export const ScrapboxNode: React.FC<{ node: NodeType }> = ({ node }) => {
       // packages/ap/src/scrapbox.ts の numberList の扱いと同じく "N. 中身" として inline で出す
       return (
         <>
-          {node.number}. {node.nodes.map((n, i) => (
+          {node.number}.{" "}
+          {node.nodes.map((n, i) => (
             <ScrapboxNode key={i} node={n} />
           ))}
         </>

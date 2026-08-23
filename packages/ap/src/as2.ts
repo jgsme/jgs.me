@@ -1,4 +1,4 @@
-import { articleURL, objectURI } from "./config";
+import { objectURI, shareURL } from "./config";
 import { ACTOR_URI } from "./actor";
 
 export const PUBLIC = "https://www.w3.org/ns/activitystreams#Public";
@@ -68,7 +68,7 @@ export function toArticle(page: PageRow, contentHtml: string): AS2Article {
   return {
     "@context": ["https://www.w3.org/ns/activitystreams"],
     // id は page.id 由来なので改題しても変わらない。
-    // 改題は url と name を差し替えた Update の再配送で伝える。
+    // 改題は name を差し替えた Update の再配送で伝える。
     id: objectURI(page.id),
     type: "Article",
     name: page.title,
@@ -78,7 +78,11 @@ export function toArticle(page: PageRow, contentHtml: string): AS2Article {
     // updated が無いと Mastodon 3.5.0 以降は Update を処理しない。
     // 更新イベントが無い時期でも最初から出しておく必要がある。
     updated: toISO(page.updated),
-    url: articleURL(page.title),
+    // 人間が辿る先。/pages/<title> ではなく /p/<page.id> を出す。
+    // 配送済みのオブジェクトは相手のキャッシュやブーストに残るので、改題で
+    // 壊れない URL を渡す (ブラウザからは /pages/<title> に 302 される)。
+    // Bluesky に貼る URL とも揃う。正準 ID は id (/o/<page.id>) の方。
+    url: shareURL(page.id),
     attributedTo: ACTOR_URI,
     to: [PUBLIC],
   };

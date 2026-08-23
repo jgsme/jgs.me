@@ -5,8 +5,9 @@ import { isAuthorized } from "./auth";
 import { chunk, parseRows } from "./rows";
 import {
   handleMicropubConfig,
-  handleMicropubCreate,
   handleMicropubMedia,
+  handleMicropubPost,
+  handleMicropubSource,
 } from "./micropub";
 
 export interface Env {
@@ -19,6 +20,9 @@ export interface Env {
   MEDIA: R2Bucket;
   MEDIA_BASE_URL: string;
   AP: Fetcher;
+  // 記事ページのエッジキャッシュを消す口 (web の POST /internal/purge)。
+  WEB: Fetcher;
+  PURGE_TOKEN: string;
 }
 
 function unauthorized(): Response {
@@ -35,9 +39,12 @@ export default {
 
     // Micropub は similarity とは別のトークンで認証する (ハンドラ内でチェックする)。
     if (url.pathname === "/micropub") {
-      if (request.method === "POST") return handleMicropubCreate(request, env);
+      if (request.method === "POST") return handleMicropubPost(request, env);
       if (request.method === "GET" && url.searchParams.get("q") === "config") {
         return handleMicropubConfig(request, env);
+      }
+      if (request.method === "GET" && url.searchParams.get("q") === "source") {
+        return handleMicropubSource(request, env);
       }
     }
     if (url.pathname === "/micropub/media" && request.method === "POST") {

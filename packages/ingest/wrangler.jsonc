@@ -38,6 +38,12 @@
       "binding": "AP",
       "service": "w-ap",
     },
+    {
+      // 記事ページのエッジキャッシュを消す口 (POST /internal/purge)。
+      // 更新した本文と改題を TTL 切れより前に出すために要る。
+      "binding": "WEB",
+      "service": "w",
+    },
   ],
   "vars": {
     "MEDIA_BASE_URL": "https://r2.jgs.me",

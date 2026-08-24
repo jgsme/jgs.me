@@ -1,13 +1,10 @@
 import { Hono } from "hono";
 import { isAuthorized } from "../auth";
 import { cacheKeyFor } from "../cacheKey";
+import { SITE_URL } from "@/constants/site";
 import type { Bindings } from "../types";
 
 const internal = new Hono<{ Bindings: Bindings }>();
-
-// キャッシュキーは実リクエストの URL から作られる (server/index.ts)。
-// 公開ホスト名はこれなので、消す側も同じ文字列から組み立てないと当たらない。
-const SITE_URL = "https://w.jgs.me";
 
 // 1 リクエストで無制限にループさせない。改題を伴う更新でも
 // 新旧 /pages/*, /a/<n>, /p/<n> の 4 本で足りる。

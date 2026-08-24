@@ -22,6 +22,58 @@ export function isSafeUrl(href: string): boolean {
   }
 }
 
+interface Card {
+  url: string;
+  title?: string;
+  siteName?: string;
+  image?: string;
+}
+
+function safeUrl(v: unknown): string | undefined {
+  if (typeof v !== "string") return undefined;
+  return isSafeUrl(v) ? v : undefined;
+}
+
+function str(v: unknown): string | undefined {
+  return typeof v === "string" && v !== "" ? v : undefined;
+}
+
+// code:card ブロックの中身を Card として読む。web 側の parseCardBlock と同じ判定にすること。
+// ずれると片方でカード、片方でコードブロックとして出てしまう。
+function parseCardBlock(content: string): Card | null {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(content.trim());
+  } catch {
+    return null;
+  }
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const o = raw as Record<string, unknown>;
+  const url = safeUrl(o.url);
+  if (!url) return null;
+
+  const card: Card = { url };
+  const title = str(o.title);
+  if (title) card.title = title;
+  const siteName = str(o.siteName);
+  if (siteName) card.siteName = siteName;
+  const image = safeUrl(o.image);
+  if (image) card.image = image;
+  return card;
+}
+
+function cardToHtml(card: Card): string {
+  // Mastodon の status sanitizer は figure/figcaption/img を通さないので、
+  // ブロック要素が消えて裸のテキストになってしまう。p + br に寄せる。
+  // img は落ちる実装が多いが、通す実装もあるので残す。
+  const img = card.image
+    ? `<a href="${esc(card.url)}"><img src="${esc(card.image)}" alt=""></a><br>`
+    : "";
+  const title = esc(card.title ?? card.url);
+  const siteName = card.siteName ? ` — ${esc(card.siteName)}` : "";
+  return `<p>${img}<a href="${esc(card.url)}">${title}</a>${siteName}</p>`;
+}
+
 function nodeToHtml(node: Node, siteUrl: string): string {
   switch (node.type) {
     case "plain":
@@ -92,6 +144,13 @@ export function scrapboxToHtml(text: string, siteUrl: string): string {
 
     if (block.type === "codeBlock") {
       flushList();
+      if (block.fileName === "card") {
+        const card = parseCardBlock(block.content);
+        if (card) {
+          out.push(cardToHtml(card));
+          continue;
+        }
+      }
       out.push(`<pre><code>${esc(block.content)}</code></pre>`);
       continue;
     }

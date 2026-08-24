@@ -4,6 +4,7 @@ import { apply, serve } from "@photonjs/hono";
 import type { Bindings } from "./types";
 import { redirects } from "./routes/redirects";
 import { rss } from "./routes/rss";
+import { robots } from "./routes/robots";
 import { wellknown } from "./routes/wellknown";
 import { objects } from "./routes/objects";
 import { reactions } from "./routes/reactions";
@@ -54,6 +55,7 @@ app.use("/p/*", createCacheMiddleware(604800));
 
 app.route("/", redirects);
 app.route("/", rss);
+app.route("/", robots);
 app.route("/", wellknown);
 app.route("/", objects);
 app.route("/", reactions);

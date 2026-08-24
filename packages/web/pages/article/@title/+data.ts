@@ -8,6 +8,7 @@ import { useConfig } from "vike-react/useConfig";
 import { pickRandom } from "@/utils/pickRandom";
 import { routeTitleToPageTitle } from "@/utils/routeTitle";
 import { buildArticleBody } from "./articleBody";
+import { resolveFromDate } from "./fromDate";
 
 // bge-m3 の cosine は下駄が高く 0.5 未満がほぼ出ないため、絶対的な意味はない。
 // ノイズ切りの調整つまみ。0.60 で全 article の 7% が候補 0 件になる。
@@ -62,6 +63,7 @@ const data = async (c: Context) => {
       pageId: pages.id,
       articleId: articles.id,
       bodyKey: pages.bodyKey,
+      created: pages.created,
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
@@ -71,6 +73,7 @@ const data = async (c: Context) => {
   const pageId = pageInfo[0]?.pageId ?? null;
   const bodyKey = pageInfo[0]?.bodyKey ?? "";
   const articleId = pageInfo[0]?.articleId ?? null;
+  const created = pageInfo[0]?.created ?? "";
 
   // 関連記事。article でないページには出さない。
   let related: { title: string; image: string | null }[] = [];
@@ -114,15 +117,12 @@ const data = async (c: Context) => {
   const built = buildArticleBody(body);
   const filteredBlocks = built.blocks;
   const description = built.description;
-  let fromDate = built.fromDate;
-
-  if (!fromDate) {
-    const titleDateMatch = title.match(/(\d{4})(\d{2})(\d{2})/);
-    if (titleDateMatch) {
-      const [, year, month, day] = titleDateMatch;
-      fromDate = `${year}/${month}/${day}`;
-    }
-  }
+  const fromDate = resolveFromDate({
+    bodyDate: built.fromDate,
+    title,
+    bodyKey,
+    created,
+  });
 
   config({
     title: `${title} - I am Electrical machine`,

@@ -14,13 +14,13 @@ describe("buildArticleBody", () => {
 
   it("from [YYYYMMDD] から日付を拾い、その行を落とす", () => {
     const out = buildArticleBody("題\nfrom [20240102]\n\n本文");
-    expect(out.fromDate).toBe("2024/01/02");
+    expect(out.fromDate).toBe("2024-01-02");
     expect(lineTexts(out.blocks)).toEqual(["本文"]);
   });
 
   it("末尾の #YYYYMMDD から日付を拾い、その行を落とす", () => {
     const out = buildArticleBody("題\n本文\n#20240102");
-    expect(out.fromDate).toBe("2024/01/02");
+    expect(out.fromDate).toBe("2024-01-02");
     expect(lineTexts(out.blocks)).toEqual(["本文"]);
   });
 

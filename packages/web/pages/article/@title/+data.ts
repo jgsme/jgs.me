@@ -5,10 +5,10 @@ import { articles, pageSimilarities, pages } from "@jigsaw/db";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { useConfig } from "vike-react/useConfig";
 import { fetchBody } from "@jigsaw/db/fetch-body";
+import { resolveArticleDate } from "@jigsaw/db/article-date";
 import { pickRandom } from "@/utils/pickRandom";
 import { routeTitleToPageTitle } from "@/utils/routeTitle";
 import { buildArticleBody } from "./articleBody";
-import { resolveFromDate } from "./fromDate";
 
 // bge-m3 の cosine は下駄が高く 0.5 未満がほぼ出ないため、絶対的な意味はない。
 // ノイズ切りの調整つまみ。0.60 で全 article の 7% が候補 0 件になる。
@@ -84,8 +84,8 @@ const data = async (c: Context) => {
   const built = buildArticleBody(body);
   const filteredBlocks = built.blocks;
   const description = built.description;
-  const fromDate = resolveFromDate({
-    bodyDate: built.fromDate,
+  const fromDate = resolveArticleDate({
+    body,
     title,
     bodyKey,
     created,

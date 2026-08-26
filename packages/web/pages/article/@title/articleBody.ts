@@ -1,4 +1,5 @@
 import { parse } from "@progfay/scrapbox-parser";
+import { extractBodyDate } from "@jigsaw/db/article-date";
 import { purifyScrapboxText } from "@/utils/purifyScrapboxText";
 
 export type ArticleBody = {
@@ -9,9 +10,13 @@ export type ArticleBody = {
 
 // text は Scrapbox 記法で1行目が題。parse() の既定 (hasTitle: true) が
 // 先頭を title ブロックにするので、それを filter で落とす。
+//
+// 日付の値そのものは @jigsaw/db/article-date に一本化してある。ここが持つのは
+// 「日付を書いた行を本文から落とす」判定だけ。値と位置の判定条件は同じなので、
+// 片方だけ変えると表示に日付行が残る。
 export function buildArticleBody(text: string): ArticleBody {
   const blocks = parse(text);
-  let fromDate: string | null = null;
+  const fromDate = extractBodyDate(text);
   let skipLines = 0;
 
   const firstLineIndex = blocks.findIndex(
@@ -30,34 +35,24 @@ export function buildArticleBody(text: string): ArticleBody {
       ) {
         const secondNode = firstLine.nodes[1];
         if (secondNode.type === "link" && secondNode.pathType === "relative") {
-          const match = secondNode.href.match(/^(\d{4})(\d{2})(\d{2})$/);
-          if (match) {
-            const [, year, month, day] = match;
-            fromDate = `${year}/${month}/${day}`;
-            skipLines = 2;
-          }
+          if (/^\d{8}$/.test(secondNode.href)) skipLines = 2;
         }
       }
     }
   }
 
   let dateLineIndex: number | null = null;
-  if (!fromDate) {
+  if (skipLines === 0) {
     for (let i = blocks.length - 1; i >= Math.max(0, blocks.length - 5); i--) {
       const block = blocks[i];
       if (block.type !== "line") continue;
-      for (const node of block.nodes) {
-        if (node.type === "hashTag") {
-          const match = node.href.match(/^(\d{4})(\d{2})(\d{2})$/);
-          if (match) {
-            const [, year, month, day] = match;
-            fromDate = `${year}/${month}/${day}`;
-            dateLineIndex = i;
-            break;
-          }
-        }
+      const hit = block.nodes.some(
+        (node) => node.type === "hashTag" && /^\d{8}$/.test(node.href),
+      );
+      if (hit) {
+        dateLineIndex = i;
+        break;
       }
-      if (fromDate) break;
     }
   }
 

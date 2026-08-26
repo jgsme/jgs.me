@@ -26,10 +26,10 @@ const Page = () => {
     );
   }
 
-  // fromDate は "YYYY/MM/DD" か null (+data.ts)。dt-published は機械可読な値が
-  // 要るので "-" 区切りに直して datetime に入れる。日付が取れない記事もあるため、
-  // null なら dt-published ごと出さない。
-  const publishedISO = d.fromDate ? d.fromDate.replaceAll("/", "-") : null;
+  // fromDate は "YYYY-MM-DD" か null (+data.ts)。dt-published にはそのまま入れ、
+  // 表示は従来どおり "/" 区切りにする。日付が取れない記事もあるため、null なら
+  // dt-published ごと出さない。
+  const publishedDisplay = d.fromDate ? d.fromDate.replaceAll("-", "/") : null;
   const canonical = `https://w.jgs.me/pages/${encodeURIComponent(d.title)}`;
 
   return (
@@ -42,8 +42,8 @@ const Page = () => {
           <div className="flex gap-2">
             {d.fromDate && (
               <p className="text-neutral-500 text-sm mt-1">
-                <time className="dt-published" dateTime={publishedISO!}>
-                  {d.fromDate}
+                <time className="dt-published" dateTime={d.fromDate!}>
+                  {publishedDisplay}
                 </time>
               </p>
             )}

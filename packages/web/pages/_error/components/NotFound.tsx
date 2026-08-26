@@ -7,11 +7,11 @@ export const NotFound = () => {
       <BouncingCode />
 
       <div className="relative z-[2] mx-auto max-w-[600px] px-4 pt-[120px] pb-[120px] sm:pt-[180px]">
-        <h1 className="mb-4 text-[1.75rem] leading-[1.4] font-bold">
+        <h1 className="mb-4 text-[4rem] leading-[1.4] font-bold text-center">
           NOT FOUND
         </h1>
 
-        <div className="flex min-h-[52px] flex-wrap items-center gap-3">
+        <div className="flex min-h-[52px] flex-wrap justify-center items-center gap-3">
           <a
             href="/random"
             style={{ transition: "transform 0.4s, color 0.3s" }}

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  runFetch,
   runProbe,
   runScan,
+  type FetchDeps,
   type PageRow,
   type ProbeDeps,
   type ScanDeps,
@@ -181,5 +183,123 @@ describe("runProbe", () => {
     const r = await runProbe(deps, [A]);
 
     expect(r.items[0]!.bytes).toBeNull();
+  });
+});
+
+const png = new TextEncoder().encode("png-bytes").buffer as ArrayBuffer;
+
+function fetchDeps(over: Partial<FetchDeps> = {}) {
+  const recorded: unknown[] = [];
+  const deps: FetchDeps = {
+    known: async () => new Set(),
+    download: async () => ({
+      status: 200,
+      contentType: "image/png",
+      body: png,
+    }),
+    put: async () => "deadbeef.png",
+    record: async (row) => {
+      recorded.push(row);
+    },
+    ...over,
+  };
+  return { deps, recorded };
+}
+
+describe("runFetch", () => {
+  it("取得して put して対応表に記録する", async () => {
+    const { deps, recorded } = fetchDeps();
+
+    const r = await runFetch(deps, [A]);
+
+    expect(recorded).toEqual([
+      {
+        gyazoHash: A,
+        r2Key: "deadbeef.png",
+        contentType: "image/png",
+        bytes: png.byteLength,
+      },
+    ]);
+    expect(r.items[0]).toEqual({
+      gyazoHash: A,
+      r2Key: "deadbeef.png",
+      bytes: png.byteLength,
+      contentType: "image/png",
+    });
+  });
+
+  // 再実行を安くする。取り込み済みは触らない。
+  it("既に対応表にあるハッシュは飛ばす", async () => {
+    const { deps, recorded } = fetchDeps({ known: async () => new Set([A]) });
+
+    const r = await runFetch(deps, [A]);
+
+    expect(recorded).toEqual([]);
+    expect(r.items).toEqual([]);
+    expect(r.processed).toBe(1);
+  });
+
+  it("200 以外は error にして記録しない", async () => {
+    const { deps, recorded } = fetchDeps({
+      download: async () => ({ status: 403, contentType: null, body: png }),
+    });
+
+    const r = await runFetch(deps, [A]);
+
+    expect(r.items[0]).toEqual({ gyazoHash: A, error: "status 403" });
+    expect(recorded).toEqual([]);
+  });
+
+  it("未対応の Content-Type は error にして記録しない", async () => {
+    const { deps, recorded } = fetchDeps({
+      download: async () => ({
+        status: 200,
+        contentType: "application/pdf",
+        body: png,
+      }),
+      put: async () => null,
+    });
+
+    const r = await runFetch(deps, [A]);
+
+    expect(r.items[0]).toEqual({
+      gyazoHash: A,
+      error: "unsupported content type: application/pdf",
+    });
+    expect(recorded).toEqual([]);
+  });
+
+  // Gyazo が charset 付きで返しても拡張子の解決を落とさない。
+  it("Content-Type のパラメータを落として渡す", async () => {
+    const seen: string[] = [];
+    const { deps } = fetchDeps({
+      download: async () => ({
+        status: 200,
+        contentType: "image/png; charset=binary",
+        body: png,
+      }),
+      put: async (_bytes, contentType) => {
+        seen.push(contentType);
+        return "deadbeef.png";
+      },
+    });
+
+    await runFetch(deps, [A]);
+
+    expect(seen).toEqual(["image/png"]);
+  });
+
+  it("download が投げたら error にして続ける", async () => {
+    const { deps } = fetchDeps({
+      download: async (url) => {
+        if (url.includes(A)) throw new Error("boom");
+        return { status: 200, contentType: "image/png", body: png };
+      },
+    });
+
+    const r = await runFetch(deps, [A, B]);
+
+    expect(r.items[0]).toEqual({ gyazoHash: A, error: "boom" });
+    expect(r.items[1]).toMatchObject({ gyazoHash: B, r2Key: "deadbeef.png" });
   });
 });

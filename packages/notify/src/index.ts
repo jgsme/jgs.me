@@ -8,7 +8,7 @@ import { pages, articles, excludedPages, clips } from "@jigsaw/db";
 import { eq, isNull, desc, and, sql, SQL } from "drizzle-orm";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 import { verifyKey } from "discord-interactions";
-import { applyAction, publishToAP } from "./actions";
+import { applyAction, publishToAP, resolveAndStoreDate } from "./actions";
 import { isAuthorized } from "./auth";
 import {
   PULL_COMMAND,
@@ -26,6 +26,7 @@ function notGlob(column: SQLiteColumn, pattern: string): SQL {
 
 type Env = {
   DB: D1Database;
+  R2: R2Bucket;
   DISCORD_APPLICATION_ID: string;
   DISCORD_BOT_TOKEN: string;
   DISCORD_CHANNEL_ID: string;
@@ -288,9 +289,19 @@ export default {
         decision.pageId,
       );
 
-      // interaction は 3 秒で返す必要があるので配送の起動は待たない。
+      // interaction は 3 秒で返す必要があるので配送も日付解決も待たない。
       if (decision.action === "register" && result.status === "ok") {
         ctx.waitUntil(publishToAP(env.AP, decision.pageId));
+        ctx.waitUntil(
+          resolveAndStoreDate(drizzle(env.DB), env.R2, decision.pageId).catch(
+            (e) => {
+              console.error(
+                `[date] failed pageID=${decision.pageId} ${String(e)}`,
+              );
+              return null;
+            },
+          ),
+        );
       }
 
       return Response.json({

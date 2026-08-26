@@ -23,6 +23,12 @@
       "migrations_dir": "../db/drizzle",
     },
   ],
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "w-data",
+    },
+  ],
   "services": [
     {
       // 記事公開を ActivityPub の fan-out に繋ぐ内部呼び出し。

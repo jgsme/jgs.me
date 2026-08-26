@@ -11,8 +11,6 @@ import { objects } from "./routes/objects";
 import { reactions } from "./routes/reactions";
 import { internal } from "./routes/internal";
 
-export type { Bindings } from "./types";
-
 const app = new Hono<{ Bindings: Bindings }>();
 
 app.use("/", createCacheMiddleware(86400));

@@ -1,5 +1,5 @@
 import type { PageContextServer } from "vike/types";
-import type { Bindings } from "@/server";
+import type { Bindings } from "@/server/types";
 
 export type OnThisDayIndex = {
   years: number[];

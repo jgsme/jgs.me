@@ -21,8 +21,15 @@ describe("extractBodyDate", () => {
     expect(extractBodyDate("題\n本文\n#20240102")).toBe("2024-01-02");
   });
 
-  it("末尾から 5 行より前の #YYYYMMDD は拾わない", () => {
-    const body = ["題", "#20240102", "a", "b", "c", "d", "e", "f"].join("\n");
+  it("末尾から 5 行目の #YYYYMMDD は拾う", () => {
+    // 6 行なので index 1 がちょうど末尾 5 行目。境界の内側。
+    const body = ["題", "#20240102", "a", "b", "c", "d"].join("\n");
+    expect(extractBodyDate(body)).toBe("2024-01-02");
+  });
+
+  it("末尾から 6 行目の #YYYYMMDD は拾わない", () => {
+    // 7 行にすると index 1 は末尾 6 行目になり、境界の外側に出る。
+    const body = ["題", "#20240102", "a", "b", "c", "d", "e"].join("\n");
     expect(extractBodyDate(body)).toBeNull();
   });
 
@@ -42,6 +49,12 @@ describe("extractBodyMonthDay", () => {
 
   it("#YYYYMMDD の一部を #MMDD として誤検出しない", () => {
     expect(extractBodyMonthDay("題\n本文\n#20240625")).toBeNull();
+  });
+
+  it("先頭4桁が妥当な月日になる 8 桁タグも #MMDD として拾わない", () => {
+    // #12312024 の先頭 4 桁は 12-31 で月日として妥当。前後の桁を見張っていないと
+    // ここを拾ってしまう。isValidMonthDay では弾けないので guard だけが頼り。
+    expect(extractBodyMonthDay("題\n本文\n#12312024")).toBeNull();
   });
 
   it("月日として不正な値は拾わない", () => {

@@ -1,5 +1,5 @@
 import type { PageContextServer } from "vike/types";
-import type { Bindings } from "@/server";
+import type { Bindings } from "@/server/types";
 import { clips, pages } from "@jigsaw/db";
 import { getDB } from "@/db/getDB";
 import { count, desc, eq } from "drizzle-orm";

@@ -19,7 +19,7 @@ random.get("/random", async (c) => {
     .limit(1);
 
   // エッジや中間 CDN に焼かれると以降ずっと同じ記事が返る。
-  // server/index.ts の cache middleware は /random を通していないが、
+  // +server.ts の cache middleware は /random を通していないが、
   // それとは別に自分でも明示しておく。
   c.header("Cache-Control", "no-store");
 

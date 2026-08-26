@@ -27,7 +27,7 @@ pnpm ワークスペースによるモノレポ構成。
 ### Packages
 
 - `packages/db` - 共有 Drizzle スキーマ（`@jigsaw/db` としてインポート）
-- `packages/web` - メインのWebアプリ（Vike + React + Photon + Hono、Cloudflare Pages）
+- `packages/web` - メインのWebアプリ（Vike + React + Hono、Cloudflare Workers / Universal Deploy）
 - `packages/notify` - 通知ワーカー（未登録記事を Discord にボタン付きで通知し、押下 interaction を受けて登録/クリップ/除外を実行。JST 05:00 cron）
 - `packages/og` - OG画像生成ワーカー（Satori + Resvg）
 - `packages/home` - ホームページ用ワーカー
@@ -35,17 +35,16 @@ pnpm ワークスペースによるモノレポ構成。
 
 ### Web App (packages/web)
 
-Vike + React + Photon + Hono で構成された Cloudflare Pages アプリケーション。
+Vike + React + Hono で構成された Cloudflare Workers アプリケーション (Vike の Universal Deploy)。
 
-### Photon
+### Universal Deploy (@vikejs/hono)
 
-- `@photonjs/cloudflare`, `@photonjs/hono`, `@photonjs/core` を使用
-- `vike-photon` で Vike と統合
-- Vite プラグインとして動作し、Cloudflare Workers 向けにビルド
+- `@vikejs/hono` と `@cloudflare/vite-plugin` を使用
+- Vite プラグインとして動作し、Cloudflare Workers 向けにビルド (ビルド成果物に `dist/w` が生成され、これが実デプロイ単位)
 
 ### Entry Points (packages/web)
 
-- `server/index.ts` - Hono サーバーエントリポイント。`@photonjs/hono` の `apply()` と `serve()` で Vike と統合
+- `+server.ts` - Hono サーバーエントリポイント。`@vikejs/hono` の `vike()` で Vike と統合し、`export default { fetch: app.fetch } satisfies Server` で公開する
 
 ### Database
 
@@ -79,7 +78,7 @@ Vike + React + Photon + Hono で構成された Cloudflare Pages アプリケー
 ### API Routes
 
 - `server/routes/` 配下に Hono ハンドラを配置
-- `server/index.ts` でルート登録
+- `+server.ts` でルート登録
 - 主要エンドポイント:
   - `/rss` - RSS フィード
 

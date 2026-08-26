@@ -235,7 +235,7 @@ async function resolveTarget(
   return { ok: true, pageID: row.id, title: row.title, bodyKey: row.bodyKey };
 }
 
-// 記事ページはエッジに載る (web の server/index.ts)。消さないと
+// 記事ページはエッジに載る (web の +server.ts)。消さないと
 // 差し替えた本文も改題も TTL が切れるまで出てこない。
 // 失敗しても update 自体は成功させる。
 async function purge(env: Env, paths: string[]): Promise<void> {

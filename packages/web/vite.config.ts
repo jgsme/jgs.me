@@ -1,7 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
-import vikePhoton from "vike-photon/plugin";
-import { cloudflare } from "@photonjs/cloudflare/vite";
+import { cloudflare } from "@cloudflare/vite-plugin";
 import vike from "vike/plugin";
 import react from "@vitejs/plugin-react";
 
@@ -17,12 +16,7 @@ export default defineConfig(() => {
     plugins: [
       react(),
       vike({}),
-      vikePhoton(),
-      cloudflare({
-        persistState: {
-          path: "../../.wrangler/state",
-        },
-      }),
+      cloudflare({ persistState: { path: "../../.wrangler/state" } }),
     ],
   };
 });

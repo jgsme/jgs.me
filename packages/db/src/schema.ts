@@ -32,6 +32,9 @@ export const articles = sqliteTable("article", {
   created: text("created")
     .notNull()
     .default(sql`(CURRENT_TIMESTAMP)`),
+  // 記事が書かれた日 "YYYY-MM-DD"。決まらない記事は null で、周年日記に出ない。
+  // created はページが D1 に入った時刻で、記事が書かれた日ではない。
+  date: text("date"),
 });
 
 export const articleRelations = relations(articles, ({ one }) => ({

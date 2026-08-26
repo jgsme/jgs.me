@@ -1,5 +1,5 @@
 import React from "react";
-import { thumbURL } from "@/utils/thumbURL";
+import { tileImageSources } from "@/utils/listImage";
 
 export const RelatedPages: React.FC<{
   related: { title: string; image: string | null }[];
@@ -18,7 +18,7 @@ export const RelatedPages: React.FC<{
             >
               {r.image ? (
                 <img
-                  src={thumbURL(r.image)}
+                  {...tileImageSources(r.image)}
                   alt=""
                   className="absolute inset-0 h-full w-full object-cover"
                   loading="lazy"

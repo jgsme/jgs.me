@@ -7,6 +7,7 @@ import { parseEntry } from "./mf2";
 import { applyUpdate, parseUpdateAction } from "./mf2update";
 import { buildSbBody } from "./body";
 import { parseTargetURL } from "./target";
+import { putMedia } from "./media";
 import type { Env } from "./index";
 
 const SITE_URL = "https://w.jgs.me";
@@ -498,15 +499,6 @@ export async function handleMicropubConfig(
   });
 }
 
-// 拡張子は Content-Type から決める。クライアントのファイル名を信用しない。
-const EXT_BY_TYPE: Record<string, string> = {
-  "image/png": "png",
-  "image/jpeg": "jpg",
-  "image/gif": "gif",
-  "image/webp": "webp",
-  "image/avif": "avif",
-};
-
 export async function handleMicropubMedia(
   request: Request,
   env: Env,
@@ -539,8 +531,9 @@ export async function handleMicropubMedia(
     );
   }
 
-  const ext = EXT_BY_TYPE[file.type];
-  if (!ext) {
+  const bytes = await file.arrayBuffer();
+  const key = await putMedia(env.MEDIA, bytes, file.type);
+  if (key === null) {
     return Response.json(
       {
         error: "invalid_request",
@@ -549,19 +542,6 @@ export async function handleMicropubMedia(
       { status: 400 },
     );
   }
-
-  const bytes = await file.arrayBuffer();
-  // 内容から鍵を作る。同じ画像を二度上げても1つにまとまる。
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  const hex = [...new Uint8Array(digest)]
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-  const key = `${hex}.${ext}`;
-
-  // 画像は本文とは別バケット (w-media)。
-  await env.MEDIA.put(key, bytes, {
-    httpMetadata: { contentType: file.type },
-  });
 
   return new Response(null, {
     status: 201,

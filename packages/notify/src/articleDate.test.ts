@@ -1,28 +1,38 @@
 import { describe, expect, it, vi } from "vitest";
+import { eq } from "drizzle-orm";
+import { articles, pages } from "@jigsaw/db";
 import { resolveAndStoreDate } from "./actions";
 
 type PageRow = { bodyKey: string; title: string; created: string };
 
 // drizzle の select().from().where().limit() チェーンと
 // update().set().where() チェーンだけを満たすスタブ。
+// where() に渡された条件も記録する。捨ててしまうと「どの行に書いたか」が
+// 一切検証されず、article.pageID と article.id の取り違えを見逃す。
 function stubDb(page: PageRow | undefined) {
   const updates: { date: string | null }[] = [];
+  const wheres: { kind: "select" | "update"; cond: unknown }[] = [];
   const db = {
     select: () => ({
       from: () => ({
-        where: () => ({
-          limit: async () => (page ? [page] : []),
-        }),
+        where: (cond: unknown) => {
+          wheres.push({ kind: "select", cond });
+          return { limit: async () => (page ? [page] : []) };
+        },
       }),
     }),
     update: () => ({
       set: (values: { date: string | null }) => {
         updates.push(values);
-        return { where: async () => undefined };
+        return {
+          where: async (cond: unknown) => {
+            wheres.push({ kind: "update", cond });
+          },
+        };
       },
     }),
   };
-  return { db, updates };
+  return { db, updates, wheres };
 }
 
 function stubR2(text: string | null) {
@@ -104,5 +114,37 @@ describe("resolveAndStoreDate", () => {
 
     expect(got).toBe("2024-05-06");
     expect(updates).toEqual([{ date: "2024-05-06" }]);
+  });
+
+  it("渡された pageId のページを引く", async () => {
+    const { db, wheres } = stubDb({
+      bodyKey: "abc123",
+      title: "題",
+      created: "2024-01-02T00:00:00.000Z",
+    });
+    const r2 = stubR2("題\nfrom [20240102]\n本文");
+
+    await resolveAndStoreDate(db as never, r2 as never, 42);
+
+    expect(wheres.find((w) => w.kind === "select")?.cond).toEqual(
+      eq(pages.id, 42),
+    );
+  });
+
+  it("同じ pageId の article に書く", async () => {
+    // articles には pageID と id が両方あるので、取り違えるとよその記事の
+    // 日付を書き換えてしまう。書き込み対象の条件そのものを固定する。
+    const { db, wheres } = stubDb({
+      bodyKey: "abc123",
+      title: "題",
+      created: "2024-01-02T00:00:00.000Z",
+    });
+    const r2 = stubR2("題\nfrom [20240102]\n本文");
+
+    await resolveAndStoreDate(db as never, r2 as never, 42);
+
+    expect(wheres.find((w) => w.kind === "update")?.cond).toEqual(
+      eq(articles.pageID, 42),
+    );
   });
 });

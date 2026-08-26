@@ -9,6 +9,7 @@ import {
   handleMicropubPost,
   handleMicropubSource,
 } from "./micropub";
+import { handleGyazoMigrate } from "./gyazoMigrate";
 
 export interface Env {
   DB: D1Database;
@@ -59,6 +60,14 @@ export default {
     }
 
     const db = drizzle(env.DB);
+
+    // Gyazo → R2 の移行バッチ。フェーズは body の phase で切り替える。
+    if (
+      request.method === "POST" &&
+      url.pathname === "/internal/gyazo-migrate"
+    ) {
+      return handleGyazoMigrate(request, env);
+    }
 
     // 類似度計算の対象。article として公開しているページだけを返す。
     if (request.method === "GET" && url.pathname === "/similarity/targets") {

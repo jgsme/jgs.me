@@ -209,3 +209,17 @@ export const followers = sqliteTable("follower", {
     .notNull()
     .default(sql`(CURRENT_TIMESTAMP)`),
 });
+
+// Gyazo から取り込んだ画像の対応表。
+// R2 のキーは内容の sha256 なので、この表が無いとキーから元の Gyazo 画像に
+// 戻れない。取り込みの再実行判断とロールバックがこの表に乗る。
+// 取得に失敗した画像は行を作らない。差し替え側は「表に無い = 触らない」で動く。
+export const gyazoMedia = sqliteTable("gyazo_media", {
+  gyazoHash: text("gyazoHash").primaryKey(),
+  r2Key: text("r2Key").notNull(),
+  contentType: text("contentType").notNull(),
+  bytes: integer("bytes").notNull(),
+  created: text("created")
+    .notNull()
+    .default(sql`(CURRENT_TIMESTAMP)`),
+});

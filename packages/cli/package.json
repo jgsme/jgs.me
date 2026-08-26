@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "undo": "node src/index.ts",
+    "gyazo": "node src/gyazo.ts",
     "test": "vitest",
     "typecheck": "tsc --noEmit"
   },

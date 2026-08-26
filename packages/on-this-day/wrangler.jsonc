@@ -4,13 +4,13 @@
   "compatibility_date": "2025-08-28",
   "main": "src/index.ts",
   "triggers": {
-    "crons": ["0 20 * * *"],
+    "crons": [],
   },
   "workflows": [
     {
-      "name": "on-this-day-workflow",
+      "name": "article-date-backfill-workflow",
       "binding": "WORKFLOW",
-      "class_name": "OnThisDayWorkflow",
+      "class_name": "ArticleDateBackfillWorkflow",
     },
   ],
   "r2_buckets": [

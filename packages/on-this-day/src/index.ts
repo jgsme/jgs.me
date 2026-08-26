@@ -4,9 +4,10 @@ import {
   WorkflowStep,
 } from "cloudflare:workers";
 import { drizzle } from "drizzle-orm/d1";
-import { eq, inArray } from "drizzle-orm";
-import { pages, onThisDayEntries } from "@jigsaw/db";
-import { parse, type Node } from "@progfay/scrapbox-parser";
+import { eq, isNull } from "drizzle-orm";
+import { pages, articles, onThisDayEntries } from "@jigsaw/db";
+import { resolveArticleDate } from "@jigsaw/db/article-date";
+import { fetchBody } from "@jigsaw/db/fetch-body";
 
 type Env = {
   R2: R2Bucket;
@@ -14,202 +15,146 @@ type Env = {
   WORKFLOW: Workflow;
 };
 
-type OnThisDayParams = {
-  cutoff?: number; // Unix timestamp
-  fullScan?: boolean;
-  start?: string; // MMDD
-  end?: string; // MMDD
+type BackfillParams = {
+  // true なら on_this_day_entry に載っていない article も対象にする。
+  // 既定は false で、載っているものだけを埋める。
+  includeUnlisted?: boolean;
+  // 1 バッチあたりの件数。Workflow の step 上限に合わせて調整する。
+  batchSize?: number;
 };
 
-type PageData = {
-  lines: { text: string }[];
-};
+// "0401" + 2022 -> "2022-04-01"。月日として読めない値は null。
+export function dateFromEntry(mmdd: string, year: number): string | null {
+  if (!/^\d{4}$/.test(mmdd)) return null;
+  const month = mmdd.slice(0, 2);
+  const day = mmdd.slice(2, 4);
+  const m = Number(month);
+  const d = Number(day);
+  if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+  return `${year}-${month}-${day}`;
+}
 
-type EntryToInsert = typeof onThisDayEntries.$inferInsert;
-
-type TempEntry = {
-  pageID: number;
-  year: number;
-  tempTitle: string;
-};
-
-export class OnThisDayWorkflow extends WorkflowEntrypoint<
+export class ArticleDateBackfillWorkflow extends WorkflowEntrypoint<
   Env,
-  OnThisDayParams
+  BackfillParams
 > {
-  async run(event: WorkflowEvent<OnThisDayParams>, step: WorkflowStep) {
-    const { cutoff: payloadCutoff, fullScan, start, end } = event.payload ?? {};
-    let cutoff = payloadCutoff;
-
-    if (fullScan || start || end) {
-      cutoff = 0;
-    } else if (cutoff === undefined) {
-      cutoff = Math.floor(Date.now() / 1000) - 25 * 60 * 60;
-    }
-
+  async run(event: WorkflowEvent<BackfillParams>, step: WorkflowStep) {
+    const { includeUnlisted = false, batchSize = 50 } = event.payload ?? {};
     const runId = Date.now();
-
-    console.log(
-      `[OnThisDay] START: runId=${runId}, cutoff=${cutoff}, fullScan=${fullScan}, start=${start}, end=${end}`,
-    );
-
     const db = drizzle(this.env.DB);
 
-    const targetPages = await step.do(`fetch-pages-${runId}`, async () => {
-      const candidates = await db
+    console.log(
+      `[Backfill] START runId=${runId} includeUnlisted=${includeUnlisted}`,
+    );
+
+    // date が未設定の article を対象にする。何度流しても既に入った分は触らない。
+    const targets = await step.do(`fetch-targets-${runId}`, async () => {
+      const rows = await db
         .select({
-          id: pages.id,
+          articleId: articles.id,
+          pageId: pages.id,
           title: pages.title,
           bodyKey: pages.bodyKey,
-          updated: pages.updated,
+          created: pages.created,
         })
-        .from(pages)
-        .orderBy(pages.title);
+        .from(articles)
+        .innerJoin(pages, eq(pages.id, articles.pageID))
+        .where(isNull(articles.date));
 
-      const cutoffDate = new Date(cutoff * 1000);
-      console.log(
-        `[OnThisDay] Filter cutoffDate: ${cutoffDate.toISOString()} (timestamp: ${cutoff})`,
-      );
+      if (includeUnlisted) return rows;
 
-      const parseDate = (dateStr: string): Date => {
-        if (/^\d+$/.test(dateStr)) {
-          return new Date(parseInt(dateStr, 10) * 1000);
-        }
-        if (dateStr.includes("T")) return new Date(dateStr);
-        return new Date(dateStr.replace(" ", "T") + "Z");
-      };
-
-      return candidates.filter((p) => {
-        const titleStr = String(p.title);
-        if (!/^\d{4}$/.test(titleStr)) return false;
-
-        if (start && titleStr < start) return false;
-        if (end && titleStr > end) return false;
-
-        const updatedDate = parseDate(p.updated);
-        const keep = updatedDate >= cutoffDate;
-
-        if (keep) {
-          console.log(
-            `[OnThisDay] Hit: ${p.title} (raw: ${
-              p.updated
-            }, parsed: ${updatedDate.toISOString()}) >= cutoff: ${cutoffDate.toISOString()}`,
-          );
-        }
-
-        return keep;
-      });
+      const listed = await db
+        .select({ targetPageID: onThisDayEntries.targetPageID })
+        .from(onThisDayEntries);
+      const listedIds = new Set(listed.map((r) => r.targetPageID));
+      return rows.filter((r) => listedIds.has(r.pageId));
     });
 
-    if (targetPages.length === 0) return { count: 0 };
+    console.log(`[Backfill] targets=${targets.length}`);
+    if (targets.length === 0) return { resolved: 0, unresolved: 0 };
 
-    let processedCount = 0;
-    const batchSize = 10;
-    for (let i = 0; i < targetPages.length; i += batchSize) {
-      const batch = targetPages.slice(i, i + batchSize);
+    // on_this_day_entry のフォールバック用。(targetPageID -> "YYYY-MM-DD")
+    const fallback = await step.do(`fetch-fallback-${runId}`, async () => {
+      const rows = await db
+        .select({
+          targetPageID: onThisDayEntries.targetPageID,
+          year: onThisDayEntries.year,
+          mmdd: pages.title,
+        })
+        .from(onThisDayEntries)
+        .innerJoin(pages, eq(pages.id, onThisDayEntries.pageID));
 
-      await step.do(`batch-${i}-${runId}`, async () => {
-        for (const page of batch) {
-          const obj = await this.env.R2.get(`${page.bodyKey}.json`);
-          if (!obj) continue;
+      const map: Record<number, string> = {};
+      for (const r of rows) {
+        const date = dateFromEntry(r.mmdd, r.year);
+        // 同一記事が複数の MMDD ページに貼られている場合がある (6 件)。
+        // 本文が正なのでここでは先勝ちで構わない。本文から決まればそちらが勝つ。
+        if (date && map[r.targetPageID] === undefined) map[r.targetPageID] = date;
+      }
+      return map;
+    });
 
-          const data = await obj.json<PageData>();
-          const text = data.lines.map((l) => l.text).join("\n");
-          const blocks = parse(text);
+    let resolved = 0;
+    let unresolved = 0;
+    const unresolvedTitles: string[] = [];
 
-          const tempEntries: TempEntry[] = [];
-          let currentYear: number | null = null;
+    for (let i = 0; i < targets.length; i += batchSize) {
+      const batch = targets.slice(i, i + batchSize);
 
-          for (const block of blocks) {
-            if (block.type !== "line") continue;
+      const result = await step.do(`batch-${i}-${runId}`, async () => {
+        let ok = 0;
+        let ng = 0;
+        const ngTitles: string[] = [];
 
-            const flattenNodes = (nodes: readonly Node[]): string => {
-              return nodes
-                .map((n) => {
-                  if ("nodes" in n) return flattenNodes(n.nodes);
-                  if ("raw" in n) return n.raw;
-                  return "";
-                })
-                .join("");
-            };
+        for (const t of batch) {
+          const body = await fetchBody(this.env.R2, t.bodyKey, t.title);
+          // 規則 1〜6 を先に通し、決まらなければ on_this_day_entry を使う。
+          const date =
+            resolveArticleDate({
+              body,
+              title: t.title,
+              bodyKey: t.bodyKey,
+              created: t.created,
+            }) ?? fallback[t.pageId] ?? null;
 
-            const lineText = flattenNodes(block.nodes).trim();
-
-            if (lineText.startsWith("[") && lineText.endsWith("]")) {
-              const inner = lineText.slice(1, -1);
-              if (/^\d{4}$/.test(inner)) {
-                currentYear = parseInt(inner, 10);
-                continue;
-              }
-            }
-
-            if (currentYear) {
-              const collectLinks = (nodes: readonly Node[]) => {
-                for (const node of nodes) {
-                  if (node.type === "link" && node.pathType === "relative") {
-                    if (!/^\d{4}$/.test(node.href)) {
-                      tempEntries.push({
-                        pageID: page.id,
-                        year: currentYear!,
-                        tempTitle: node.href,
-                      });
-                    }
-                  } else if ("nodes" in node) {
-                    collectLinks(node.nodes);
-                  }
-                }
-              };
-              collectLinks(block.nodes);
-            }
+          if (!date) {
+            ng++;
+            ngTitles.push(t.title);
+            continue;
           }
 
-          if (tempEntries.length > 0) {
-            const titles = Array.from(
-              new Set(tempEntries.map((e) => e.tempTitle)),
-            );
-            const foundPages = await db
-              .select({ id: pages.id, title: pages.title })
-              .from(pages)
-              .where(inArray(pages.title, titles));
-
-            const titleMap = new Map(foundPages.map((p) => [p.title, p.id]));
-            const validEntries: EntryToInsert[] = tempEntries
-              .map((e) => {
-                const targetPageID = titleMap.get(e.tempTitle);
-                if (targetPageID === undefined) return null;
-                return {
-                  pageID: e.pageID,
-                  targetPageID,
-                  year: e.year,
-                };
-              })
-              .filter((e): e is EntryToInsert => e !== null);
-
-            if (validEntries.length > 0) {
-              const dbTx = drizzle(this.env.DB);
-              await dbTx.batch([
-                dbTx
-                  .delete(onThisDayEntries)
-                  .where(eq(onThisDayEntries.pageID, page.id)),
-                dbTx.insert(onThisDayEntries).values(validEntries),
-              ]);
-            }
-          }
+          await db
+            .update(articles)
+            .set({ date })
+            .where(eq(articles.id, t.articleId));
+          ok++;
         }
+
+        return { ok, ng, ngTitles };
       });
-      processedCount += batch.length;
+
+      resolved += result.ok;
+      unresolved += result.ng;
+      unresolvedTitles.push(...result.ngTitles);
     }
 
-    return { processedCount };
+    console.log(
+      `[Backfill] FINISH runId=${runId} resolved=${resolved} unresolved=${unresolved}`,
+    );
+    if (unresolvedTitles.length > 0) {
+      console.log(`[Backfill] unresolved: ${unresolvedTitles.join(" / ")}`);
+    }
+
+    return { resolved, unresolved, unresolvedTitles };
   }
 }
 
 export default {
   async scheduled(
     _event: ScheduledEvent,
-    env: Env,
+    _env: Env,
     _ctx: ExecutionContext,
   ): Promise<void> {
-    await env.WORKFLOW.create();
+    // cron からの自動起動はしない。バックフィルは手動で trigger する。
   },
 };

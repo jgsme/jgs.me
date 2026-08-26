@@ -1,5 +1,6 @@
 import React from "react";
 import type { Node as NodeType } from "@progfay/scrapbox-parser";
+import { bodyImageSources } from "@/utils/bodyImage";
 
 function getYouTubeVideoId(url: string): string | null {
   try {
@@ -80,15 +81,23 @@ export const ScrapboxNode: React.FC<{ node: NodeType }> = ({ node }) => {
         </a>
       );
 
-    case "image":
+    case "image": {
+      // scrapbox-parser は Gyazo の URL を /thumb/1000 に正規化するので、
+      // 移行前の本文は Gyazo 側で縮小された版を受け取っていた。R2 に移すと
+      // その縮小が外れて原寸が飛ぶため、こちらで幅を与え直す。
+      const image = bodyImageSources(node.src);
       return (
         <img
-          src={node.src}
+          src={image.src}
+          srcSet={image.srcSet}
+          sizes={image.sizes}
           alt=""
           className="max-w-full h-auto rounded my-2"
           loading="lazy"
+          decoding="async"
         />
       );
+    }
 
     case "decoration": {
       const classes: string[] = [];

@@ -41,13 +41,17 @@ export function buildArticleBody(text: string): ArticleBody {
     }
   }
 
+  // 落とす行は「値の出どころ」から逆引きする。ここで独自に走査条件を書くと
+  // extractBodyDate 側の判定 (無効な月日を飛ばして上の行を見に行く) とずれ、
+  // 値を取った行が本文に残ったまま無関係な行が消える。
   let dateLineIndex: number | null = null;
-  if (skipLines === 0) {
+  if (skipLines === 0 && fromDate) {
+    const tag = fromDate.replaceAll("-", "");
     for (let i = blocks.length - 1; i >= Math.max(0, blocks.length - 5); i--) {
       const block = blocks[i];
       if (block.type !== "line") continue;
       const hit = block.nodes.some(
-        (node) => node.type === "hashTag" && /^\d{8}$/.test(node.href),
+        (node) => node.type === "hashTag" && node.href === tag,
       );
       if (hit) {
         dateLineIndex = i;

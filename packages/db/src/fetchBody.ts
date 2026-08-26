@@ -1,4 +1,4 @@
-import { bodyFormatOf, r2KeyOf } from "@jigsaw/db/body-key";
+import { bodyFormatOf, r2KeyOf } from "./bodyKey";
 
 type R2PageData = {
   id: string;

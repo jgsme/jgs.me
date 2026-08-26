@@ -4,7 +4,7 @@ import { getDB } from "@/db/getDB";
 import { articles, pageSimilarities, pages } from "@jigsaw/db";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { useConfig } from "vike-react/useConfig";
-import { fetchBody } from "@/utils/fetchBody";
+import { fetchBody } from "@jigsaw/db/fetch-body";
 import { pickRandom } from "@/utils/pickRandom";
 import { routeTitleToPageTitle } from "@/utils/routeTitle";
 import { buildArticleBody } from "./articleBody";

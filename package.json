@@ -13,7 +13,8 @@
     "dev:ap": "pnpm --filter ap dev",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "undo": "pnpm --filter cli undo"
+    "undo": "pnpm --filter cli undo",
+    "gyazo": "pnpm --filter cli gyazo"
   },
   "devDependencies": {
     "prettier": "^3.9.4",

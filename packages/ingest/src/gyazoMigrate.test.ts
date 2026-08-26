@@ -312,14 +312,16 @@ function rewriteDeps(
   over: Partial<RewriteDeps> = {},
 ) {
   const calls: string[] = [];
+  const backedUp: Record<string, string> = {};
   const written: Record<string, string> = {};
   const images: Record<number, string> = {};
   const deps: RewriteDeps = {
     listArticlePages: async (cursor, limit) =>
       rows.filter((r) => r.id > cursor).slice(0, limit),
     readBody: async (bodyKey) => bodies[bodyKey] ?? null,
-    backupBody: async (bodyKey) => {
+    backupBody: async (bodyKey, raw) => {
       calls.push(`backup:${bodyKey}`);
+      backedUp[bodyKey] = raw;
     },
     writeBody: async (bodyKey, raw) => {
       calls.push(`write:${bodyKey}`);
@@ -331,7 +333,7 @@ function rewriteDeps(
     },
     ...over,
   };
-  return { deps, calls, written, images };
+  return { deps, calls, backedUp, written, images };
 }
 
 describe("runRewrite", () => {
@@ -354,15 +356,19 @@ describe("runRewrite", () => {
   });
 
   // 退避してから上書きする。順番が逆だと元に戻せない。
+  // 中身も突き合わせる: 置換後のものを退避していたらバックアップの意味が消える。
   it("上書きの前に退避する", async () => {
     const rows = [page({ id: 1 })];
-    const { deps, calls } = rewriteDeps(rows, {
-      "sb-1": `題\nhttps://gyazo.com/${A}/raw`,
+    const rawOriginal = `題\nhttps://gyazo.com/${A}/raw`;
+    const { deps, calls, backedUp, written } = rewriteDeps(rows, {
+      "sb-1": rawOriginal,
     });
 
     await runRewrite(deps, 0, 20);
 
     expect(calls).toEqual(["backup:sb-1", "write:sb-1"]);
+    expect(backedUp["sb-1"]).toBe(rawOriginal);
+    expect(written["sb-1"]).toBe("題\nhttps://r2.jgs.me/deadbeef.png");
   });
 
   // 置換対象が無いページに無駄な書き込みをしない。

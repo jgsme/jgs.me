@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { runScan, type PageRow, type ScanDeps } from "./gyazoMigrate";
+import {
+  runProbe,
+  runScan,
+  type PageRow,
+  type ProbeDeps,
+  type ScanDeps,
+} from "./gyazoMigrate";
 
 const A = "0123456789abcdef0123456789abcdef";
 const B = "fedcba9876543210fedcba9876543210";
@@ -104,5 +110,76 @@ describe("runScan", () => {
     expect(r.items[0]!.error).toBeTypeOf("string");
     expect(r.items[0]!.hashes).toEqual([]);
     expect(r.items[1]!.hashes).toEqual([A]);
+  });
+});
+
+describe("runProbe", () => {
+  it("HEAD の status と Content-Length を返す", async () => {
+    const deps: ProbeDeps = {
+      head: async (url) => {
+        expect(url).toBe(`https://gyazo.com/${A}/raw`);
+        return {
+          status: 200,
+          contentLength: "1234",
+          contentType: "image/png",
+        };
+      },
+    };
+
+    const r = await runProbe(deps, [A]);
+
+    expect(r.processed).toBe(1);
+    expect(r.items).toEqual([
+      { gyazoHash: A, status: 200, bytes: 1234, contentType: "image/png" },
+    ]);
+  });
+
+  // 非公開だとここに 403 が並ぶ。全滅ならトークンを使う設計に組み直す判断材料。
+  it("200 以外もそのまま返す", async () => {
+    const deps: ProbeDeps = {
+      head: async () => ({
+        status: 403,
+        contentLength: null,
+        contentType: null,
+      }),
+    };
+
+    const r = await runProbe(deps, [A]);
+
+    expect(r.items[0]).toEqual({
+      gyazoHash: A,
+      status: 403,
+      bytes: null,
+      contentType: null,
+    });
+  });
+
+  // 1 件の通信エラーで残りの打診を捨てない。
+  it("head が投げたら status 0 にして続ける", async () => {
+    const deps: ProbeDeps = {
+      head: async (url) => {
+        if (url.includes(A)) throw new Error("boom");
+        return { status: 200, contentLength: "1", contentType: "image/png" };
+      },
+    };
+
+    const r = await runProbe(deps, [A, B]);
+
+    expect(r.items[0]!.status).toBe(0);
+    expect(r.items[1]!.status).toBe(200);
+  });
+
+  it("Content-Length が数値でなければ bytes は null", async () => {
+    const deps: ProbeDeps = {
+      head: async () => ({
+        status: 200,
+        contentLength: "chunked",
+        contentType: "image/png",
+      }),
+    };
+
+    const r = await runProbe(deps, [A]);
+
+    expect(r.items[0]!.bytes).toBeNull();
   });
 });

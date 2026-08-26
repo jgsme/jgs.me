@@ -4,7 +4,8 @@
   "type": "module",
   "exports": {
     ".": "./src/schema.ts",
-    "./body-key": "./src/bodyKey.ts"
+    "./body-key": "./src/bodyKey.ts",
+    "./article-date": "./src/articleDate.ts"
   },
   "scripts": {
     "gen": "drizzle-kit generate",

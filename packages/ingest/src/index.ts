@@ -62,7 +62,10 @@ export default {
     const db = drizzle(env.DB);
 
     // Gyazo → R2 の移行バッチ。フェーズは body の phase で切り替える。
-    if (request.method === "POST" && url.pathname === "/internal/gyazo-migrate") {
+    if (
+      request.method === "POST" &&
+      url.pathname === "/internal/gyazo-migrate"
+    ) {
       return handleGyazoMigrate(request, env);
     }
 

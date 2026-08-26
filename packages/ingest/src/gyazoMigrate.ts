@@ -119,7 +119,12 @@ export async function runProbe(
       });
     } catch {
       // 通信エラー。1 件で残りの打診を捨てない。status 0 で人間に見せる。
-      items.push({ gyazoHash: hash, status: 0, bytes: null, contentType: null });
+      items.push({
+        gyazoHash: hash,
+        status: 0,
+        bytes: null,
+        contentType: null,
+      });
     }
   }
 
@@ -396,7 +401,9 @@ export async function handleGyazoMigrate(
   function parseHashes(input: unknown, max: number): string[] | null {
     if (!Array.isArray(input)) return null;
     if (input.length > max) return null;
-    if (!input.every((h) => typeof h === "string" && /^[0-9a-f]{32}$/.test(h))) {
+    if (
+      !input.every((h) => typeof h === "string" && /^[0-9a-f]{32}$/.test(h))
+    ) {
       return null;
     }
     return input as string[];

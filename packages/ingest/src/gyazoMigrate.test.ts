@@ -34,9 +34,7 @@ function deps(rows: PageRow[], bodies: Record<string, string>): ScanDeps {
 
 describe("runScan", () => {
   it("本文と page.image からハッシュを集める", async () => {
-    const rows = [
-      page({ id: 1, image: `https://gyazo.com/${B}/raw` }),
-    ];
+    const rows = [page({ id: 1, image: `https://gyazo.com/${B}/raw` })];
     const d = deps(rows, { "sb-1": `題\nhttps://gyazo.com/${A}/raw` });
 
     const r = await runScan(d, 0, 20);

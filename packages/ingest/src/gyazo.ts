@@ -55,7 +55,8 @@ export function replaceGyazoURLs(
 // Scrapbox 自前のファイルも同じ外部依存の地雷を踏んでいる。今回は移行しないが、
 // 次の判断のために件数だけ数える。
 export function countScrapboxFiles(text: string): number {
-  return [...text.matchAll(/https:\/\/scrapbox\.io\/files\/[0-9a-f]+/gi)].length;
+  return [...text.matchAll(/https:\/\/scrapbox\.io\/files\/[0-9a-f]+/gi)]
+    .length;
 }
 
 // 取得元は /raw に固定する。拡張子が分からなくても Content-Type が返るため。

@@ -5,7 +5,7 @@ A personal website for managing and publishing articles from a frozen Scrapbox e
 ## Tech Stack
 
 - **Frontend**: React, Vite, Tailwind CSS
-- **Backend**: Hono, Photon, Cloudflare Workers/Pages
+- **Backend**: Hono, Vike (Universal Deploy via @vikejs/hono), Cloudflare Workers
 - **Database**: Cloudflare D1 + Drizzle ORM
 - **Storage**: Cloudflare R2, KV
 - **Build**: Vite

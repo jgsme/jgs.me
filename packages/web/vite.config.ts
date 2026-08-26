@@ -13,6 +13,10 @@ export default defineConfig(() => {
         "@": __dirname,
       },
     },
-    plugins: [react(), vike({}), cloudflare()],
+    plugins: [
+      react(),
+      vike({}),
+      cloudflare({ persistState: { path: "../../.wrangler/state" } }),
+    ],
   };
 });

@@ -20,7 +20,7 @@ This is the main package for the `jgs.me` project. It is a full-stack applicatio
 
 - **File-based Routing:** The application uses Vike's file-based routing, with pages located in `pages/`. Each page can have its own data-loading logic (`+data.ts`), UI component (`+Page.tsx`), and metadata (`+Head.tsx`).
 - **SSR + SPA:** It operates as a Server-Side Rendered (SSR) application that hydrates into a Single-Page Application (SPA) on the client side.
-- **Backend Server:** A Hono application, defined in `server/index.ts`, runs as the server-side backend. It handles API routes (`/api`), redirects, and the RSS feed. This server code is the entry point for the Cloudflare Pages deployment.
+- **Backend Server:** A Hono application, defined in `+server.ts`, runs as the server-side backend via `@vikejs/hono` (Vike's Universal Deploy). It handles API routes (`/api`), redirects, and the RSS feed. This is the entry point for the Cloudflare Workers deployment.
 - **Database Migrations:** This package is responsible for managing and generating database migrations for the entire project using Drizzle Kit.
 
 ## Building and Running
@@ -51,7 +51,16 @@ To build the application for production:
 pnpm build
 ```
 
-This command runs `vite build`, which builds both the client and server assets.
+This command runs `vite build`, which builds both the client and server assets, including the `dist/w` Worker output consumed by `wrangler dev`.
+
+### Preview
+
+```bash
+# Run from packages/web
+pnpm preview
+```
+
+This runs `wrangler dev`, which reads `dist/w/wrangler.json` (a config redirect emitted by `@cloudflare/vite-plugin`). **Run `pnpm build` before `pnpm preview`** — if `dist/w` is missing or stale, `wrangler dev` will silently serve old or nonexistent code instead of failing loudly.
 
 ### Testing
 

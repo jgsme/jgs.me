@@ -29,7 +29,7 @@
     },
     {
       "groupName": "vike",
-      "matchPackageNames": ["vike", "vike-**", "@photonjs/**"]
+      "matchPackageNames": ["vike", "vike-**", "@vikejs/**"]
     },
     {
       "groupName": "three",

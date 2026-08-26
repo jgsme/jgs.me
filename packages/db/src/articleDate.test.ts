@@ -40,6 +40,32 @@ describe("extractBodyDate", () => {
   it("月日として不正な値は拾わない", () => {
     expect(extractBodyDate("題\nfrom [20241332]\n本文")).toBeNull();
   });
+
+  it("作成日と更新日が並記されていれば作成日を採る", () => {
+    // #... C が作成日、#... U が更新日。下から探すと更新日を拾ってしまう。
+    const body = ["題", "本文", "", "#20190527 #0527 C", "#20190605 #0605 U"].join("\n");
+    expect(extractBodyDate(body)).toBe("2019-05-27");
+  });
+
+  it("マーカーが無くても古い方を採る", () => {
+    // 旧ブログ移行記事は「元記事の日付」と「移行日」を並記する。
+    const body = ["題", "本文", "", "#20081120", "#20191121"].join("\n");
+    expect(extractBodyDate(body)).toBe("2008-11-20");
+  });
+
+  it("同じ行に複数あっても古い方を採る", () => {
+    expect(extractBodyDate("題\n本文\n#20191121 #20081120")).toBe("2008-11-20");
+  });
+
+  it("同じ日付が繰り返されていてもその日付を返す", () => {
+    const body = ["題", "本文", "#20190219", "#20190219", "#20190219"].join("\n");
+    expect(extractBodyDate(body)).toBe("2019-02-19");
+  });
+
+  it("無効な日付は候補に入れず、有効なものから最古を選ぶ", () => {
+    const body = ["題", "本文", "#20241332", "#20240102", "#20240301"].join("\n");
+    expect(extractBodyDate(body)).toBe("2024-01-02");
+  });
 });
 
 describe("extractBodyMonthDay", () => {

@@ -24,13 +24,19 @@ export function extractBodyDate(body: string): string | null {
     if (isValidMonthDay(month, day)) return `${year}-${month}-${day}`;
   }
 
-  for (let i = lines.length - 1; i >= Math.max(0, lines.length - TAIL_LINES); i--) {
-    const hashMatch = lines[i].match(/#(\d{4})(\d{2})(\d{2})(?!\d)/);
-    if (hashMatch) {
-      const [, year, month, day] = hashMatch;
-      if (isValidMonthDay(month, day)) return `${year}-${month}-${day}`;
+  // 末尾には作成日と更新日が並記されていることがある (`#20190527 ... C` /
+  // `#20190605 ... U`)。旧ブログからの移行記事も「元記事の日付」と「移行日」を
+  // 並べて持つ。記事が書かれた日は常に古い方なので、範囲内の候補を全部集めて
+  // 最も古いものを採る。下から探して最初に当たったものを返すと更新日を拾う。
+  const tail = lines.slice(Math.max(0, lines.length - TAIL_LINES));
+  const candidates: string[] = [];
+  for (const line of tail) {
+    for (const m of line.matchAll(/#(\d{4})(\d{2})(\d{2})(?!\d)/g)) {
+      const [, year, month, day] = m;
+      if (isValidMonthDay(month, day)) candidates.push(`${year}-${month}-${day}`);
     }
   }
+  if (candidates.length > 0) return candidates.sort()[0];
 
   return null;
 }

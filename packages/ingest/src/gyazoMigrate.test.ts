@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   runFetch,
   runProbe,
+  runRewrite,
   runScan,
   type FetchDeps,
   type PageRow,
   type ProbeDeps,
+  type RewriteDeps,
   type ScanDeps,
 } from "./gyazoMigrate";
 
@@ -301,5 +303,127 @@ describe("runFetch", () => {
 
     expect(r.items[0]).toEqual({ gyazoHash: A, error: "boom" });
     expect(r.items[1]).toMatchObject({ gyazoHash: B, r2Key: "deadbeef.png" });
+  });
+});
+
+function rewriteDeps(
+  rows: PageRow[],
+  bodies: Record<string, string>,
+  over: Partial<RewriteDeps> = {},
+) {
+  const calls: string[] = [];
+  const written: Record<string, string> = {};
+  const images: Record<number, string> = {};
+  const deps: RewriteDeps = {
+    listArticlePages: async (cursor, limit) =>
+      rows.filter((r) => r.id > cursor).slice(0, limit),
+    readBody: async (bodyKey) => bodies[bodyKey] ?? null,
+    backupBody: async (bodyKey) => {
+      calls.push(`backup:${bodyKey}`);
+    },
+    writeBody: async (bodyKey, raw) => {
+      calls.push(`write:${bodyKey}`);
+      written[bodyKey] = raw;
+    },
+    resolve: (hash) => (hash === A ? "https://r2.jgs.me/deadbeef.png" : null),
+    setImage: async (row, image) => {
+      images[row.id] = image;
+    },
+    ...over,
+  };
+  return { deps, calls, written, images };
+}
+
+describe("runRewrite", () => {
+  it("本文を置換して書き戻す", async () => {
+    const rows = [page({ id: 1 })];
+    const { deps, written } = rewriteDeps(rows, {
+      "sb-1": `題\nhttps://gyazo.com/${A}/raw`,
+    });
+
+    const r = await runRewrite(deps, 0, 20);
+
+    expect(written["sb-1"]).toBe("題\nhttps://r2.jgs.me/deadbeef.png");
+    expect(r.items[0]).toEqual({
+      pageId: 1,
+      title: "題1",
+      replaced: 1,
+      skipped: 0,
+      imageReplaced: false,
+    });
+  });
+
+  // 退避してから上書きする。順番が逆だと元に戻せない。
+  it("上書きの前に退避する", async () => {
+    const rows = [page({ id: 1 })];
+    const { deps, calls } = rewriteDeps(rows, {
+      "sb-1": `題\nhttps://gyazo.com/${A}/raw`,
+    });
+
+    await runRewrite(deps, 0, 20);
+
+    expect(calls).toEqual(["backup:sb-1", "write:sb-1"]);
+  });
+
+  // 置換対象が無いページに無駄な書き込みをしない。
+  it("置換が 0 件なら退避も書き込みもしない", async () => {
+    const rows = [page({ id: 1 })];
+    const { deps, calls } = rewriteDeps(rows, { "sb-1": "題\n本文" });
+
+    const r = await runRewrite(deps, 0, 20);
+
+    expect(calls).toEqual([]);
+    expect(r.items[0]!.replaced).toBe(0);
+  });
+
+  it("対応表に無いハッシュは残して skipped に数える", async () => {
+    const rows = [page({ id: 1 })];
+    const { deps, calls } = rewriteDeps(rows, {
+      "sb-1": `題\nhttps://gyazo.com/${B}/raw`,
+    });
+
+    const r = await runRewrite(deps, 0, 20);
+
+    expect(calls).toEqual([]);
+    expect(r.items[0]!.skipped).toBe(1);
+  });
+
+  it("page.image も差し替える", async () => {
+    const rows = [page({ id: 1, image: `https://gyazo.com/${A}/raw` })];
+    const { deps, images } = rewriteDeps(rows, { "sb-1": "題\n本文" });
+
+    const r = await runRewrite(deps, 0, 20);
+
+    expect(images[1]).toBe("https://r2.jgs.me/deadbeef.png");
+    expect(r.items[0]!.imageReplaced).toBe(true);
+  });
+
+  it("page.image が対応表に無ければ触らない", async () => {
+    const rows = [page({ id: 1, image: `https://gyazo.com/${B}/raw` })];
+    const { deps, images } = rewriteDeps(rows, { "sb-1": "題\n本文" });
+
+    const r = await runRewrite(deps, 0, 20);
+
+    expect(images).toEqual({});
+    expect(r.items[0]!.imageReplaced).toBe(false);
+  });
+
+  it("本文が R2 に無くても落ちない", async () => {
+    const rows = [page({ id: 1 })];
+    const { deps, calls } = rewriteDeps(rows, {});
+
+    const r = await runRewrite(deps, 0, 20);
+
+    expect(calls).toEqual([]);
+    expect(r.items[0]!.replaced).toBe(0);
+  });
+
+  it("limit まで取れたら nextCursor に最後の page.id を返す", async () => {
+    const rows = [page({ id: 1 }), page({ id: 2 }), page({ id: 3 })];
+    const { deps } = rewriteDeps(rows, {});
+
+    const r = await runRewrite(deps, 0, 2);
+
+    expect(r.nextCursor).toBe(2);
   });
 });

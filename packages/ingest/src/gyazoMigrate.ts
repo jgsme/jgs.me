@@ -2,8 +2,13 @@ import { drizzle } from "drizzle-orm/d1";
 import { eq, gt, inArray } from "drizzle-orm";
 import { articles, gyazoMedia, pages } from "@jigsaw/db";
 import { r2KeyOf } from "@jigsaw/db/body-key";
-import { countScrapboxFiles, extractGyazoHashes, gyazoRawURL } from "./gyazo";
-import { bodyTextOf } from "./gyazoBody";
+import {
+  countScrapboxFiles,
+  extractGyazoHashes,
+  gyazoRawURL,
+  replaceGyazoURLs,
+} from "./gyazo";
+import { bodyContentType, bodyTextOf, rewriteBody } from "./gyazoBody";
 import { putMedia } from "./media";
 import type { Env } from "./index";
 
@@ -191,6 +196,76 @@ export async function runFetch(
   return { processed: hashes.length, items };
 }
 
+// 上書き前の本文の退避先。同じバケット (w-data) の別 prefix に置く。
+export const BACKUP_PREFIX = "gyazo-backup/";
+
+export type RewriteItem = {
+  pageId: number;
+  title: string;
+  replaced: number;
+  skipped: number;
+  imageReplaced: boolean;
+};
+
+export type RewriteDeps = {
+  listArticlePages: (cursor: number, limit: number) => Promise<PageRow[]>;
+  readBody: (bodyKey: string) => Promise<string | null>;
+  backupBody: (bodyKey: string, raw: string) => Promise<void>;
+  writeBody: (bodyKey: string, raw: string) => Promise<void>;
+  resolve: (hash: string) => string | null;
+  setImage: (row: PageRow, image: string) => Promise<void>;
+};
+
+export async function runRewrite(
+  deps: RewriteDeps,
+  cursor: number,
+  limit: number,
+): Promise<{
+  processed: number;
+  nextCursor: number | null;
+  items: RewriteItem[];
+}> {
+  const rows = await deps.listArticlePages(cursor, limit);
+  const items: RewriteItem[] = [];
+
+  for (const row of rows) {
+    let replaced = 0;
+    let skipped = 0;
+
+    const raw = await deps.readBody(row.bodyKey);
+    if (raw !== null) {
+      const out = rewriteBody(row.bodyKey, raw, deps.resolve);
+      replaced = out.replaced;
+      skipped = out.skipped;
+      if (out.replaced > 0) {
+        // 退避が先。上書きしてから失敗すると元に戻せない。
+        await deps.backupBody(row.bodyKey, raw);
+        await deps.writeBody(row.bodyKey, out.raw);
+      }
+    }
+
+    let imageReplaced = false;
+    if (row.image !== null) {
+      const r = replaceGyazoURLs(row.image, deps.resolve);
+      if (r.replaced > 0) {
+        await deps.setImage(row, r.text);
+        imageReplaced = true;
+      }
+    }
+
+    items.push({
+      pageId: row.id,
+      title: row.title,
+      replaced,
+      skipped,
+      imageReplaced,
+    });
+  }
+
+  const nextCursor = rows.length < limit ? null : rows[rows.length - 1]!.id;
+  return { processed: rows.length, nextCursor, items };
+}
+
 type Body = {
   phase?: unknown;
   cursor?: unknown;
@@ -278,6 +353,46 @@ export async function handleGyazoMigrate(
     },
   };
 
+  const rewriteDepsFor = async (): Promise<RewriteDeps> => {
+    // 対応表を丸ごと Map に載せる。1 画像 1 行しかないので小さい。
+    // ページごとに引くと D1 の往復が page 数ぶん増える。
+    const rows = await db
+      .select({ gyazoHash: gyazoMedia.gyazoHash, r2Key: gyazoMedia.r2Key })
+      .from(gyazoMedia);
+    const map = new Map(
+      rows.map((r) => [r.gyazoHash, `${env.MEDIA_BASE_URL}/${r.r2Key}`]),
+    );
+
+    return {
+      listArticlePages,
+      readBody,
+      backupBody: async (bodyKey, raw) => {
+        const key = r2KeyOf(bodyKey);
+        if (!key) return;
+        await env.R2.put(`${BACKUP_PREFIX}${key}`, raw, {
+          httpMetadata: { contentType: bodyContentType(bodyKey) },
+        });
+      },
+      writeBody: async (bodyKey, raw) => {
+        const key = r2KeyOf(bodyKey);
+        if (!key) return;
+        await env.R2.put(key, raw, {
+          httpMetadata: { contentType: bodyContentType(bodyKey) },
+        });
+      },
+      resolve: (hash) => map.get(hash) ?? null,
+      setImage: async (row, image) => {
+        // updated は現在値をそのまま渡して据え置く。$onUpdate を発火させない。
+        // URL の差し替えは記事の編集ではないし、page.updated は AS2 の updated
+        // として /o/<n> に出る。Update を配送しないのに更新時刻だけ動くのは嘘。
+        await db
+          .update(pages)
+          .set({ image, updated: row.updated })
+          .where(eq(pages.id, row.id));
+      },
+    };
+  };
+
   function parseHashes(input: unknown, max: number): string[] | null {
     if (!Array.isArray(input)) return null;
     if (input.length > max) return null;
@@ -311,6 +426,11 @@ export async function handleGyazoMigrate(
     }
     const r = await runFetch(fetchDeps, hashes);
     return Response.json({ phase: "fetch", nextCursor: null, ...r });
+  }
+
+  if (body.phase === "rewrite") {
+    const r = await runRewrite(await rewriteDepsFor(), cursor, limit);
+    return Response.json({ phase: "rewrite", ...r });
   }
 
   return bad(`unknown phase: ${String(body.phase)}`);

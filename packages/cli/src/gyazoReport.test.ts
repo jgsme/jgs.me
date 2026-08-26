@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   chunk,
   formatScanReport,
+  nextLimit,
+  SERVER_DEFAULT_LIMIT,
   uniqueHashes,
   type ProbeItem,
   type ScanItem,
@@ -70,5 +72,45 @@ describe("formatScanReport", () => {
 
   it("scrapbox.io/files の出現数を出す", () => {
     expect(out).toContain("scrapbox.io/files: 3");
+  });
+
+  // page.image が本文中と同じハッシュを指すことがある (Scrapbox では実際にありがち)。
+  // 参照元を二重に数えると判断材料として誤読させる。
+  it("同じ page が本文と image の両方で同じハッシュを参照していても 1 回だけ出す", () => {
+    const dupItems: ScanItem[] = [
+      { pageId: 1, title: "え", hashes: [A], imageHash: A, scrapboxFiles: 0 },
+    ];
+    const dupProbes: ProbeItem[] = [
+      { gyazoHash: A, status: 404, bytes: null, contentType: null },
+    ];
+    const dupOut = formatScanReport(dupItems, dupProbes);
+    expect(dupOut).toContain(`${A} (404) <- 1 え`);
+    expect(dupOut).not.toContain(`${A} (404) <- 1 え, 1 え`);
+  });
+});
+
+describe("nextLimit", () => {
+  it("maxPages が無指定ならサーバ既定を使う", () => {
+    expect(nextLimit(null, 0)).toBe(SERVER_DEFAULT_LIMIT);
+  });
+
+  it("maxPages がサーバ既定より小さいとき、残り分に切る", () => {
+    expect(nextLimit(5, 0)).toBe(5);
+  });
+
+  it("途中まで進んでいたら残り分に切る", () => {
+    expect(nextLimit(25, 20)).toBe(5);
+  });
+
+  it("maxPages がサーバ既定より大きくても 1 回はサーバ既定で頭打ち", () => {
+    expect(nextLimit(100, 0)).toBe(SERVER_DEFAULT_LIMIT);
+  });
+
+  it("既に上限ちょうどに達していたら 0", () => {
+    expect(nextLimit(5, 5)).toBe(0);
+  });
+
+  it("上限を超えていても負にはならない", () => {
+    expect(nextLimit(5, 10)).toBe(0);
   });
 });

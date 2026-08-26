@@ -68,11 +68,13 @@ export function formatScanReport(
     .reduce((n, p) => n + (p.bytes ?? 0), 0);
 
   // どの記事から参照されているかが分からないと手で追えない。
+  // page.image が本文中と同じハッシュを指すこともある (Scrapbox では実際にありがち) ので
+  // item 単位で Set にして、同じ page が同じハッシュに二重に載らないようにする。
   const sources = new Map<string, ScanItem[]>();
   for (const item of items) {
-    const all = [...item.hashes];
-    if (item.imageHash !== null) all.push(item.imageHash);
-    for (const h of all) {
+    const refs = new Set(item.hashes);
+    if (item.imageHash !== null) refs.add(item.imageHash);
+    for (const h of refs) {
       const list = sources.get(h) ?? [];
       list.push(item);
       sources.set(h, list);
@@ -114,4 +116,15 @@ export function formatScanReport(
   }
 
   return lines.join("\n");
+}
+
+// サーバの既定 limit。ingest 側の DEFAULT_LIMIT (packages/ingest/src/gyazoMigrate.ts) と揃える。
+export const SERVER_DEFAULT_LIMIT = 20;
+
+// 次の 1 回で要求する page 数。maxPages が指定されているときは残り分までに切る。
+// これを送らないとサーバが既定の 20 件を先に処理してしまい、
+// 破壊的な rewrite で --pages が安全弁として機能しない。
+export function nextLimit(maxPages: number | null, seen: number): number {
+  if (maxPages === null) return SERVER_DEFAULT_LIMIT;
+  return Math.min(SERVER_DEFAULT_LIMIT, Math.max(0, maxPages - seen));
 }

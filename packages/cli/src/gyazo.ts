@@ -1,6 +1,7 @@
 import {
   chunk,
   formatScanReport,
+  nextLimit,
   uniqueHashes,
   type FetchItem,
   type ProbeItem,
@@ -69,7 +70,13 @@ async function walk<T>(
   let cursor = 0;
   let seen = 0;
   for (;;) {
-    const r = await call<T>({ phase, cursor });
+    // limit を送らないとサーバが既定の 20 件を先に処理してから返ってくるので、
+    // --pages が rewrite の安全弁として機能しない (破壊的な書き込みが先に走る)。
+    const r = await call<T>({
+      phase,
+      cursor,
+      limit: nextLimit(maxPages, seen),
+    });
     items.push(...r.items);
     seen += r.processed;
     console.error(`${phase}: ${seen} pages`);

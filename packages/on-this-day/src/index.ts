@@ -48,7 +48,7 @@ export class ArticleDateBackfillWorkflow extends WorkflowEntrypoint<
     );
 
     // date が未設定の article を対象にする。何度流しても既に入った分は触らない。
-    const targets = await step.do(`fetch-targets-${runId}`, async () => {
+    const targets = await step.do("fetch-targets", async () => {
       const rows = await db
         .select({
           articleId: articles.id,
@@ -74,7 +74,7 @@ export class ArticleDateBackfillWorkflow extends WorkflowEntrypoint<
     if (targets.length === 0) return { resolved: 0, unresolved: 0 };
 
     // on_this_day_entry のフォールバック用。(targetPageID -> "YYYY-MM-DD")
-    const fallback = await step.do(`fetch-fallback-${runId}`, async () => {
+    const fallback = await step.do("fetch-fallback", async () => {
       const rows = await db
         .select({
           targetPageID: onThisDayEntries.targetPageID,
@@ -101,7 +101,7 @@ export class ArticleDateBackfillWorkflow extends WorkflowEntrypoint<
     for (let i = 0; i < targets.length; i += batchSize) {
       const batch = targets.slice(i, i + batchSize);
 
-      const result = await step.do(`batch-${i}-${runId}`, async () => {
+      const result = await step.do(`batch-${i}`, async () => {
         let ok = 0;
         let ng = 0;
         const ngTitles: string[] = [];

@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   chunk,
+  formatRewriteErrors,
   formatScanReport,
   nextLimit,
   SERVER_DEFAULT_LIMIT,
   uniqueHashes,
   type ProbeItem,
+  type RewriteItem,
   type ScanItem,
 } from "./gyazoReport.ts";
 
@@ -112,5 +114,35 @@ describe("nextLimit", () => {
 
   it("上限を超えていても負にはならない", () => {
     expect(nextLimit(5, 10)).toBe(0);
+  });
+});
+
+// rewrite の非対称の解消 (I1) に追随: 壊れた本文で error になった page を
+// scan の「本文を読めなかった page:」と同じ調子でまとめて出す。
+describe("formatRewriteErrors", () => {
+  it("error が無ければ空", () => {
+    const items: RewriteItem[] = [
+      { pageId: 1, title: "あ", replaced: 1, skipped: 0, imageReplaced: false },
+    ];
+    expect(formatRewriteErrors(items)).toEqual([]);
+  });
+
+  it("error になった page をまとめて出す", () => {
+    const items: RewriteItem[] = [
+      { pageId: 1, title: "あ", replaced: 1, skipped: 0, imageReplaced: false },
+      {
+        pageId: 2,
+        title: "い",
+        replaced: 0,
+        skipped: 0,
+        imageReplaced: false,
+        error: "boom",
+      },
+    ];
+    expect(formatRewriteErrors(items)).toEqual([
+      "",
+      "書き換えられなかった page:",
+      "  2 い: boom",
+    ]);
   });
 });

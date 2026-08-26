@@ -1,5 +1,6 @@
 import {
   chunk,
+  formatRewriteErrors,
   formatScanReport,
   nextLimit,
   uniqueHashes,
@@ -142,6 +143,9 @@ async function main(): Promise<void> {
   console.log(`対応表に無くて残した URL: ${skipped}`);
   for (const i of touched) {
     console.log(`  ${i.pageId} ${i.title} (${i.replaced})`);
+  }
+  for (const line of formatRewriteErrors(items)) {
+    console.log(line);
   }
 }
 

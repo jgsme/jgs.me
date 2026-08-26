@@ -26,6 +26,7 @@ export type RewriteItem = {
   replaced: number;
   skipped: number;
   imageReplaced: boolean;
+  error?: string;
 };
 
 export function chunk<T>(xs: T[], size: number): T[][] {
@@ -116,6 +117,20 @@ export function formatScanReport(
   }
 
   return lines.join("\n");
+}
+
+// rewrite で error になった page を、scan の「本文を読めなかった page:」と
+// 同じ調子でまとめて出す。cursor が進むようになった (I1) ので、エラーは
+// バッチを止めずに人間に投げる側に回った。
+export function formatRewriteErrors(items: RewriteItem[]): string[] {
+  const errored = items.filter((i) => i.error !== undefined);
+  if (errored.length === 0) return [];
+
+  return [
+    "",
+    "書き換えられなかった page:",
+    ...errored.map((i) => `  ${i.pageId} ${i.title}: ${i.error}`),
+  ];
 }
 
 // サーバの既定 limit。ingest 側の DEFAULT_LIMIT (packages/ingest/src/gyazoMigrate.ts) と揃える。

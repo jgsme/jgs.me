@@ -99,6 +99,19 @@ describe("runScan", () => {
     expect(r.items[0]!.hashes).toEqual([]);
   });
 
+  // limit=0 は SQLite の LIMIT 0 で 0 件を返す。rows[-1] を踏んで
+  // TypeError にならず null を返すこと。CLI から --pages 0 を打つと
+  // nextLimit が 0 を返すので実際に起こりうる。
+  it("limit が 0 で rows が空でも nextCursor は null", async () => {
+    const rows = [page({ id: 1 })];
+    const d = deps(rows, {});
+
+    const r = await runScan(d, 0, 0);
+
+    expect(r.processed).toBe(0);
+    expect(r.nextCursor).toBeNull();
+  });
+
   // 1 件の壊れた本文でバッチ全体を止めない。何が壊れたかは items に残す。
   it("本文の JSON が壊れていてもそのページだけ error にして続ける", async () => {
     const rows = [page({ id: 1, bodyKey: "sbid" }), page({ id: 2 })];
@@ -429,5 +442,92 @@ describe("runRewrite", () => {
     const r = await runRewrite(deps, 0, 2);
 
     expect(r.nextCursor).toBe(2);
+  });
+
+  // runScan は同じケースを try/catch して item.error に載せる (非対称の解消)。
+  // ここが素通しだとリクエストごと 500 になり nextCursor が返らない。CLI は
+  // cursor を渡す口を持たないので、再実行しても同じ page で毎回止まってしまう。
+  it("本文の JSON が壊れていてもそのページだけ error にして次に進む", async () => {
+    const rows = [page({ id: 1, bodyKey: "sbid" }), page({ id: 2 })];
+    const { deps } = rewriteDeps(rows, {
+      sbid: "{ broken",
+      "sb-2": `題\nhttps://gyazo.com/${A}/raw`,
+    });
+
+    const r = await runRewrite(deps, 0, 20);
+
+    expect(r.processed).toBe(2);
+    expect(r.items[0]!.error).toBeTypeOf("string");
+    expect(r.items[0]).toMatchObject({
+      pageId: 1,
+      replaced: 0,
+      skipped: 0,
+      imageReplaced: false,
+    });
+    expect(r.items[1]!.error).toBeUndefined();
+    expect(r.items[1]).toMatchObject({ pageId: 2, replaced: 1 });
+  });
+
+  // runScan と同じ理由。limit=0 で rows[-1] を踏まない。
+  it("limit が 0 で rows が空でも nextCursor は null", async () => {
+    const rows = [page({ id: 1 })];
+    const { deps } = rewriteDeps(rows, {});
+
+    const r = await runRewrite(deps, 0, 0);
+
+    expect(r.processed).toBe(0);
+    expect(r.nextCursor).toBeNull();
+  });
+
+  // 再現手順 (レビュアーが実際に踏んだ順序):
+  // 1. page が hash A と B を参照。1 回目の fetch で A は成功、B は失敗。
+  // 2. rewrite → A だけ置換されて原本が退避される。
+  // 3. fetch をやり直して B も対応表に載る。
+  // 4. rewrite を再実行 → B が置換できる。このとき「A だけ置換済みの本文」を
+  //    退避に使うと、1 回目に取った原本が失われてロールバックできなくなる。
+  // backupBody は既に退避済みなら書かない (ハンドラ側の実装と同じ意味論) 前提で、
+  // fake にも同じ状態を持たせて runRewrite 経由で固定する。
+  it("2 回目の rewrite ではバックアップを上書きしない", async () => {
+    const rawOriginal = `題\nhttps://gyazo.com/${A}/raw\nhttps://gyazo.com/${B}/raw`;
+    const bodies: Record<string, string> = { "sb-1": rawOriginal };
+    const backedUp: Record<string, string> = {};
+    let resolvable: Record<string, string> = {
+      [A]: "https://r2.jgs.me/a.png",
+    };
+
+    const rows = [page({ id: 1 })];
+    const deps: RewriteDeps = {
+      listArticlePages: async (cursor, limit) =>
+        rows.filter((r) => r.id > cursor).slice(0, limit),
+      readBody: async (bodyKey) => bodies[bodyKey] ?? null,
+      // ハンドラ側の実装 (packages/ingest/src/gyazoMigrate.ts の backupBody) と
+      // 同じ意味論: 既に退避済みなら書かない。
+      backupBody: async (bodyKey, raw) => {
+        if (bodyKey in backedUp) return;
+        backedUp[bodyKey] = raw;
+      },
+      writeBody: async (bodyKey, raw) => {
+        bodies[bodyKey] = raw;
+      },
+      resolve: (hash) => resolvable[hash] ?? null,
+      setImage: async () => {},
+    };
+
+    // 1 回目: A だけ解決できる (B は Gyazo 側の一時エラー等で失敗した想定)。
+    await runRewrite(deps, 0, 20);
+    expect(backedUp["sb-1"]).toBe(rawOriginal);
+
+    // fetch をやり直して B も対応表に載った想定。
+    resolvable = {
+      [A]: "https://r2.jgs.me/a.png",
+      [B]: "https://r2.jgs.me/b.png",
+    };
+
+    // 2 回目: B も解決できるので replaced > 0 になり backupBody がまた呼ばれる。
+    await runRewrite(deps, 0, 20);
+
+    // 退避されているのは 1 回目の原本のまま。2 回目の「A だけ置換済みの本文」で
+    // 上書きされていたら原本が失われる。
+    expect(backedUp["sb-1"]).toBe(rawOriginal);
   });
 });

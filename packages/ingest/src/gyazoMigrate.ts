@@ -78,8 +78,10 @@ export async function runScan(
     items.push(item);
   }
 
-  // limit に届かなかった = 最後まで来た。
-  const nextCursor = rows.length < limit ? null : rows[rows.length - 1]!.id;
+  // limit に届かなかった = 最後まで来た。rows.length === 0 を先に見るのは
+  // limit=0 (SQLite の LIMIT 0) で rows[-1] を踏まないため。
+  const nextCursor =
+    rows.length === 0 || rows.length < limit ? null : rows[rows.length - 1]!.id;
   return { processed: rows.length, nextCursor, items };
 }
 
@@ -210,6 +212,7 @@ export type RewriteItem = {
   replaced: number;
   skipped: number;
   imageReplaced: boolean;
+  error?: string;
 };
 
 export type RewriteDeps = {
@@ -236,26 +239,35 @@ export async function runRewrite(
   for (const row of rows) {
     let replaced = 0;
     let skipped = 0;
-
-    const raw = await deps.readBody(row.bodyKey);
-    if (raw !== null) {
-      const out = rewriteBody(row.bodyKey, raw, deps.resolve);
-      replaced = out.replaced;
-      skipped = out.skipped;
-      if (out.replaced > 0) {
-        // 退避が先。上書きしてから失敗すると元に戻せない。
-        await deps.backupBody(row.bodyKey, raw);
-        await deps.writeBody(row.bodyKey, out.raw);
-      }
-    }
-
     let imageReplaced = false;
-    if (row.image !== null) {
-      const r = replaceGyazoURLs(row.image, deps.resolve);
-      if (r.replaced > 0) {
-        await deps.setImage(row, r.text);
-        imageReplaced = true;
+    let error: string | undefined;
+
+    try {
+      const raw = await deps.readBody(row.bodyKey);
+      if (raw !== null) {
+        const out = rewriteBody(row.bodyKey, raw, deps.resolve);
+        replaced = out.replaced;
+        skipped = out.skipped;
+        if (out.replaced > 0) {
+          // 退避が先。上書きしてから失敗すると元に戻せない。
+          await deps.backupBody(row.bodyKey, raw);
+          await deps.writeBody(row.bodyKey, out.raw);
+        }
       }
+
+      if (row.image !== null) {
+        const r = replaceGyazoURLs(row.image, deps.resolve);
+        if (r.replaced > 0) {
+          await deps.setImage(row, r.text);
+          imageReplaced = true;
+        }
+      }
+    } catch (e) {
+      // 壊れた本文が 1 件あってもバッチ全体を止めない (runScan と同じ理由)。
+      // ここで投げっぱなしにするとリクエストごと 500 になり nextCursor が
+      // 返らない。CLI は cursor を渡す口を持たないので、再実行しても同じ
+      // page で毎回止まってしまう。
+      error = e instanceof Error ? e.message : String(e);
     }
 
     items.push({
@@ -264,10 +276,13 @@ export async function runRewrite(
       replaced,
       skipped,
       imageReplaced,
+      ...(error !== undefined ? { error } : {}),
     });
   }
 
-  const nextCursor = rows.length < limit ? null : rows[rows.length - 1]!.id;
+  // runScan と同じ理由で rows.length === 0 を先に見る。
+  const nextCursor =
+    rows.length === 0 || rows.length < limit ? null : rows[rows.length - 1]!.id;
   return { processed: rows.length, nextCursor, items };
 }
 
@@ -374,7 +389,12 @@ export async function handleGyazoMigrate(
       backupBody: async (bodyKey, raw) => {
         const key = r2KeyOf(bodyKey);
         if (!key) return;
-        await env.R2.put(`${BACKUP_PREFIX}${key}`, raw, {
+        const backupKey = `${BACKUP_PREFIX}${key}`;
+        // rewrite の再実行は「途中まで置換済みの本文」を持ってくる。
+        // 既に退避済みなら上書きしない。上書きすると原本が消えて
+        // ロールバックできなくなる。
+        if (await env.R2.head(backupKey)) return;
+        await env.R2.put(backupKey, raw, {
           httpMetadata: { contentType: bodyContentType(bodyKey) },
         });
       },
@@ -407,6 +427,30 @@ export async function handleGyazoMigrate(
       return null;
     }
     return input as string[];
+  }
+
+  // limit=-1 は SQLite の LIMIT -1 で「無制限」になる。rewrite に直接
+  // 投げると article 全件を 1 リクエストで書き換えてしまうので弾く。
+  // limit=0 は runScan/runRewrite 側で rows[-1] を踏まないよう直したが、
+  // そもそも 0 件処理するリクエストを許す意味が無いので下限は 1。
+  if (body.cursor !== undefined) {
+    if (
+      typeof body.cursor !== "number" ||
+      !Number.isInteger(body.cursor) ||
+      body.cursor < 0
+    ) {
+      return bad("cursor must be an integer >= 0");
+    }
+  }
+  if (body.limit !== undefined) {
+    if (
+      typeof body.limit !== "number" ||
+      !Number.isInteger(body.limit) ||
+      body.limit < 1 ||
+      body.limit > 100
+    ) {
+      return bad("limit must be an integer between 1 and 100");
+    }
   }
 
   const cursor = typeof body.cursor === "number" ? body.cursor : 0;

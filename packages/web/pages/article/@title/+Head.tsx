@@ -15,12 +15,6 @@ export function Head() {
 
   return (
     <>
-      <link
-        rel="alternate"
-        type="application/rss+xml"
-        title="RSS Feed"
-        href="/rss.xml"
-      />
       <meta property="og:type" content="article" />
       <meta property="og:site_name" content="I am Electrical machine" />
       <meta property="og:url" content={ogUrl} />

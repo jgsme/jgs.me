@@ -11,6 +11,14 @@ export function Head() {
       {/* IndieAuth の所有証明の土台。actor 側から指し返すのは別途。 */}
       <link rel="me" href="https://w.jgs.me/ap/actor" />
 
+      {/* feed autodiscovery。reader はトップを見に来るので全ページで出す。 */}
+      <link
+        rel="alternate"
+        type="application/rss+xml"
+        title="RSS Feed"
+        href="/rss.xml"
+      />
+
       <script
         async
         src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}

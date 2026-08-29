@@ -1,13 +1,14 @@
 import { drizzle } from "drizzle-orm/d1";
 import { and, eq } from "drizzle-orm";
-import { articles, objects, pages } from "@jigsaw/db";
+import { articles, clips, objects, pages } from "@jigsaw/db";
 import { newSbBodyKey, r2KeyOf, bodyFormatOf } from "@jigsaw/db/body-key";
 import { isAuthorized } from "./auth";
-import { parseEntry } from "./mf2";
+import { parseEntry, isClip } from "./mf2";
 import { applyUpdate, parseUpdateAction } from "./mf2update";
 import { buildSbBody } from "./body";
 import { parseTargetURL } from "./target";
 import { putMedia } from "./media";
+import { uniqueTitle } from "./uniqueTitle";
 import type { Env } from "./index";
 
 const SITE_URL = "https://w.jgs.me";
@@ -108,11 +109,17 @@ async function handleMicropubCreate(
   }
 
   const created = entry.published || new Date().toISOString();
+  const db = drizzle(env.DB);
+
+  // 題が既に使われていたら suffix を付ける。page.title は
+  // /pages/<title> の実キーなので、重複させると片方が引けなくなる。
+  // R2 に書く本文の 1 行目もこの題なので、put より先に決める。
+  const title = await uniqueTitle(db, entry.name);
 
   // 本文を先に R2 へ書く。page 行が指す先を必ず存在させる (spec §6)。
   // 逆順だと「本文が引けない page」が生まれる。
   // R2 だけ書けて D1 が失敗した場合は、参照されない孤児オブジェクトが残るだけ。
-  const put = buildCreateR2Put(entry.name, entry.content);
+  const put = buildCreateR2Put(title, entry.content);
   if (!put) {
     return Response.json({ error: "server_error" }, { status: 500 });
   }
@@ -120,17 +127,17 @@ async function handleMicropubCreate(
     httpMetadata: { contentType: put.contentType },
   });
 
-  const db = drizzle(env.DB);
-
-  // page.id を採番してから article / object に使うため、
+  // page.id を採番してから article / clip / object に使うため、
   // page の INSERT だけ先に実行する。
   const [page] = await db
     .insert(pages)
     .values({
-      title: entry.name,
+      title,
       bodyKey: put.bodyKey,
       created,
       updated: created,
+      // 一覧のサムネ。photo が無ければ null のまま。
+      image: entry.photo,
     })
     .returning({ id: pages.id });
 
@@ -138,11 +145,18 @@ async function handleMicropubCreate(
     return Response.json({ error: "server_error" }, { status: 500 });
   }
 
+  // clip は「記事にはしないが残す」枠。article と排他にする。
+  const clip = isClip(entry.categories);
+
   await env.DB.batch([
-    env.DB.prepare("INSERT INTO article (pageID, created) VALUES (?, ?)").bind(
-      page.id,
-      created,
-    ),
+    clip
+      ? env.DB.prepare("INSERT INTO clip (pageID, created) VALUES (?, ?)").bind(
+          page.id,
+          created,
+        )
+      : env.DB.prepare(
+          "INSERT INTO article (pageID, created) VALUES (?, ?)",
+        ).bind(page.id, created),
     env.DB.prepare(
       `INSERT INTO object (id, pageID, source_protocol, mf2, deleted, created, updated)
        VALUES (?, ?, 'web', ?, 0, ?, ?)`,
@@ -170,7 +184,7 @@ async function handleMicropubCreate(
 
   return new Response(null, {
     status: 201,
-    headers: { Location: articleURL(entry.name) },
+    headers: { Location: articleURL(title) },
   });
 }
 

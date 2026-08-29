@@ -23,12 +23,25 @@ const parseCreated = (created: string): Date | null => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
+const DEFAULT_TITLE = "I am Electrical machine";
+const DEFAULT_SELF_PATH = "/rss.xml";
+
 export function buildRssXml(opts: {
   items: RssFeedItem[];
   siteUrl: string;
   lastBuildDate: Date;
+  // feed が 2 本になったので、reader が見分けられるよう題を分けられる
+  // ようにする。省略時は既存の /rss.xml と同じ値。
+  title?: string;
+  selfPath?: string;
 }): string {
-  const { items, siteUrl, lastBuildDate } = opts;
+  const {
+    items,
+    siteUrl,
+    lastBuildDate,
+    title = DEFAULT_TITLE,
+    selfPath = DEFAULT_SELF_PATH,
+  } = opts;
 
   const rssItems = items
     .map((item) => {
@@ -50,12 +63,12 @@ export function buildRssXml(opts: {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>I am Electrical machine</title>
+    <title>${escapeXml(title)}</title>
     <link>${siteUrl}/</link>
     <description>Notes from jigsaw</description>
     <language>ja</language>
     <lastBuildDate>${lastBuildDate.toUTCString()}</lastBuildDate>
-    <atom:link href="${siteUrl}/rss.xml" rel="self" type="application/rss+xml"/>
+    <atom:link href="${siteUrl}${selfPath}" rel="self" type="application/rss+xml"/>
 ${rssItems}
   </channel>
 </rss>`;

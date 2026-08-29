@@ -9,7 +9,7 @@ import {
   type RewriteItem,
   type ScanItem,
 } from "./gyazoReport.ts";
-import { parseGyazoArgs, type GyazoTarget } from "./gyazoArgs.ts";
+import { parseGyazoArgs } from "./gyazoArgs.ts";
 
 // probe / fetch の 1 回あたりの上限。ingest 側の PROBE_MAX / FETCH_MAX と揃える。
 const PROBE_MAX = 40;
@@ -18,14 +18,15 @@ const FETCH_MAX = 10;
 function usage(): never {
   console.error(
     [
-      "usage: pnpm gyazo <scan|fetch|rewrite> [--target article|clip] [--pages N]",
+      "usage: pnpm gyazo <scan|fetch|rewrite> [--pages N]",
+      "",
+      "  走査対象は clip ページ。article は移行済み。",
       "",
       "  scan    棚卸し。書き込みなし。走査 + HEAD 打診をしてレポートを出す",
       "  fetch   取り込み。Gyazo → R2 (w-media) + 対応表への記録",
       "  rewrite 差し替え。本文と page.image を書き換える (破壊的)",
       "",
-      "  --target T  走査する page の集合 (既定 article)",
-      "  --pages N   rewrite で処理する page 数の上限 (1 以上)",
+      "  --pages N  rewrite で処理する page 数の上限 (1 以上)",
       "",
       "  環境変数 INGEST_URL / SIMILARITY_TOKEN が要る。",
     ].join("\n"),
@@ -67,7 +68,6 @@ async function call<T>(body: Record<string, unknown>): Promise<Envelope<T>> {
 // cursor が尽きるまで回して items を全部集める。
 async function walk<T>(
   phase: "scan" | "rewrite",
-  target: GyazoTarget,
   maxPages: number | null,
 ): Promise<T[]> {
   const items: T[] = [];
@@ -78,7 +78,6 @@ async function walk<T>(
     // --pages が rewrite の安全弁として機能しない (破壊的な書き込みが先に走る)。
     const r = await call<T>({
       phase,
-      target,
       cursor,
       limit: nextLimit(maxPages, seen),
     });
@@ -95,10 +94,10 @@ async function walk<T>(
 async function main(): Promise<void> {
   const parsed = parseGyazoArgs(process.argv.slice(2));
   if (parsed === null) usage();
-  const { command, maxPages, target } = parsed;
+  const { command, maxPages } = parsed;
 
   if (command === "scan") {
-    const items = await walk<ScanItem>("scan", target, null);
+    const items = await walk<ScanItem>("scan", null);
     const probes: ProbeItem[] = [];
     for (const group of chunk(uniqueHashes(items), PROBE_MAX)) {
       const r = await call<ProbeItem>({ phase: "probe", hashes: group });
@@ -111,7 +110,7 @@ async function main(): Promise<void> {
 
   if (command === "fetch") {
     // 取り込む対象は棚卸しと同じ集合。scan をもう一度回して拾い直す。
-    const items = await walk<ScanItem>("scan", target, null);
+    const items = await walk<ScanItem>("scan", null);
     let ok = 0;
     const errors: string[] = [];
     for (const group of chunk(uniqueHashes(items), FETCH_MAX)) {
@@ -133,7 +132,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  const items = await walk<RewriteItem>("rewrite", target, maxPages);
+  const items = await walk<RewriteItem>("rewrite", maxPages);
   const touched = items.filter((i) => i.replaced > 0 || i.imageReplaced);
   const skipped = items.reduce((n, i) => n + i.skipped, 0);
   console.log(`書き換えた page: ${touched.length}`);

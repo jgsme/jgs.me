@@ -6,22 +6,14 @@ describe("parseGyazoArgs", () => {
     expect(parseGyazoArgs(["scan"])).toEqual({
       command: "scan",
       maxPages: null,
-      target: "article",
     });
   });
 
-  it("--target clip を読む", () => {
-    expect(parseGyazoArgs(["scan", "--target", "clip"])).toEqual({
-      command: "scan",
-      maxPages: null,
-      target: "clip",
+  it("--pages を読む", () => {
+    expect(parseGyazoArgs(["rewrite", "--pages", "20"])).toEqual({
+      command: "rewrite",
+      maxPages: 20,
     });
-  });
-
-  it("--pages と --target を同時に読む", () => {
-    expect(
-      parseGyazoArgs(["rewrite", "--pages", "20", "--target", "clip"]),
-    ).toEqual({ command: "rewrite", maxPages: 20, target: "clip" });
   });
 
   it("知らないコマンドは null にする", () => {
@@ -32,16 +24,12 @@ describe("parseGyazoArgs", () => {
     expect(parseGyazoArgs([])).toBeNull();
   });
 
-  it("知らない target は null にする", () => {
-    expect(parseGyazoArgs(["scan", "--target", "excluded"])).toBeNull();
-  });
-
-  it("--target の値が無いなら null にする", () => {
-    expect(parseGyazoArgs(["scan", "--target"])).toBeNull();
-  });
-
   it("数値でない --pages は null にする", () => {
     expect(parseGyazoArgs(["rewrite", "--pages", "たくさん"])).toBeNull();
+  });
+
+  it("--pages の値が無いなら null にする", () => {
+    expect(parseGyazoArgs(["rewrite", "--pages"])).toBeNull();
   });
 
   // --pages 0 を通すと rewrite が 1 ページも処理しないまま「完了」と出る。

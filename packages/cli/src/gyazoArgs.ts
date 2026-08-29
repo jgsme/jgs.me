@@ -1,16 +1,12 @@
 export type GyazoCommand = "scan" | "fetch" | "rewrite";
 
-// ingest 側の Target と揃える。増やすなら両方直す。
-export type GyazoTarget = "article" | "clip";
-
 export type GyazoArgs = {
   command: GyazoCommand;
   maxPages: number | null;
-  target: GyazoTarget;
 };
 
 // undefined = フラグごと無い / null = フラグはあるが値が無い。
-// この 2 つを区別しないと `--target` の打ちかけを既定値として飲んでしまう。
+// この 2 つを区別しないと `--pages` の打ちかけを既定値として飲んでしまう。
 function flagValue(argv: string[], name: string): string | null | undefined {
   const i = argv.indexOf(name);
   if (i === -1) return undefined;
@@ -33,12 +29,5 @@ export function parseGyazoArgs(argv: string[]): GyazoArgs | null {
     maxPages = n;
   }
 
-  let target: GyazoTarget = "article";
-  const t = flagValue(argv, "--target");
-  if (t !== undefined) {
-    if (t !== "article" && t !== "clip") return null;
-    target = t;
-  }
-
-  return { command, maxPages, target };
+  return { command, maxPages };
 }

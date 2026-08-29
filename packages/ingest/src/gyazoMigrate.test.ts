@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import type { Env } from "./index";
 import {
   handleGyazoMigrate,
-  parseTarget,
   runFetch,
   runProbe,
   runRewrite,
@@ -535,29 +534,7 @@ describe("runRewrite", () => {
   });
 });
 
-describe("parseTarget", () => {
-  it("省略時は article にする (既存の呼び出しを壊さない)", () => {
-    expect(parseTarget(undefined)).toBe("article");
-  });
-
-  it("clip を受け付ける", () => {
-    expect(parseTarget("clip")).toBe("clip");
-  });
-
-  it("article を受け付ける", () => {
-    expect(parseTarget("article")).toBe("article");
-  });
-
-  it("知らない対象は null にする", () => {
-    expect(parseTarget("excluded")).toBeNull();
-  });
-
-  it("文字列でない値は null にする", () => {
-    expect(parseTarget(123)).toBeNull();
-  });
-});
-
-// D1 に投げた SQL を覗くだけの偽 binding。target の配線 (どのテーブルを
+// D1 に投げた SQL を覗くだけの偽 binding。走査対象の配線 (どのテーブルを
 // join するか) は runScan/runRewrite の外にあるので、deps 注入では届かない。
 function fakeEnv(): { env: Env; sql: string[] } {
   const sql: string[] = [];
@@ -590,20 +567,8 @@ function migrateRequest(body: Record<string, unknown>): Request {
   });
 }
 
-describe("handleGyazoMigrate の target", () => {
-  it("target=clip の scan は clip テーブルを引く", async () => {
-    const { env, sql } = fakeEnv();
-
-    const res = await handleGyazoMigrate(
-      migrateRequest({ phase: "scan", target: "clip" }),
-      env,
-    );
-
-    expect(res.status).toBe(200);
-    expect(sql.join("\n")).toContain(`"clip"`);
-  });
-
-  it("target を省いた scan は今まで通り article テーブルを引く", async () => {
+describe("handleGyazoMigrate の走査対象", () => {
+  it("scan は clip テーブルを引く", async () => {
     const { env, sql } = fakeEnv();
 
     const res = await handleGyazoMigrate(
@@ -612,15 +577,14 @@ describe("handleGyazoMigrate の target", () => {
     );
 
     expect(res.status).toBe(200);
-    expect(sql.join("\n")).toContain(`"article"`);
-    expect(sql.join("\n")).not.toContain(`"clip"`);
+    expect(sql.join("\n")).toContain(`"clip"`);
   });
 
-  it("target=clip の rewrite は clip テーブルを引く", async () => {
+  it("rewrite は clip テーブルを引く", async () => {
     const { env, sql } = fakeEnv();
 
     const res = await handleGyazoMigrate(
-      migrateRequest({ phase: "rewrite", target: "clip" }),
+      migrateRequest({ phase: "rewrite" }),
       env,
     );
 
@@ -628,14 +592,13 @@ describe("handleGyazoMigrate の target", () => {
     expect(sql.join("\n")).toContain(`"clip"`);
   });
 
-  it("知らない target は 400 で弾く", async () => {
-    const { env } = fakeEnv();
+  // article の移行は済んでいる。もう一度回せてしまうと、対応表に無いまま
+  // 残した URL を「未処理」と誤認して本文を触りに行く経路が生き続ける。
+  it("article テーブルは引かない", async () => {
+    const { env, sql } = fakeEnv();
 
-    const res = await handleGyazoMigrate(
-      migrateRequest({ phase: "scan", target: "excluded" }),
-      env,
-    );
+    await handleGyazoMigrate(migrateRequest({ phase: "rewrite" }), env);
 
-    expect(res.status).toBe(400);
+    expect(sql.join("\n")).not.toContain(`"article"`);
   });
 });

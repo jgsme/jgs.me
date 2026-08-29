@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/d1";
 import { eq, gt, inArray } from "drizzle-orm";
-import { articles, clips, gyazoMedia, pages } from "@jigsaw/db";
+import { clips, gyazoMedia, pages } from "@jigsaw/db";
 import { r2KeyOf } from "@jigsaw/db/body-key";
 import {
   countScrapboxFiles,
@@ -286,22 +286,11 @@ export async function runRewrite(
   return { processed: rows.length, nextCursor, items };
 }
 
-// 走査対象。article は移行済みだが、再実行できないと取りこぼしを直せないので
-// 消さずに残す。既定を article にしてあるのは target を知らない古い呼び出し
-// (デプロイ済みの CLI) が黙って clip を書き換え始めないため。
-export type Target = "article" | "clip";
-
-export function parseTarget(input: unknown): Target | null {
-  if (input === undefined) return "article";
-  return input === "article" || input === "clip" ? input : null;
-}
-
 type Body = {
   phase?: unknown;
   cursor?: unknown;
   limit?: unknown;
   hashes?: unknown;
-  target?: unknown;
 };
 
 function bad(description: string): Response {
@@ -320,15 +309,9 @@ export async function handleGyazoMigrate(
     return bad("invalid json");
   }
 
-  const target = parseTarget(body.target);
-  if (target === null) return bad(`target must be "article" or "clip"`);
-
   const db = drizzle(env.DB);
 
-  // article と clip はどちらも page を指す参照テーブルで、参照列の名前も
-  // pageID で揃っている。join 先を差し替えるだけで同じクエリが使える。
-  const owner = target === "clip" ? clips : articles;
-
+  // 走査対象は clip だけ。article は移行済みで、もう一度回す用は無い。
   const listPages = (cursor: number, limit: number) =>
     db
       .select({
@@ -338,8 +321,8 @@ export async function handleGyazoMigrate(
         image: pages.image,
         updated: pages.updated,
       })
-      .from(owner)
-      .innerJoin(pages, eq(pages.id, owner.pageID))
+      .from(clips)
+      .innerJoin(pages, eq(pages.id, clips.pageID))
       .where(gt(pages.id, cursor))
       .orderBy(pages.id)
       .limit(limit);

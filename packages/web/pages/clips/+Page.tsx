@@ -11,20 +11,26 @@ const Page = () => {
       <ul>
         {d.payload.clips.map((clip) => (
           <li key={clip.id} className="my-8">
-            <a href={`/pages/${encodeURIComponent(clip.title ?? "")}`}>
-              {clip.image ? (
+            <a href={`/pages/${encodeURIComponent(clip.title)}`}>
+              {clip.image && (
                 <img
                   {...cardImageSources(clip.image)}
-                  alt={clip.title ?? ""}
+                  alt={clip.title}
                   className="mb-2 rounded mx-auto h-[300px] object-contain"
                   loading="lazy"
                 />
-              ) : (
-                <div className="h-[300px] text-center mx-auto font-bold flex justify-center items-center bg-black/[0.04] mb-2 rounded text-[2rem]">
-                  {clip.title}
-                </div>
               )}
               <div className="font-bold text-[1.2rem]">{clip.title}</div>
+              {clip.description && (
+                <div className="mt-1 text-[0.9rem] text-black/60 line-clamp-2">
+                  {clip.description}
+                </div>
+              )}
+              {clip.hostname && (
+                <div className="mt-1 text-[0.8rem] text-black/40">
+                  {clip.hostname}
+                </div>
+              )}
             </a>
           </li>
         ))}

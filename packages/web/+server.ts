@@ -18,6 +18,7 @@ app.use("/", createCacheMiddleware(86400));
 app.use("/pages/*", createCacheMiddleware(86400));
 app.use("/a/*", createCacheMiddleware(604800));
 app.use("/p/*", createCacheMiddleware(604800));
+app.use("/c/*", createCacheMiddleware(604800));
 
 app.route("/", redirects);
 app.route("/", rss);

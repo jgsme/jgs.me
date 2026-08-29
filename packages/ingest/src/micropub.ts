@@ -1,13 +1,14 @@
 import { drizzle } from "drizzle-orm/d1";
-import { and, eq } from "drizzle-orm";
-import { articles, objects, pages } from "@jigsaw/db";
+import { and, eq, ne } from "drizzle-orm";
+import { articles, clips, objects, pages } from "@jigsaw/db";
 import { newSbBodyKey, r2KeyOf, bodyFormatOf } from "@jigsaw/db/body-key";
 import { isAuthorized } from "./auth";
-import { parseEntry } from "./mf2";
+import { parseEntry, isClip } from "./mf2";
 import { applyUpdate, parseUpdateAction } from "./mf2update";
 import { buildSbBody } from "./body";
 import { parseTargetURL } from "./target";
 import { putMedia } from "./media";
+import { uniqueTitle } from "./uniqueTitle";
 import type { Env } from "./index";
 
 const SITE_URL = "https://w.jgs.me";
@@ -108,11 +109,17 @@ async function handleMicropubCreate(
   }
 
   const created = entry.published || new Date().toISOString();
+  const db = drizzle(env.DB);
+
+  // 題が既に使われていたら suffix を付ける。page.title は
+  // /pages/<title> の実キーなので、重複させると片方が引けなくなる。
+  // R2 に書く本文の 1 行目もこの題なので、put より先に決める。
+  const title = await uniqueTitle(db, entry.name);
 
   // 本文を先に R2 へ書く。page 行が指す先を必ず存在させる (spec §6)。
   // 逆順だと「本文が引けない page」が生まれる。
   // R2 だけ書けて D1 が失敗した場合は、参照されない孤児オブジェクトが残るだけ。
-  const put = buildCreateR2Put(entry.name, entry.content);
+  const put = buildCreateR2Put(title, entry.content);
   if (!put) {
     return Response.json({ error: "server_error" }, { status: 500 });
   }
@@ -120,17 +127,17 @@ async function handleMicropubCreate(
     httpMetadata: { contentType: put.contentType },
   });
 
-  const db = drizzle(env.DB);
-
-  // page.id を採番してから article / object に使うため、
+  // page.id を採番してから article / clip / object に使うため、
   // page の INSERT だけ先に実行する。
   const [page] = await db
     .insert(pages)
     .values({
-      title: entry.name,
+      title,
       bodyKey: put.bodyKey,
       created,
       updated: created,
+      // 一覧のサムネ。photo が無ければ null のまま。
+      image: entry.photo,
     })
     .returning({ id: pages.id });
 
@@ -138,21 +145,24 @@ async function handleMicropubCreate(
     return Response.json({ error: "server_error" }, { status: 500 });
   }
 
-  await env.DB.batch([
-    env.DB.prepare("INSERT INTO article (pageID, created) VALUES (?, ?)").bind(
-      page.id,
+  // clip は「記事にはしないが残す」枠。article と排他にする。
+  const clip = isClip(entry.categories);
+
+  // env.DB.batch (生 SQL) と db.batch (query builder) は混ぜられないので、
+  // clip / article の分岐も含めて 3 件とも drizzle で組み立てる。
+  await db.batch([
+    clip
+      ? db.insert(clips).values({ pageID: page.id, created })
+      : db.insert(articles).values({ pageID: page.id, created }),
+    db.insert(objects).values({
+      id: objectURI(page.id),
+      pageID: page.id,
+      sourceProtocol: "web",
+      mf2: JSON.stringify(payload),
+      deleted: false,
       created,
-    ),
-    env.DB.prepare(
-      `INSERT INTO object (id, pageID, source_protocol, mf2, deleted, created, updated)
-       VALUES (?, ?, 'web', ?, 0, ?, ?)`,
-    ).bind(
-      objectURI(page.id),
-      page.id,
-      JSON.stringify(payload),
-      created,
-      created,
-    ),
+      updated: created,
+    }),
   ]);
 
   // 公開したので ActivityPub のフォロワーへ配送する。
@@ -170,7 +180,7 @@ async function handleMicropubCreate(
 
   return new Response(null, {
     status: 201,
-    headers: { Location: articleURL(entry.name) },
+    headers: { Location: articleURL(title) },
   });
 }
 
@@ -349,6 +359,29 @@ async function handleMicropubUpdate(
     );
   }
 
+  const db = drizzle(env.DB);
+
+  // 改題先の題が既に他の page に使われていないかを、R2 に書く前に確認する。
+  // page.title は UNIQUE INDEX なので、ここで弾かずに UPDATE まで進むと
+  // R2 の本文だけ新しい題で上書きされた後に SQLite が違反を投げ、
+  // R2 と D1 の題がずれたまま 500 を返すことになる (create の uniqueTitle と
+  // 違い、update はユーザが明示した題なので黙って suffix を付けず失敗させる)。
+  // 同じ題への no-op な更新は「対象 page 自身」を除くことで衝突扱いにしない。
+  const [collision] = await db
+    .select({ id: pages.id })
+    .from(pages)
+    .where(and(eq(pages.title, entry.name), ne(pages.id, target.pageID)))
+    .limit(1);
+  if (collision) {
+    return Response.json(
+      {
+        error: "invalid_request",
+        error_description: `title already in use: ${entry.name}`,
+      },
+      { status: 409 },
+    );
+  }
+
   const r2Key = r2KeyOf(target.bodyKey);
   if (!r2Key) {
     return Response.json({ error: "server_error" }, { status: 500 });
@@ -363,17 +396,17 @@ async function handleMicropubUpdate(
   });
 
   const now = new Date().toISOString();
-  await env.DB.batch([
-    env.DB.prepare("UPDATE page SET title = ?, updated = ? WHERE id = ?").bind(
-      entry.name,
-      now,
-      target.pageID,
-    ),
-    env.DB.prepare("UPDATE object SET mf2 = ?, updated = ? WHERE id = ?").bind(
-      JSON.stringify(nextPayload),
-      now,
-      objectURI(target.pageID),
-    ),
+  // updated を明示で渡しているので $onUpdate は発火しない (明示値が勝つ)。
+  // create 同様、生 SQL ではなく drizzle の db.batch で組み立てる。
+  await db.batch([
+    db
+      .update(pages)
+      .set({ title: entry.name, updated: now })
+      .where(eq(pages.id, target.pageID)),
+    db
+      .update(objects)
+      .set({ mf2: JSON.stringify(nextPayload), updated: now })
+      .where(eq(objects.id, objectURI(target.pageID))),
   ]);
 
   const renamed = entry.name !== target.title;

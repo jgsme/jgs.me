@@ -1,25 +1,31 @@
-import { PUBLIC, type AS2Article } from "./as2";
+import { PUBLIC, type AS2Article, type AS2Note } from "./as2";
 import { ACTOR_CONTEXT, ACTOR_URI, type ActorDocument } from "./actor";
 
 const CONTEXT = "https://www.w3.org/ns/activitystreams";
 
-export type CreateActivity = {
+// clip (Note) も article (Article) と同じ Create/Update に包んで配送するため、
+// object は呼び出し側の型 (AS2Article | AS2Note) をそのまま保つ。
+export type CreateActivity<
+  T extends AS2Article | AS2Note = AS2Article | AS2Note,
+> = {
   "@context": string;
   id: string;
   type: "Create";
   actor: string;
   published: string;
   to: string[];
-  object: AS2Article;
+  object: T;
 };
 
-export type UpdateActivity = {
+export type UpdateActivity<
+  T extends AS2Article | AS2Note = AS2Article | AS2Note,
+> = {
   "@context": string;
   id: string;
   type: "Update";
   actor: string;
   to: string[];
-  object: AS2Article;
+  object: T;
 };
 
 export type DeleteActivity = {
@@ -31,7 +37,9 @@ export type DeleteActivity = {
   object: { id: string; type: "Tombstone" };
 };
 
-export function wrapCreate(article: AS2Article): CreateActivity {
+export function wrapCreate<T extends AS2Article | AS2Note>(
+  article: T,
+): CreateActivity<T> {
   return {
     "@context": CONTEXT,
     // 受信側は activity id で重複排除する。object id から決定的に導く。
@@ -44,7 +52,9 @@ export function wrapCreate(article: AS2Article): CreateActivity {
   };
 }
 
-export function wrapUpdate(article: AS2Article): UpdateActivity {
+export function wrapUpdate<T extends AS2Article | AS2Note>(
+  article: T,
+): UpdateActivity<T> {
   return {
     "@context": CONTEXT,
     // 編集のたびに別の activity として扱われる必要があるため updated を含める。

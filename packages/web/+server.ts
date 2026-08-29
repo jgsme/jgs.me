@@ -18,6 +18,10 @@ app.use("/", createCacheMiddleware(86400));
 app.use("/pages/*", createCacheMiddleware(86400));
 app.use("/a/*", createCacheMiddleware(604800));
 app.use("/p/*", createCacheMiddleware(604800));
+app.use("/c/*", createCacheMiddleware(604800));
+// /clips は 1 ページ 20 件ぶん R2 GET が走るページ。トップからの導線が
+// このブランチで初めて張られるので、/ と同じ TTL でキャッシュする。
+app.use("/clips*", createCacheMiddleware(86400));
 
 app.route("/", redirects);
 app.route("/", rss);

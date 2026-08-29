@@ -1,10 +1,10 @@
 import { Hono } from "hono";
 import { eq } from "drizzle-orm";
-import { articles, followers, pages } from "@jigsaw/db";
+import { articles, clips, followers, pages } from "@jigsaw/db";
 import { getDB, type Env } from "../db";
 import { SITE_URL, articleURL, objectURI } from "../config";
 import { resolveContent } from "../content";
-import { toArticle, type PageRow } from "../as2";
+import { toArticle, toNote, type PageRow } from "../as2";
 import {
   wrapActorUpdate,
   wrapCreate,
@@ -35,10 +35,19 @@ publish.post("/internal/publish", async (c) => {
 
   // 本文と Webmention はフォロワーの有無・fan-out の可否と独立して扱う。
   // delete は本文が無いので対象外。
-  let page: (PageRow & { bodyKey: string }) | null = null;
+  let page:
+    | (PageRow & {
+        bodyKey: string;
+        articleID: number | null;
+        clipID: number | null;
+      })
+    | null = null;
   let content = "";
 
   if (kind !== "delete") {
+    // article だけでなく clip も配送対象にする。innerJoin(articles) のままだと
+    // clip しか持たない page が「not published」で 404 になる。
+    // 両方ある page は article として扱う (先に立った方を尊重する)。
     const rows = await db
       .select({
         id: pages.id,
@@ -46,14 +55,19 @@ publish.post("/internal/publish", async (c) => {
         created: pages.created,
         updated: pages.updated,
         bodyKey: pages.bodyKey,
+        articleID: articles.id,
+        clipID: clips.id,
       })
       .from(pages)
-      .innerJoin(articles, eq(articles.pageID, pages.id))
+      .leftJoin(articles, eq(articles.pageID, pages.id))
+      .leftJoin(clips, eq(clips.pageID, pages.id))
       .where(eq(pages.id, pageID))
       .limit(1);
 
     page = rows[0] ?? null;
-    if (!page) return c.json({ error: "page not found or not published" }, 404);
+    if (!page || (page.articleID === null && page.clipID === null)) {
+      return c.json({ error: "page not found or not published" }, 404);
+    }
 
     content = await resolveContent(
       page.bodyKey,
@@ -120,8 +134,12 @@ publish.post("/internal/publish", async (c) => {
   if (kind === "delete") {
     activity = wrapDelete(objectURI(pageID));
   } else {
-    const article = toArticle(page!, content);
-    activity = kind === "create" ? wrapCreate(article) : wrapUpdate(article);
+    // article 行が無い = clip としてだけ公開されている page。
+    const object =
+      page!.articleID === null
+        ? toNote(page!, content)
+        : toArticle(page!, content);
+    activity = kind === "create" ? wrapCreate(object) : wrapUpdate(object);
   }
 
   // sharedInbox があればそちらに寄せて重複配送を減らす。

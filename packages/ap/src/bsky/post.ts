@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { articles, copies, pages } from "@jigsaw/db";
+import { articles, clips, copies, pages } from "@jigsaw/db";
 import { getDB, type Env } from "../db";
 import { SITE_URL, USER_AGENT, objectURI, shareURL } from "../config";
 import { resolveContent } from "../content";
@@ -34,6 +34,9 @@ function createRecord(
 export async function postToBsky(pageID: number, env: Env): Promise<void> {
   const db = getDB(env.DB);
 
+  // article だけでなく clip も配送対象。innerJoin(articles) のままだと
+  // publish.ts が投げた clip の bsky キューがここで握り潰され、
+  // ログにも残らず no-op になる (object.ts / inbox.ts と同じ形に揃える)。
   const rows = await db
     .select({
       id: pages.id,
@@ -41,14 +44,17 @@ export async function postToBsky(pageID: number, env: Env): Promise<void> {
       created: pages.created,
       updated: pages.updated,
       bodyKey: pages.bodyKey,
+      articleID: articles.id,
+      clipID: clips.id,
     })
     .from(pages)
-    .innerJoin(articles, eq(articles.pageID, pages.id))
+    .leftJoin(articles, eq(articles.pageID, pages.id))
+    .leftJoin(clips, eq(clips.pageID, pages.id))
     .where(eq(pages.id, pageID))
     .limit(1);
 
   const page = rows[0];
-  if (!page) {
+  if (!page || (page.articleID === null && page.clipID === null)) {
     console.log(`[bsky] page not found or not published pageID=${pageID}`);
     return;
   }

@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { eq } from "drizzle-orm";
-import { articles, followers, pages, reactions } from "@jigsaw/db";
+import { articles, clips, followers, pages, reactions } from "@jigsaw/db";
 import { getDB, type Env } from "../db";
 import { sha256Digest, verifyDigest } from "../sig/digest";
 import {
@@ -220,15 +220,22 @@ inbox.post("/ap/inbox", async (c) => {
 
     // reaction.targetPageID は page(id) への FK。存在しない id を insert すると
     // FK 違反で inbox が 500 を返し、相手がリトライを続ける。URI の形だけでは
-    // 実在を保証できないので、公開済み (article に行がある) かをここで確認する。
-    // 計画6 の resolveTarget と同じ条件。
+    // 実在を保証できないので、公開済み (article か clip の行がある) かを
+    // ここで確認する。article だけを見ると clip 宛の反応が全部落ちる
+    // (canonical id は /o/<pageID> で article/clip 共通なので同様に見る)。
     const published = await db
-      .select({ id: pages.id })
+      .select({ articleID: articles.id, clipID: clips.id })
       .from(pages)
-      .innerJoin(articles, eq(articles.pageID, pages.id))
+      .leftJoin(articles, eq(articles.pageID, pages.id))
+      .leftJoin(clips, eq(clips.pageID, pages.id))
       .where(eq(pages.id, pageID))
       .limit(1);
-    if (!published[0]) {
+    // leftJoin だけだと page 単体行でも 1 件返ってしまうので、
+    // article/clip どちらの id も無いケースを別途弾く。
+    if (
+      !published[0] ||
+      (published[0].articleID === null && published[0].clipID === null)
+    ) {
       console.log(`[inbox] reaction for unpublished page=${pageID}`);
       return c.text("", 202);
     }

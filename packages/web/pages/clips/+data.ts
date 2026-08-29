@@ -3,6 +3,7 @@ import type { Bindings } from "@/server/types";
 import { clips, pages } from "@jigsaw/db";
 import { getDB } from "@/db/getDB";
 import { count, desc, eq } from "drizzle-orm";
+import { parse } from "@progfay/scrapbox-parser";
 import { fetchBody } from "@/utils/fetchBody";
 import { firstLinkHostname } from "@/utils/firstLinkHostname";
 import { buildArticleBody } from "@/pages/article/@title/articleBody";
@@ -51,16 +52,19 @@ const data = async (c: Context) => {
           hostname: null,
         };
       }
-      // buildArticleBody が返す blocks は title ブロックを除いた line
-      // ブロック群で、firstLinkHostname は line ブロックしか見ないので、
-      // parse(body) をもう一度呼ばなくても結果は変わらない。
+      // built.blocks は from 行 (from [YYYYMMDD]) と日付ハッシュタグ行
+      // (#YYYYMMDD) を落とす。Scrapbox アーカイブ由来の clip はこの2つを
+      // 高頻度で持つため、built.blocks から探すとリンクごと消えて
+      // hostname が null になるケースがある。リンク抽出には生の
+      // parse(body) を使う (二重パースのコストは、同じリクエストで走る
+      // 20 回の R2 GET の前では無視できる)。
       const built = buildArticleBody(body);
       return {
         id: clip.id,
         title: clip.title,
         image: clip.image,
         description: built.description.slice(0, SNIPPET_MAX) || null,
-        hostname: firstLinkHostname(built.blocks),
+        hostname: firstLinkHostname(parse(body)),
       };
     }),
   );

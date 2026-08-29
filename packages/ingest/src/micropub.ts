@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/d1";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { articles, clips, objects, pages } from "@jigsaw/db";
 import { newSbBodyKey, r2KeyOf, bodyFormatOf } from "@jigsaw/db/body-key";
 import { isAuthorized } from "./auth";
@@ -359,6 +359,29 @@ async function handleMicropubUpdate(
     );
   }
 
+  const db = drizzle(env.DB);
+
+  // 改題先の題が既に他の page に使われていないかを、R2 に書く前に確認する。
+  // page.title は UNIQUE INDEX なので、ここで弾かずに UPDATE まで進むと
+  // R2 の本文だけ新しい題で上書きされた後に SQLite が違反を投げ、
+  // R2 と D1 の題がずれたまま 500 を返すことになる (create の uniqueTitle と
+  // 違い、update はユーザが明示した題なので黙って suffix を付けず失敗させる)。
+  // 同じ題への no-op な更新は「対象 page 自身」を除くことで衝突扱いにしない。
+  const [collision] = await db
+    .select({ id: pages.id })
+    .from(pages)
+    .where(and(eq(pages.title, entry.name), ne(pages.id, target.pageID)))
+    .limit(1);
+  if (collision) {
+    return Response.json(
+      {
+        error: "invalid_request",
+        error_description: `title already in use: ${entry.name}`,
+      },
+      { status: 409 },
+    );
+  }
+
   const r2Key = r2KeyOf(target.bodyKey);
   if (!r2Key) {
     return Response.json({ error: "server_error" }, { status: 500 });
@@ -373,17 +396,17 @@ async function handleMicropubUpdate(
   });
 
   const now = new Date().toISOString();
-  await env.DB.batch([
-    env.DB.prepare("UPDATE page SET title = ?, updated = ? WHERE id = ?").bind(
-      entry.name,
-      now,
-      target.pageID,
-    ),
-    env.DB.prepare("UPDATE object SET mf2 = ?, updated = ? WHERE id = ?").bind(
-      JSON.stringify(nextPayload),
-      now,
-      objectURI(target.pageID),
-    ),
+  // updated を明示で渡しているので $onUpdate は発火しない (明示値が勝つ)。
+  // create 同様、生 SQL ではなく drizzle の db.batch で組み立てる。
+  await db.batch([
+    db
+      .update(pages)
+      .set({ title: entry.name, updated: now })
+      .where(eq(pages.id, target.pageID)),
+    db
+      .update(objects)
+      .set({ mf2: JSON.stringify(nextPayload), updated: now })
+      .where(eq(objects.id, objectURI(target.pageID))),
   ]);
 
   const renamed = entry.name !== target.title;

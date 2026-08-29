@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 import { and, eq } from "drizzle-orm";
-import { articles, objects, pages } from "@jigsaw/db";
+import { articles, clips, objects, pages } from "@jigsaw/db";
 import { getDB, type Env } from "../db";
 import { SITE_URL, articleURL, objectURI } from "../config";
-import { toArticle } from "../as2";
+import { toArticle, toNote } from "../as2";
 import { resolveContent } from "../content";
 
 export const AS2_CONTENT_TYPE = "application/activity+json";
@@ -27,6 +27,9 @@ objectRoute.get("/o/:id", async (c) => {
 
   const db = getDB(c.env.DB);
 
+  // article だけでなく clip も配送対象。innerJoin(articles) のままだと
+  // clip しか持たない page の canonical URI (id) が 404 を返してしまう
+  // (publish.ts が Note として配送しているのに、ここで引けない)。
   const rows = await db
     .select({
       id: pages.id,
@@ -34,15 +37,20 @@ objectRoute.get("/o/:id", async (c) => {
       created: pages.created,
       updated: pages.updated,
       bodyKey: pages.bodyKey,
+      articleID: articles.id,
+      clipID: clips.id,
     })
     .from(pages)
-    .innerJoin(articles, eq(articles.pageID, pages.id))
+    .leftJoin(articles, eq(articles.pageID, pages.id))
+    .leftJoin(clips, eq(clips.pageID, pages.id))
     .where(eq(pages.id, id))
     .limit(1);
 
   const page = rows[0];
-  // article に行が無い = 未公開。federation の対象外。
-  if (!page) return c.notFound();
+  // article にも clip にも行が無い = 未公開。federation の対象外。
+  if (!page || (page.articleID === null && page.clipID === null)) {
+    return c.notFound();
+  }
 
   const deletedRows = await db
     .select({ deleted: objects.deleted })
@@ -74,7 +82,14 @@ objectRoute.get("/o/:id", async (c) => {
     page.title,
   );
 
-  return c.json(toArticle(page, contentHtml), 200, {
+  // 配送した型と提供する型を揃える。publish.ts の分岐と同じ条件
+  // (article 行が無い = clip としてだけ公開されている page)。
+  const object =
+    page.articleID === null
+      ? toNote(page, contentHtml)
+      : toArticle(page, contentHtml);
+
+  return c.json(object, 200, {
     "Content-Type": AS2_CONTENT_TYPE,
   });
 });

@@ -148,25 +148,21 @@ async function handleMicropubCreate(
   // clip は「記事にはしないが残す」枠。article と排他にする。
   const clip = isClip(entry.categories);
 
-  await env.DB.batch([
+  // env.DB.batch (生 SQL) と db.batch (query builder) は混ぜられないので、
+  // clip / article の分岐も含めて 3 件とも drizzle で組み立てる。
+  await db.batch([
     clip
-      ? env.DB.prepare("INSERT INTO clip (pageID, created) VALUES (?, ?)").bind(
-          page.id,
-          created,
-        )
-      : env.DB.prepare(
-          "INSERT INTO article (pageID, created) VALUES (?, ?)",
-        ).bind(page.id, created),
-    env.DB.prepare(
-      `INSERT INTO object (id, pageID, source_protocol, mf2, deleted, created, updated)
-       VALUES (?, ?, 'web', ?, 0, ?, ?)`,
-    ).bind(
-      objectURI(page.id),
-      page.id,
-      JSON.stringify(payload),
+      ? db.insert(clips).values({ pageID: page.id, created })
+      : db.insert(articles).values({ pageID: page.id, created }),
+    db.insert(objects).values({
+      id: objectURI(page.id),
+      pageID: page.id,
+      sourceProtocol: "web",
+      mf2: JSON.stringify(payload),
+      deleted: false,
       created,
-      created,
-    ),
+      updated: created,
+    }),
   ]);
 
   // 公開したので ActivityPub のフォロワーへ配送する。

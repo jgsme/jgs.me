@@ -1,6 +1,6 @@
 import type { PageContextServer } from "vike/types";
 import type { Bindings } from "@/server/types";
-import { articles, pages } from "@jigsaw/db";
+import { articles, clips, pages } from "@jigsaw/db";
 import { getDB } from "@/db/getDB";
 import { count, desc, eq } from "drizzle-orm";
 
@@ -9,6 +9,8 @@ type Context = PageContextServer & {
 };
 
 const PER_PAGE = 20;
+// index に差し込む clip の数。多すぎると記事の一覧が分断される。
+const RECENT_CLIPS = 6;
 
 const data = async (c: Context) => {
   const db = getDB(c.env.DB);
@@ -30,6 +32,22 @@ const data = async (c: Context) => {
     db.select({ count: count() }).from(articles),
   ]);
 
+  // clip は 1 ページ目にだけ差し込む。2 ページ目以降は過去記事を
+  // 遡っている最中なので、そこに最新の clip が出ると文脈が切れる。
+  const recentClips =
+    page === 1
+      ? await db
+          .select({
+            id: clips.id,
+            title: pages.title,
+            image: pages.image,
+          })
+          .from(clips)
+          .innerJoin(pages, eq(clips.pageID, pages.id))
+          .orderBy(desc(pages.created))
+          .limit(RECENT_CLIPS)
+      : [];
+
   const total = totalResult[0]?.count ?? 0;
   const totalPages = Math.ceil(total / PER_PAGE);
 
@@ -37,6 +55,7 @@ const data = async (c: Context) => {
     ok: true,
     payload: {
       articles: as,
+      recentClips,
       page,
       totalPages,
       hasNext: page < totalPages,

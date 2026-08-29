@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/d1";
 import { eq, gt, inArray } from "drizzle-orm";
-import { articles, gyazoMedia, pages } from "@jigsaw/db";
+import { articles, clips, gyazoMedia, pages } from "@jigsaw/db";
 import { r2KeyOf } from "@jigsaw/db/body-key";
 import {
   countScrapboxFiles,
@@ -36,7 +36,7 @@ export type ScanItem = {
 };
 
 export type ScanDeps = {
-  listArticlePages: (cursor: number, limit: number) => Promise<PageRow[]>;
+  listPages: (cursor: number, limit: number) => Promise<PageRow[]>;
   readBody: (bodyKey: string) => Promise<string | null>;
 };
 
@@ -49,7 +49,7 @@ export async function runScan(
   nextCursor: number | null;
   items: ScanItem[];
 }> {
-  const rows = await deps.listArticlePages(cursor, limit);
+  const rows = await deps.listPages(cursor, limit);
   const items: ScanItem[] = [];
 
   for (const row of rows) {
@@ -216,7 +216,7 @@ export type RewriteItem = {
 };
 
 export type RewriteDeps = {
-  listArticlePages: (cursor: number, limit: number) => Promise<PageRow[]>;
+  listPages: (cursor: number, limit: number) => Promise<PageRow[]>;
   readBody: (bodyKey: string) => Promise<string | null>;
   backupBody: (bodyKey: string, raw: string) => Promise<void>;
   writeBody: (bodyKey: string, raw: string) => Promise<void>;
@@ -233,7 +233,7 @@ export async function runRewrite(
   nextCursor: number | null;
   items: RewriteItem[];
 }> {
-  const rows = await deps.listArticlePages(cursor, limit);
+  const rows = await deps.listPages(cursor, limit);
   const items: RewriteItem[] = [];
 
   for (const row of rows) {
@@ -286,11 +286,22 @@ export async function runRewrite(
   return { processed: rows.length, nextCursor, items };
 }
 
+// 走査対象。article は移行済みだが、再実行できないと取りこぼしを直せないので
+// 消さずに残す。既定を article にしてあるのは target を知らない古い呼び出し
+// (デプロイ済みの CLI) が黙って clip を書き換え始めないため。
+export type Target = "article" | "clip";
+
+export function parseTarget(input: unknown): Target | null {
+  if (input === undefined) return "article";
+  return input === "article" || input === "clip" ? input : null;
+}
+
 type Body = {
   phase?: unknown;
   cursor?: unknown;
   limit?: unknown;
   hashes?: unknown;
+  target?: unknown;
 };
 
 function bad(description: string): Response {
@@ -309,9 +320,16 @@ export async function handleGyazoMigrate(
     return bad("invalid json");
   }
 
+  const target = parseTarget(body.target);
+  if (target === null) return bad(`target must be "article" or "clip"`);
+
   const db = drizzle(env.DB);
 
-  const listArticlePages = (cursor: number, limit: number) =>
+  // article と clip はどちらも page を指す参照テーブルで、参照列の名前も
+  // pageID で揃っている。join 先を差し替えるだけで同じクエリが使える。
+  const owner = target === "clip" ? clips : articles;
+
+  const listPages = (cursor: number, limit: number) =>
     db
       .select({
         id: pages.id,
@@ -320,8 +338,8 @@ export async function handleGyazoMigrate(
         image: pages.image,
         updated: pages.updated,
       })
-      .from(articles)
-      .innerJoin(pages, eq(pages.id, articles.pageID))
+      .from(owner)
+      .innerJoin(pages, eq(pages.id, owner.pageID))
       .where(gt(pages.id, cursor))
       .orderBy(pages.id)
       .limit(limit);
@@ -384,7 +402,7 @@ export async function handleGyazoMigrate(
     );
 
     return {
-      listArticlePages,
+      listPages,
       readBody,
       backupBody: async (bodyKey, raw) => {
         const key = r2KeyOf(bodyKey);
@@ -457,7 +475,7 @@ export async function handleGyazoMigrate(
   const limit = typeof body.limit === "number" ? body.limit : DEFAULT_LIMIT;
 
   if (body.phase === "scan") {
-    const r = await runScan({ listArticlePages, readBody }, cursor, limit);
+    const r = await runScan({ listPages, readBody }, cursor, limit);
     return Response.json({ phase: "scan", ...r });
   }
 

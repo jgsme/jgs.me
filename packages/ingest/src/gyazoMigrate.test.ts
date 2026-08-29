@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
+import type { Env } from "./index";
 import {
+  handleGyazoMigrate,
+  parseTarget,
   runFetch,
   runProbe,
   runRewrite,
@@ -26,7 +29,7 @@ function page(over: Partial<PageRow> & { id: number }): PageRow {
 
 function deps(rows: PageRow[], bodies: Record<string, string>): ScanDeps {
   return {
-    listArticlePages: async (cursor, limit) =>
+    listPages: async (cursor, limit) =>
       rows.filter((r) => r.id > cursor).slice(0, limit),
     readBody: async (bodyKey) => bodies[bodyKey] ?? null,
   };
@@ -327,7 +330,7 @@ function rewriteDeps(
   const written: Record<string, string> = {};
   const images: Record<number, string> = {};
   const deps: RewriteDeps = {
-    listArticlePages: async (cursor, limit) =>
+    listPages: async (cursor, limit) =>
       rows.filter((r) => r.id > cursor).slice(0, limit),
     readBody: async (bodyKey) => bodies[bodyKey] ?? null,
     backupBody: async (bodyKey, raw) => {
@@ -497,7 +500,7 @@ describe("runRewrite", () => {
 
     const rows = [page({ id: 1 })];
     const deps: RewriteDeps = {
-      listArticlePages: async (cursor, limit) =>
+      listPages: async (cursor, limit) =>
         rows.filter((r) => r.id > cursor).slice(0, limit),
       readBody: async (bodyKey) => bodies[bodyKey] ?? null,
       // ハンドラ側の実装 (packages/ingest/src/gyazoMigrate.ts の backupBody) と
@@ -529,5 +532,110 @@ describe("runRewrite", () => {
     // 退避されているのは 1 回目の原本のまま。2 回目の「A だけ置換済みの本文」で
     // 上書きされていたら原本が失われる。
     expect(backedUp["sb-1"]).toBe(rawOriginal);
+  });
+});
+
+describe("parseTarget", () => {
+  it("省略時は article にする (既存の呼び出しを壊さない)", () => {
+    expect(parseTarget(undefined)).toBe("article");
+  });
+
+  it("clip を受け付ける", () => {
+    expect(parseTarget("clip")).toBe("clip");
+  });
+
+  it("article を受け付ける", () => {
+    expect(parseTarget("article")).toBe("article");
+  });
+
+  it("知らない対象は null にする", () => {
+    expect(parseTarget("excluded")).toBeNull();
+  });
+
+  it("文字列でない値は null にする", () => {
+    expect(parseTarget(123)).toBeNull();
+  });
+});
+
+// D1 に投げた SQL を覗くだけの偽 binding。target の配線 (どのテーブルを
+// join するか) は runScan/runRewrite の外にあるので、deps 注入では届かない。
+function fakeEnv(): { env: Env; sql: string[] } {
+  const sql: string[] = [];
+  const stmt = {
+    bind: () => stmt,
+    all: async () => ({ results: [], success: true, meta: {} }),
+    first: async () => null,
+    run: async () => ({ results: [], success: true, meta: {} }),
+    raw: async () => [],
+  };
+  const env = {
+    DB: {
+      prepare: (query: string) => {
+        sql.push(query);
+        return stmt;
+      },
+      batch: async () => [],
+    },
+    R2: { get: async () => null, head: async () => null, put: async () => {} },
+    MEDIA: {},
+    MEDIA_BASE_URL: "https://r2.jgs.me",
+  };
+  return { env: env as unknown as Env, sql };
+}
+
+function migrateRequest(body: Record<string, unknown>): Request {
+  return new Request("https://ingest.example/internal/gyazo-migrate", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+describe("handleGyazoMigrate の target", () => {
+  it("target=clip の scan は clip テーブルを引く", async () => {
+    const { env, sql } = fakeEnv();
+
+    const res = await handleGyazoMigrate(
+      migrateRequest({ phase: "scan", target: "clip" }),
+      env,
+    );
+
+    expect(res.status).toBe(200);
+    expect(sql.join("\n")).toContain(`"clip"`);
+  });
+
+  it("target を省いた scan は今まで通り article テーブルを引く", async () => {
+    const { env, sql } = fakeEnv();
+
+    const res = await handleGyazoMigrate(
+      migrateRequest({ phase: "scan" }),
+      env,
+    );
+
+    expect(res.status).toBe(200);
+    expect(sql.join("\n")).toContain(`"article"`);
+    expect(sql.join("\n")).not.toContain(`"clip"`);
+  });
+
+  it("target=clip の rewrite は clip テーブルを引く", async () => {
+    const { env, sql } = fakeEnv();
+
+    const res = await handleGyazoMigrate(
+      migrateRequest({ phase: "rewrite", target: "clip" }),
+      env,
+    );
+
+    expect(res.status).toBe(200);
+    expect(sql.join("\n")).toContain(`"clip"`);
+  });
+
+  it("知らない target は 400 で弾く", async () => {
+    const { env } = fakeEnv();
+
+    const res = await handleGyazoMigrate(
+      migrateRequest({ phase: "scan", target: "excluded" }),
+      env,
+    );
+
+    expect(res.status).toBe(400);
   });
 });

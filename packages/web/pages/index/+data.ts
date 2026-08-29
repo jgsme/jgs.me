@@ -17,7 +17,7 @@ const data = async (c: Context) => {
   const page = Number(c.urlParsed.search.p) || 1;
   const offset = (page - 1) * PER_PAGE;
 
-  const [as, totalResult] = await Promise.all([
+  const [as, totalResult, recentClips] = await Promise.all([
     db
       .select({
         id: pages.id,
@@ -30,13 +30,10 @@ const data = async (c: Context) => {
       .limit(PER_PAGE)
       .offset(offset),
     db.select({ count: count() }).from(articles),
-  ]);
-
-  // clip は 1 ページ目にだけ差し込む。2 ページ目以降は過去記事を
-  // 遡っている最中なので、そこに最新の clip が出ると文脈が切れる。
-  const recentClips =
+    // clip は 1 ページ目にだけ差し込む。2 ページ目以降は過去記事を
+    // 遡っている最中なので、そこに最新の clip が出ると文脈が切れる。
     page === 1
-      ? await db
+      ? db
           .select({
             id: clips.id,
             title: pages.title,
@@ -46,7 +43,8 @@ const data = async (c: Context) => {
           .innerJoin(pages, eq(clips.pageID, pages.id))
           .orderBy(desc(pages.created))
           .limit(RECENT_CLIPS)
-      : [];
+      : Promise.resolve([]),
+  ]);
 
   const total = totalResult[0]?.count ?? 0;
   const totalPages = Math.ceil(total / PER_PAGE);

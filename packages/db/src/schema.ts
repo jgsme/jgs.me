@@ -4,25 +4,32 @@ import {
   integer,
   real,
   primaryKey,
+  uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 import { relations, sql } from "drizzle-orm";
 
-export const pages = sqliteTable("page", {
-  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
-  title: text("title").notNull(),
-  created: text("created")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
-  updated: text("updated")
-    .notNull()
-    .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
-  image: text("image"),
-  // 本文オブジェクトの R2 キー。Scrapbox 由来は Scrapbox ID (R2 上は
-  // <bodyKey>.json)、diary (Micropub) 由来は sb-<uuid> (R2 上は
-  // <bodyKey>.sb、1行目が題の Scrapbox 記法プレーンテキスト)。
-  // DB のカラム名は歴史的経緯で sbID のまま。
-  bodyKey: text("sbID").notNull(),
-});
+export const pages = sqliteTable(
+  "page",
+  {
+    id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+    title: text("title").notNull(),
+    created: text("created")
+      .notNull()
+      .default(sql`(CURRENT_TIMESTAMP)`),
+    updated: text("updated")
+      .notNull()
+      .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+    image: text("image"),
+    // 本文オブジェクトの R2 キー。Scrapbox 由来は Scrapbox ID (R2 上は
+    // <bodyKey>.json)、diary (Micropub) 由来は sb-<uuid> (R2 上は
+    // <bodyKey>.sb、1行目が題の Scrapbox 記法プレーンテキスト)。
+    // DB のカラム名は歴史的経緯で sbID のまま。
+    bodyKey: text("sbID").notNull(),
+  },
+  // title は /pages/<title> の実キー。重複すると片方が引けなくなり、
+  // Micropub の update も「同題が 2 件」で弾かれる。今 0 件なので貼れる。
+  (t) => [uniqueIndex("page_title_unique").on(t.title)],
+);
 
 export const articles = sqliteTable("article", {
   id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),

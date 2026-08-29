@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `page_title_unique` ON `page` (`title`);

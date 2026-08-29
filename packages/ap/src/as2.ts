@@ -26,6 +26,18 @@ export type AS2Article = {
   to: string[];
 };
 
+export type AS2Note = {
+  "@context": string[];
+  id: string;
+  type: "Note";
+  content: string;
+  published: string;
+  updated: string;
+  url: string;
+  attributedTo: string;
+  to: string[];
+};
+
 // summary は CW 欄にプレーンテキストとして出るため、
 // 本文で escape したぶんを戻す。&amp; を最後に処理しないと
 // "&amp;lt;" が "<" まで戻ってしまう。
@@ -82,6 +94,25 @@ export function toArticle(page: PageRow, contentHtml: string): AS2Article {
     // 配送済みのオブジェクトは相手のキャッシュやブーストに残るので、改題で
     // 壊れない URL を渡す (ブラウザからは /pages/<title> に 302 される)。
     // Bluesky に貼る URL とも揃う。正準 ID は id (/o/<page.id>) の方。
+    url: shareURL(page.id),
+    attributedTo: ACTOR_URI,
+    to: [PUBLIC],
+  };
+}
+
+// clip は「読んだものへの言及」なので、Article ではなく Note で出す。
+// Article にすると Mastodon 側で長文記事のカードになり、リンク共有の
+// 投稿として並ばない。name と summary を出さないのも同じ理由で、
+// name を持つ Note は題付きの特殊な投稿として扱われることがあり、
+// summary は CW 欄になって短い clip がわざわざ折り畳まれる。
+export function toNote(page: PageRow, contentHtml: string): AS2Note {
+  return {
+    "@context": ["https://www.w3.org/ns/activitystreams"],
+    id: objectURI(page.id),
+    type: "Note",
+    content: contentHtml,
+    published: toISO(page.created),
+    updated: toISO(page.updated),
     url: shareURL(page.id),
     attributedTo: ACTOR_URI,
     to: [PUBLIC],

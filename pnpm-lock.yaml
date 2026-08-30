@@ -201,56 +201,6 @@ importers:
         specifier: 'catalog:'
         version: 4.126.0(@cloudflare/workers-types@4.20260702.1)
 
-  packages/on-this-day:
-    dependencies:
-      '@jigsaw/db':
-        specifier: workspace:*
-        version: link:../db
-      '@progfay/scrapbox-parser':
-        specifier: 'catalog:'
-        version: 10.1.1
-      drizzle-orm:
-        specifier: 'catalog:'
-        version: 0.45.2(@cloudflare/workers-types@4.20260702.1)
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: 'catalog:'
-        version: 4.20260702.1
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.10(@types/node@24.13.3)(vite@7.3.6(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.12))
-      wrangler:
-        specifier: 'catalog:'
-        version: 4.126.0(@cloudflare/workers-types@4.20260702.1)
-
-  packages/on-this-day-index:
-    dependencies:
-      '@jigsaw/db':
-        specifier: workspace:*
-        version: link:../db
-      '@progfay/scrapbox-parser':
-        specifier: 'catalog:'
-        version: 10.1.1
-      drizzle-orm:
-        specifier: 'catalog:'
-        version: 0.45.2(@cloudflare/workers-types@4.20260702.1)
-    devDependencies:
-      '@cloudflare/workers-types':
-        specifier: 'catalog:'
-        version: 4.20260702.1
-      typescript:
-        specifier: 'catalog:'
-        version: 5.9.3
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.10(@types/node@24.13.3)(vite@7.3.6(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.12))
-      wrangler:
-        specifier: 'catalog:'
-        version: 4.126.0(@cloudflare/workers-types@4.20260702.1)
-
   packages/web:
     dependencies:
       '@jigsaw/db':

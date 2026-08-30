@@ -64,6 +64,13 @@
       "when": 1787756747966,
       "tag": "0008_bored_lady_vermin",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1788083381622,
+      "tag": "0009_lovely_baron_strucker",
+      "breakpoints": true
     }
   ]
 }

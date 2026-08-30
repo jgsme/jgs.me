@@ -51,7 +51,7 @@ Vike + React + Hono で構成された Cloudflare Workers アプリケーショ�
 - Cloudflare D1 (SQLite) + Drizzle ORM
 - スキーマ: `packages/db/src/schema.ts`（`@jigsaw/db` でインポート）
 - D1バインディング: `DB` (wrangler.jsonc で定義)
-- マイグレーション: `packages/web/drizzle/` ディレクトリ
+- マイグレーション: `packages/db/drizzle/` ディレクトリ
 
 ### Pages (Vike)
 
@@ -74,6 +74,7 @@ Vike + React + Hono で構成された Cloudflare Workers アプリケーショ�
 - `pages/a/@id/` - 共有URL用リダイレクト（`/a/{id}` → `/pages/{title}`）
 - `pages/search/` - 検索ページ
 - `pages/clips/` - クリップ一覧ページ
+- `pages/on-this-day/@mmdd/` - 周年日記ページ（ルート: `/on-this-day/@mmdd`）。`article.date` の月日が一致する記事を年ごとにグルーピングして表示
 
 ### API Routes
 
@@ -91,7 +92,7 @@ Vike + React + Hono で構成された Cloudflare Workers アプリケーショ�
 ### Database Schema
 
 - `page` - Scrapbox ページ (id, title, created, updated, image, sbID)
-- `article` - 登録済み記事 (id, pageID, created)
+- `article` - 登録済み記事 (id, pageID, created, date)
 - `excluded_page` - 除外ページ (id, pageID, created)
 - `clip` - クリップ (id, pageID, created)
 

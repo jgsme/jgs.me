@@ -1,0 +1,1 @@
+DROP TABLE `on_this_day_entry`;

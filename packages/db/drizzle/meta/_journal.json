@@ -71,6 +71,13 @@
       "when": 1788083381622,
       "tag": "0009_lovely_baron_strucker",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1788086624835,
+      "tag": "0010_smart_sally_floyd",
+      "breakpoints": true
     }
   ]
 }

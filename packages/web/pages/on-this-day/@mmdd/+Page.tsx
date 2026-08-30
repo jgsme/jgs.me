@@ -1,6 +1,7 @@
 import React from "react";
 import { useData } from "vike-react/useData";
 import type data from "./+data";
+import { WarpButton } from "../../components/WarpButton";
 
 type Data = Awaited<ReturnType<typeof data>>;
 
@@ -12,13 +13,23 @@ const Page = () => {
       <main className="max-w-3xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-4">On This Day</h1>
         <p className="text-neutral-500">日付として読めない</p>
+        <WarpButton />
       </main>
     );
   }
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-8">{d.label}</h1>
+      <h1 className="text-2xl font-bold mb-4">{d.label}</h1>
+
+      <nav className="flex justify-between text-sm text-neutral-500 mb-8">
+        <a href={`/on-this-day/${d.prev.mmdd}`} className="underline">
+          ← {d.prev.label}
+        </a>
+        <a href={`/on-this-day/${d.next.mmdd}`} className="underline">
+          {d.next.label} →
+        </a>
+      </nav>
 
       {d.groups.length === 0 && (
         <p className="text-neutral-500">この日に書いた記事はまだ無い</p>
@@ -44,11 +55,7 @@ const Page = () => {
         </section>
       ))}
 
-      <div className="mt-12">
-        <a href="/on-this-day" className="underline text-neutral-500">
-          ← On This Day
-        </a>
-      </div>
+      <WarpButton />
     </main>
   );
 };

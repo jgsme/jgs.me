@@ -261,7 +261,7 @@ export const MainScene = ({
                   onHover={setTooltip}
                   onClick={() => {
                     const pageName = cell.dateStr.replace("-", "");
-                    window.location.assign(`/pages/${pageName}`);
+                    window.location.assign(`/on-this-day/${pageName}`);
                   }}
                 />,
               );

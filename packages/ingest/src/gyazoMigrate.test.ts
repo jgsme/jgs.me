@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type { Env } from "./index";
 import {
+  handleGyazoMigrate,
   runFetch,
   runProbe,
   runRewrite,
@@ -26,7 +28,7 @@ function page(over: Partial<PageRow> & { id: number }): PageRow {
 
 function deps(rows: PageRow[], bodies: Record<string, string>): ScanDeps {
   return {
-    listArticlePages: async (cursor, limit) =>
+    listPages: async (cursor, limit) =>
       rows.filter((r) => r.id > cursor).slice(0, limit),
     readBody: async (bodyKey) => bodies[bodyKey] ?? null,
   };
@@ -327,7 +329,7 @@ function rewriteDeps(
   const written: Record<string, string> = {};
   const images: Record<number, string> = {};
   const deps: RewriteDeps = {
-    listArticlePages: async (cursor, limit) =>
+    listPages: async (cursor, limit) =>
       rows.filter((r) => r.id > cursor).slice(0, limit),
     readBody: async (bodyKey) => bodies[bodyKey] ?? null,
     backupBody: async (bodyKey, raw) => {
@@ -497,7 +499,7 @@ describe("runRewrite", () => {
 
     const rows = [page({ id: 1 })];
     const deps: RewriteDeps = {
-      listArticlePages: async (cursor, limit) =>
+      listPages: async (cursor, limit) =>
         rows.filter((r) => r.id > cursor).slice(0, limit),
       readBody: async (bodyKey) => bodies[bodyKey] ?? null,
       // ハンドラ側の実装 (packages/ingest/src/gyazoMigrate.ts の backupBody) と
@@ -529,5 +531,74 @@ describe("runRewrite", () => {
     // 退避されているのは 1 回目の原本のまま。2 回目の「A だけ置換済みの本文」で
     // 上書きされていたら原本が失われる。
     expect(backedUp["sb-1"]).toBe(rawOriginal);
+  });
+});
+
+// D1 に投げた SQL を覗くだけの偽 binding。走査対象の配線 (どのテーブルを
+// join するか) は runScan/runRewrite の外にあるので、deps 注入では届かない。
+function fakeEnv(): { env: Env; sql: string[] } {
+  const sql: string[] = [];
+  const stmt = {
+    bind: () => stmt,
+    all: async () => ({ results: [], success: true, meta: {} }),
+    first: async () => null,
+    run: async () => ({ results: [], success: true, meta: {} }),
+    raw: async () => [],
+  };
+  const env = {
+    DB: {
+      prepare: (query: string) => {
+        sql.push(query);
+        return stmt;
+      },
+      batch: async () => [],
+    },
+    R2: { get: async () => null, head: async () => null, put: async () => {} },
+    MEDIA: {},
+    MEDIA_BASE_URL: "https://r2.jgs.me",
+  };
+  return { env: env as unknown as Env, sql };
+}
+
+function migrateRequest(body: Record<string, unknown>): Request {
+  return new Request("https://ingest.example/internal/gyazo-migrate", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+describe("handleGyazoMigrate の走査対象", () => {
+  it("scan は clip テーブルを引く", async () => {
+    const { env, sql } = fakeEnv();
+
+    const res = await handleGyazoMigrate(
+      migrateRequest({ phase: "scan" }),
+      env,
+    );
+
+    expect(res.status).toBe(200);
+    expect(sql.join("\n")).toContain(`"clip"`);
+  });
+
+  it("rewrite は clip テーブルを引く", async () => {
+    const { env, sql } = fakeEnv();
+
+    const res = await handleGyazoMigrate(
+      migrateRequest({ phase: "rewrite" }),
+      env,
+    );
+
+    expect(res.status).toBe(200);
+    expect(sql.join("\n")).toContain(`"clip"`);
+  });
+
+  // article の移行は済んでいる。もう一度回せてしまうと、対応表に無いまま
+  // 残した URL を「未処理」と誤認して本文を触りに行く経路が生き続ける。
+  it("article テーブルは引かない", async () => {
+    const { env, sql } = fakeEnv();
+
+    await handleGyazoMigrate(migrateRequest({ phase: "rewrite" }), env);
+
+    expect(sql.join("\n")).not.toContain(`"article"`);
   });
 });

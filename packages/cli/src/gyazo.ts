@@ -9,6 +9,7 @@ import {
   type RewriteItem,
   type ScanItem,
 } from "./gyazoReport.ts";
+import { parseGyazoArgs } from "./gyazoArgs.ts";
 
 // probe / fetch の 1 回あたりの上限。ingest 側の PROBE_MAX / FETCH_MAX と揃える。
 const PROBE_MAX = 40;
@@ -19,11 +20,13 @@ function usage(): never {
     [
       "usage: pnpm gyazo <scan|fetch|rewrite> [--pages N]",
       "",
+      "  走査対象は clip ページ。article は移行済み。",
+      "",
       "  scan    棚卸し。書き込みなし。走査 + HEAD 打診をしてレポートを出す",
       "  fetch   取り込み。Gyazo → R2 (w-media) + 対応表への記録",
       "  rewrite 差し替え。本文と page.image を書き換える (破壊的)",
       "",
-      "  --pages N  rewrite で処理する page 数の上限",
+      "  --pages N  rewrite で処理する page 数の上限 (1 以上)",
       "",
       "  環境変数 INGEST_URL / SIMILARITY_TOKEN が要る。",
     ].join("\n"),
@@ -89,15 +92,9 @@ async function walk<T>(
 }
 
 async function main(): Promise<void> {
-  const args = process.argv.slice(2);
-  const command = args[0];
-  if (command !== "scan" && command !== "fetch" && command !== "rewrite") {
-    usage();
-  }
-
-  const pagesFlag = args.indexOf("--pages");
-  const maxPages = pagesFlag === -1 ? null : Number(args[pagesFlag + 1]);
-  if (maxPages !== null && !Number.isFinite(maxPages)) usage();
+  const parsed = parseGyazoArgs(process.argv.slice(2));
+  if (parsed === null) usage();
+  const { command, maxPages } = parsed;
 
   if (command === "scan") {
     const items = await walk<ScanItem>("scan", null);

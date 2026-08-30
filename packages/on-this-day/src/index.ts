@@ -34,6 +34,22 @@ export function dateFromEntry(mmdd: string, year: number): string | null {
   return `${year}-${month}-${day}`;
 }
 
+// on_this_day_entry の行から targetPageID -> "YYYY-MM-DD" のフォールバック表を組み立てる。
+// 同一記事が複数の MMDD ページに貼られている場合がある (6 件)。この表がそのまま
+// 採用される値になるので、対象が複数あるときは最古の日付を採る (先勝ちにはしない)。
+export function buildFallbackMap(
+  rows: { targetPageID: number; year: number; mmdd: string }[],
+): Record<number, string> {
+  const map: Record<number, string> = {};
+  for (const r of rows) {
+    const date = dateFromEntry(r.mmdd, r.year);
+    if (!date) continue;
+    const current = map[r.targetPageID];
+    if (current === undefined || date < current) map[r.targetPageID] = date;
+  }
+  return map;
+}
+
 export class ArticleDateBackfillWorkflow extends WorkflowEntrypoint<
   Env,
   BackfillParams
@@ -73,7 +89,7 @@ export class ArticleDateBackfillWorkflow extends WorkflowEntrypoint<
     console.log(`[Backfill] targets=${targets.length}`);
     if (targets.length === 0) return { resolved: 0, unresolved: 0 };
 
-    // on_this_day_entry のフォールバック用。(targetPageID -> "YYYY-MM-DD")
+    // 手書きの on_this_day_entry を正とする。(targetPageID -> "YYYY-MM-DD")
     const fallback = await step.do("fetch-fallback", async () => {
       const rows = await db
         .select({
@@ -84,14 +100,7 @@ export class ArticleDateBackfillWorkflow extends WorkflowEntrypoint<
         .from(onThisDayEntries)
         .innerJoin(pages, eq(pages.id, onThisDayEntries.pageID));
 
-      const map: Record<number, string> = {};
-      for (const r of rows) {
-        const date = dateFromEntry(r.mmdd, r.year);
-        // 同一記事が複数の MMDD ページに貼られている場合がある (6 件)。
-        // 本文が正なのでここでは先勝ちで構わない。本文から決まればそちらが勝つ。
-        if (date && map[r.targetPageID] === undefined) map[r.targetPageID] = date;
-      }
-      return map;
+      return buildFallbackMap(rows);
     });
 
     let resolved = 0;
@@ -108,14 +117,16 @@ export class ArticleDateBackfillWorkflow extends WorkflowEntrypoint<
 
         for (const t of batch) {
           const body = await fetchBody(this.env.R2, t.bodyKey, t.title);
-          // 規則 1〜6 を先に通し、決まらなければ on_this_day_entry を使う。
+          // 手書きの on_this_day_entry を先に使い、無ければ本文から規則 1〜6 で決める。
           const date =
+            fallback[t.pageId] ??
             resolveArticleDate({
               body,
               title: t.title,
               bodyKey: t.bodyKey,
               created: t.created,
-            }) ?? fallback[t.pageId] ?? null;
+            }) ??
+            null;
 
           if (!date) {
             ng++;

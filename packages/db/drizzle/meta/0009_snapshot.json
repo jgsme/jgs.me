@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "e093e977-6dbf-4f4e-a3db-3dedf6ffc3ee",
-  "prevId": "6251d12a-e6cd-4d98-885e-7447861eb4d7",
+  "id": "e8619460-8a9f-4036-bd57-be2445c32d3a",
+  "prevId": "e093e977-6dbf-4f4e-a3db-3dedf6ffc3ee",
   "tables": {
     "article": {
       "name": "article",
@@ -378,86 +378,6 @@
           "tableTo": "page",
           "columnsFrom": [
             "pageID"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "on_this_day_entry": {
-      "name": "on_this_day_entry",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": true
-        },
-        "pageID": {
-          "name": "pageID",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "targetPageID": {
-          "name": "targetPageID",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "year": {
-          "name": "year",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "created": {
-          "name": "created",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(CURRENT_TIMESTAMP)"
-        },
-        "updated": {
-          "name": "updated",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "on_this_day_entry_pageID_page_id_fk": {
-          "name": "on_this_day_entry_pageID_page_id_fk",
-          "tableFrom": "on_this_day_entry",
-          "tableTo": "page",
-          "columnsFrom": [
-            "pageID"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "on_this_day_entry_targetPageID_page_id_fk": {
-          "name": "on_this_day_entry_targetPageID_page_id_fk",
-          "tableFrom": "on_this_day_entry",
-          "tableTo": "page",
-          "columnsFrom": [
-            "targetPageID"
           ],
           "columnsTo": [
             "id"

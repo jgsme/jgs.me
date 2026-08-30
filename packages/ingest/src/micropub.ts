@@ -2,6 +2,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { and, eq, ne } from "drizzle-orm";
 import { articles, clips, objects, pages } from "@jigsaw/db";
 import { newSbBodyKey, r2KeyOf, bodyFormatOf } from "@jigsaw/db/body-key";
+import { jstDate } from "@jigsaw/db/article-date";
 import { isAuthorized } from "./auth";
 import { parseEntry, isClip } from "./mf2";
 import { applyUpdate, parseUpdateAction } from "./mf2update";
@@ -153,7 +154,13 @@ async function handleMicropubCreate(
   await db.batch([
     clip
       ? db.insert(clips).values({ pageID: page.id, created })
-      : db.insert(articles).values({ pageID: page.id, created }),
+      : db.insert(articles).values({
+          pageID: page.id,
+          created,
+          // 周年日記 (/on-this-day/MMDD) はこの日付で記事を引く。micropub 由来は
+          // created が投稿時刻そのものなので、本文を読まずに JST の暦日で決まる。
+          date: jstDate(created),
+        }),
     db.insert(objects).values({
       id: objectURI(page.id),
       pageID: page.id,

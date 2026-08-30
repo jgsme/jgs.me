@@ -4,7 +4,9 @@
   "type": "module",
   "exports": {
     ".": "./src/schema.ts",
-    "./body-key": "./src/bodyKey.ts"
+    "./body-key": "./src/bodyKey.ts",
+    "./article-date": "./src/articleDate.ts",
+    "./fetch-body": "./src/fetchBody.ts"
   },
   "scripts": {
     "gen": "drizzle-kit generate",
@@ -14,7 +16,9 @@
     "drizzle-orm": "catalog:"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
     "drizzle-kit": "catalog:",
+    "typescript": "catalog:",
     "vitest": "catalog:"
   }
 }

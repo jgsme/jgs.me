@@ -14,16 +14,13 @@ A personal website for managing and publishing articles from a frozen Scrapbox e
 
 pnpm workspace monorepo.
 
-| Package                      | Description                         |
-| ---------------------------- | ----------------------------------- |
-| `packages/web`               | Main web app                        |
-| `packages/db`                | Shared Drizzle schema               |
-| `packages/notify`            | Discord notification worker         |
-| `packages/og`                | OG image generation worker          |
-| `packages/home`              | Home page worker                    |
-| `packages/on-this-day`       | On-this-day entry extraction worker |
-| `packages/on-this-day-index` | On-this-day search index worker     |
-| `packages/cli`               | Discord button undo CLI             |
+| Package         | Description                |
+| --------------- | -------------------------- |
+| `packages/web`  | Main web app               |
+| `packages/db`   | Shared Drizzle schema      |
+| `packages/og`   | OG image generation worker |
+| `packages/home` | Home page worker           |
+| `packages/cli`  | Discord button undo CLI    |
 
 ## Environment Variables & Bindings
 

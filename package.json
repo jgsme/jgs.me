@@ -6,8 +6,6 @@
     "build": "pnpm --filter web build",
     "dev:og": "pnpm --filter og dev",
     "dev:home": "pnpm --filter home dev",
-    "dev:on-this-day": "pnpm --filter on-this-day dev",
-    "dev:on-this-day-index": "pnpm --filter on-this-day-index dev",
     "dev:ingest": "pnpm --filter ingest dev",
     "dev:ap": "pnpm --filter ap dev",
     "format": "prettier . --write",

@@ -4,11 +4,11 @@ import { getDB } from "@/db/getDB";
 import { articles, pageSimilarities, pages } from "@jigsaw/db";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { useConfig } from "vike-react/useConfig";
-import { fetchBody } from "@/utils/fetchBody";
+import { fetchBody } from "@jigsaw/db/fetch-body";
+import { resolveArticleDate } from "@jigsaw/db/article-date";
 import { pickRandom } from "@/utils/pickRandom";
 import { routeTitleToPageTitle } from "@/utils/routeTitle";
 import { buildArticleBody } from "./articleBody";
-import { resolveFromDate } from "./fromDate";
 
 // bge-m3 の cosine は下駄が高く 0.5 未満がほぼ出ないため、絶対的な意味はない。
 // ノイズ切りの調整つまみ。0.60 で全 article の 7% が候補 0 件になる。
@@ -31,6 +31,7 @@ const data = async (c: Context) => {
       articleId: articles.id,
       bodyKey: pages.bodyKey,
       created: pages.created,
+      date: articles.date,
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
@@ -41,6 +42,7 @@ const data = async (c: Context) => {
   const bodyKey = pageInfo[0]?.bodyKey ?? "";
   const articleId = pageInfo[0]?.articleId ?? null;
   const created = pageInfo[0]?.created ?? "";
+  const storedDate = pageInfo[0]?.date ?? null;
 
   // 関連記事。article でないページには出さない。
   let related: { title: string; image: string | null }[] = [];
@@ -84,12 +86,14 @@ const data = async (c: Context) => {
   const built = buildArticleBody(body);
   const filteredBlocks = built.blocks;
   const description = built.description;
-  const fromDate = resolveFromDate({
-    bodyDate: built.fromDate,
-    title,
-    bodyKey,
-    created,
-  });
+  const fromDate =
+    storedDate ??
+    resolveArticleDate({
+      body,
+      title,
+      bodyKey,
+      created,
+    });
 
   config({
     title: `${title} - I am Electrical machine`,

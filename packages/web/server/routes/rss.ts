@@ -3,7 +3,7 @@ import { pages, articles, clips } from "@jigsaw/db";
 import { getDB } from "@/db/getDB";
 import { desc, eq } from "drizzle-orm";
 import { SITE_URL } from "@/constants/site";
-import { fetchBody } from "@/utils/fetchBody";
+import { fetchBody } from "@jigsaw/db/fetch-body";
 import { buildArticleBody } from "@/pages/article/@title/articleBody";
 import type { Bindings } from "../types";
 import { buildRssXml, type RssFeedItem } from "./rssFeed";

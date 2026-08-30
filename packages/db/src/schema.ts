@@ -39,6 +39,9 @@ export const articles = sqliteTable("article", {
   created: text("created")
     .notNull()
     .default(sql`(CURRENT_TIMESTAMP)`),
+  // 記事が書かれた日 "YYYY-MM-DD"。決まらない記事は null で、周年日記に出ない。
+  // created はページが D1 に入った時刻で、記事が書かれた日ではない。
+  date: text("date"),
 });
 
 export const articleRelations = relations(articles, ({ one }) => ({
@@ -81,39 +84,6 @@ export const clipRelations = relations(clips, ({ one }) => ({
     references: [pages.id],
   }),
 }));
-
-export const onThisDayEntries = sqliteTable("on_this_day_entry", {
-  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
-  pageID: integer("pageID")
-    .notNull()
-    .references(() => pages.id), // 親ページ (例: 0401) への参照
-  targetPageID: integer("targetPageID")
-    .notNull()
-    .references(() => pages.id), // 実際の記事ページへの参照
-  year: integer("year").notNull(), // 記事の年 (例: 2022)
-  created: text("created")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
-  updated: text("updated")
-    .notNull()
-    .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
-});
-
-export const onThisDayEntryRelations = relations(
-  onThisDayEntries,
-  ({ one }) => ({
-    page: one(pages, {
-      fields: [onThisDayEntries.pageID],
-      references: [pages.id],
-      relationName: "on_this_day_page",
-    }),
-    targetPage: one(pages, {
-      fields: [onThisDayEntries.targetPageID],
-      references: [pages.id],
-      relationName: "on_this_day_target_page",
-    }),
-  }),
-);
 
 // 類似度の計算世代。書き込みは INSERT のみで、表示の切り替えは current の UPDATE 1 行で行う。
 // 途中まで入った run は current を立てなければ表示に出ないので、ロールバックが要らない。

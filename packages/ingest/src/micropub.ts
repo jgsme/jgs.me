@@ -9,6 +9,7 @@ import { applyUpdate, parseUpdateAction } from "./mf2update";
 import { buildSbBody } from "./body";
 import { parseTargetURL } from "./target";
 import { putMedia } from "./media";
+import { pageImage } from "./firstImage";
 import { uniqueTitle } from "./uniqueTitle";
 import type { Env } from "./index";
 
@@ -137,8 +138,8 @@ async function handleMicropubCreate(
       bodyKey: put.bodyKey,
       created,
       updated: created,
-      // 一覧のサムネ。photo が無ければ null のまま。
-      image: entry.photo,
+      // 一覧のサムネと OG 画像。photo が無ければ本文の先頭画像を使う。
+      image: pageImage(entry),
     })
     .returning({ id: pages.id });
 
@@ -408,7 +409,8 @@ async function handleMicropubUpdate(
   await db.batch([
     db
       .update(pages)
-      .set({ title: entry.name, updated: now })
+      // 本文が差し替わればサムネの元も変わる。create と同じ規則で引き直す。
+      .set({ title: entry.name, image: pageImage(entry), updated: now })
       .where(eq(pages.id, target.pageID)),
     db
       .update(objects)

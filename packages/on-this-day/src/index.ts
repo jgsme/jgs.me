@@ -35,17 +35,23 @@ export function dateFromEntry(mmdd: string, year: number): string | null {
 }
 
 // on_this_day_entry の行から targetPageID -> "YYYY-MM-DD" のフォールバック表を組み立てる。
-// 同一記事が複数の MMDD ページに貼られている場合がある (6 件)。この表がそのまま
-// 採用される値になるので、対象が複数あるときは最古の日付を採る (先勝ちにはしない)。
+// 手書きの entry が一つの日付に定まる記事だけを表に載せる。同一記事が複数の
+// 異なる MMDD ページに貼られている場合 (6 件) は手書きだけでは決められないので、
+// map には入れず本文解決 (resolveArticleDate) に委ねる。同じ日付が重複しているだけなら
+// 曖昧ではないので載せる。
 export function buildFallbackMap(
   rows: { targetPageID: number; year: number; mmdd: string }[],
 ): Record<number, string> {
-  const map: Record<number, string> = {};
+  const seen: Record<number, Set<string>> = {};
   for (const r of rows) {
     const date = dateFromEntry(r.mmdd, r.year);
     if (!date) continue;
-    const current = map[r.targetPageID];
-    if (current === undefined || date < current) map[r.targetPageID] = date;
+    (seen[r.targetPageID] ??= new Set()).add(date);
+  }
+
+  const map: Record<number, string> = {};
+  for (const [id, dates] of Object.entries(seen)) {
+    if (dates.size === 1) map[Number(id)] = [...dates][0];
   }
   return map;
 }
@@ -116,12 +122,13 @@ export class ArticleDateBackfillWorkflow extends WorkflowEntrypoint<
         const ngTitles: string[] = [];
 
         for (const t of batch) {
-          const body = await fetchBody(this.env.R2, t.bodyKey, t.title);
           // 手書きの on_this_day_entry を先に使い、無ければ本文から規則 1〜6 で決める。
+          // entry が決まっているときは R2 から本文を読む必要すらない。
+          const fromEntry = fallback[t.pageId];
           const date =
-            fallback[t.pageId] ??
+            fromEntry ??
             resolveArticleDate({
-              body,
+              body: await fetchBody(this.env.R2, t.bodyKey, t.title),
               title: t.title,
               bodyKey: t.bodyKey,
               created: t.created,

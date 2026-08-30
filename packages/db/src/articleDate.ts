@@ -44,7 +44,8 @@ export function extractBodyDate(body: string): string | null {
   for (const line of tail) {
     for (const m of line.matchAll(/#(\d{4})(\d{2})(\d{2})(?!\d)/g)) {
       const [, year, month, day] = m;
-      if (isValidMonthDay(month, day)) candidates.push(`${year}-${month}-${day}`);
+      if (isValidMonthDay(month, day))
+        candidates.push(`${year}-${month}-${day}`);
     }
   }
   if (candidates.length > 0) return candidates.sort()[0];

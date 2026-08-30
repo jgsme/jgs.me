@@ -34,9 +34,7 @@ describe("extractBodyDate", () => {
   });
 
   it("空白のみの行も空行として扱う", () => {
-    expect(extractBodyDate("題\n  \nfrom [20240102]\n本文")).toBe(
-      "2024-01-02",
-    );
+    expect(extractBodyDate("題\n  \nfrom [20240102]\n本文")).toBe("2024-01-02");
   });
 
   it("題(0行目)自体が from [...] 形式でも拾わない", () => {
@@ -65,7 +63,13 @@ describe("extractBodyDate", () => {
 
   it("作成日と更新日が並記されていれば作成日を採る", () => {
     // #... C が作成日、#... U が更新日。下から探すと更新日を拾ってしまう。
-    const body = ["題", "本文", "", "#20190527 #0527 C", "#20190605 #0605 U"].join("\n");
+    const body = [
+      "題",
+      "本文",
+      "",
+      "#20190527 #0527 C",
+      "#20190605 #0605 U",
+    ].join("\n");
     expect(extractBodyDate(body)).toBe("2019-05-27");
   });
 
@@ -80,12 +84,16 @@ describe("extractBodyDate", () => {
   });
 
   it("同じ日付が繰り返されていてもその日付を返す", () => {
-    const body = ["題", "本文", "#20190219", "#20190219", "#20190219"].join("\n");
+    const body = ["題", "本文", "#20190219", "#20190219", "#20190219"].join(
+      "\n",
+    );
     expect(extractBodyDate(body)).toBe("2019-02-19");
   });
 
   it("無効な日付は候補に入れず、有効なものから最古を選ぶ", () => {
-    const body = ["題", "本文", "#20241332", "#20240102", "#20240301"].join("\n");
+    const body = ["題", "本文", "#20241332", "#20240102", "#20240301"].join(
+      "\n",
+    );
     expect(extractBodyDate(body)).toBe("2024-01-02");
   });
 });
@@ -164,9 +172,9 @@ describe("resolveArticleDate", () => {
   });
 
   it("規則2: 末尾の #YYYYMMDD を使う", () => {
-    expect(
-      resolveArticleDate({ ...base, body: "題\n本文\n#20200102" }),
-    ).toBe("2020-01-02");
+    expect(resolveArticleDate({ ...base, body: "題\n本文\n#20200102" })).toBe(
+      "2020-01-02",
+    );
   });
 
   it("規則3: 本文に無ければタイトルの YYYYMMDD を使う", () => {
@@ -219,7 +227,9 @@ describe("resolveArticleDate", () => {
   });
 
   it("規則6: どれにも当たらなければ null", () => {
-    expect(resolveArticleDate({ ...base, bodyKey: "sb-abc", created: "" })).toBeNull();
+    expect(
+      resolveArticleDate({ ...base, bodyKey: "sb-abc", created: "" }),
+    ).toBeNull();
   });
 
   it("body が null でもタイトルから決まる", () => {

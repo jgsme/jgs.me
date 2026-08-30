@@ -35,6 +35,7 @@ const data = async (c: Context) => {
   // article は 2000 件台で、全件スキャンしても 1ms 未満。index は張っていない。
   const rows = await db
     .select({
+      id: pages.id,
       title: pages.title,
       image: pages.image,
       date: articles.date,
@@ -58,7 +59,9 @@ const data = async (c: Context) => {
   // date は schema 上 string | null。isNotNull で絞ってあるが型は narrow
   // されないので、ここで null を落として DayArticle に合わせる。
   const dayArticles: DayArticle[] = rows.flatMap((r) =>
-    r.date === null ? [] : [{ title: r.title, image: r.image, date: r.date }],
+    r.date === null
+      ? []
+      : [{ id: r.id, title: r.title, image: r.image, date: r.date }],
   );
 
   return {

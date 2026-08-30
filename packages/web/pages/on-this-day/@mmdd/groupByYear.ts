@@ -1,4 +1,5 @@
 export type DayArticle = {
+  id: number;
   title: string;
   image: string | null;
   // "YYYY-MM-DD"

@@ -21,8 +21,6 @@ pnpm workspace monorepo.
 | `packages/notify`            | Discord notification worker         |
 | `packages/og`                | OG image generation worker          |
 | `packages/home`              | Home page worker                    |
-| `packages/on-this-day`       | On-this-day entry extraction worker |
-| `packages/on-this-day-index` | On-this-day search index worker     |
 | `packages/cli`               | Discord button undo CLI             |
 
 ## Environment Variables & Bindings

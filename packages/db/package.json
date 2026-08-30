@@ -18,6 +18,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",
     "drizzle-kit": "catalog:",
+    "typescript": "catalog:",
     "vitest": "catalog:"
   }
 }

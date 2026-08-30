@@ -17,8 +17,19 @@ function isValidMonthDay(month: string, day: string): boolean {
 export function extractBodyDate(body: string): string | null {
   const lines = body.split("\n");
 
-  // 1行目は題なので、日付行は 2 行目に来る。
-  const fromMatch = lines[1]?.match(/^from \[(\d{4})(\d{2})(\d{2})\]/);
+  // 0行目は題なので必ず飛ばす。そこから最初の非空行 (空白のみの行も空扱い) を
+  // from 行の候補として見る。
+  let fromLineIndex = -1;
+  for (let i = 1; i < lines.length; i++) {
+    if (lines[i].trim() !== "") {
+      fromLineIndex = i;
+      break;
+    }
+  }
+  const fromMatch =
+    fromLineIndex === -1
+      ? null
+      : lines[fromLineIndex]?.match(/^from \[(\d{4})(\d{2})(\d{2})\]/);
   if (fromMatch) {
     const [, year, month, day] = fromMatch;
     if (isValidMonthDay(month, day)) return `${year}-${month}-${day}`;

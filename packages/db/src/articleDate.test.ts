@@ -21,6 +21,28 @@ describe("extractBodyDate", () => {
     expect(extractBodyDate("題\n本文\n#20240102")).toBe("2024-01-02");
   });
 
+  it("題と from 行の間に空行があっても拾う", () => {
+    expect(extractBodyDate("題\n\nfrom [20240102]\n\n本文A")).toBe(
+      "2024-01-02",
+    );
+  });
+
+  it("題と from 行の間に空行が複数あっても拾う", () => {
+    expect(extractBodyDate("題\n\n\n\nfrom [20240102]\n本文")).toBe(
+      "2024-01-02",
+    );
+  });
+
+  it("空白のみの行も空行として扱う", () => {
+    expect(extractBodyDate("題\n  \nfrom [20240102]\n本文")).toBe(
+      "2024-01-02",
+    );
+  });
+
+  it("題(0行目)自体が from [...] 形式でも拾わない", () => {
+    expect(extractBodyDate("from [20240102]\n本文\n本文2")).toBeNull();
+  });
+
   it("末尾から 5 行目の #YYYYMMDD は拾う", () => {
     // 6 行なので index 1 がちょうど末尾 5 行目。境界の内側。
     const body = ["題", "#20240102", "a", "b", "c", "d"].join("\n");

@@ -26,8 +26,6 @@ The project is a monorepo containing several packages within the `packages/` dir
 | `packages/notify`            | A Worker for sending Discord notifications.                                                                     |
 | `packages/og`                | A Worker for dynamic Open Graph image generation.                                                               |
 | `packages/home`              | A Worker that serves the home page.                                                                             |
-| `packages/on-this-day`       | A Worker that extracts "on this day" historical entries from archived Scrapbox pages in R2.                     |
-| `packages/on-this-day-index` | A Worker that builds the "on this day" search index and stores it in R2.                                        |
 | `packages/cli`               | A CLI (`pnpm undo <url\|id>`) to undo a mis-clicked Discord button by deleting from article/clip/excluded_page. |
 
 The `web` package is the core, handling most user-facing functionality. It's a server-side rendered (SSR) React application using Vike, with a Hono backend for API routes, all running on Cloudflare Pages.

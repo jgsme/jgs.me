@@ -31,6 +31,7 @@ const data = async (c: Context) => {
       articleId: articles.id,
       bodyKey: pages.bodyKey,
       created: pages.created,
+      date: articles.date,
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
@@ -41,6 +42,7 @@ const data = async (c: Context) => {
   const bodyKey = pageInfo[0]?.bodyKey ?? "";
   const articleId = pageInfo[0]?.articleId ?? null;
   const created = pageInfo[0]?.created ?? "";
+  const storedDate = pageInfo[0]?.date ?? null;
 
   // 関連記事。article でないページには出さない。
   let related: { title: string; image: string | null }[] = [];
@@ -84,12 +86,14 @@ const data = async (c: Context) => {
   const built = buildArticleBody(body);
   const filteredBlocks = built.blocks;
   const description = built.description;
-  const fromDate = resolveArticleDate({
-    body,
-    title,
-    bodyKey,
-    created,
-  });
+  const fromDate =
+    storedDate ??
+    resolveArticleDate({
+      body,
+      title,
+      bodyKey,
+      created,
+    });
 
   config({
     title: `${title} - I am Electrical machine`,

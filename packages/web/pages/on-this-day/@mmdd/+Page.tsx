@@ -31,7 +31,7 @@ const Page = () => {
           </h2>
           <ul className="space-y-2">
             {group.articles.map((article) => (
-              <li key={article.title}>
+              <li key={article.id}>
                 <a
                   href={`/pages/${encodeURIComponent(article.title)}`}
                   className="underline"

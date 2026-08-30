@@ -1,5 +1,6 @@
 import type { PageContextServer } from "vike/types";
 import type { Bindings } from "@/server/types";
+import { useConfig } from "vike-react/useConfig";
 
 export type OnThisDayIndex = {
   years: number[];
@@ -17,6 +18,12 @@ type Context = PageContextServer & {
 };
 
 const data = async (c: Context): Promise<Data> => {
+  const config = useConfig();
+  config({
+    title: "On This Day - I am Electrical machine",
+    description: "Overview of articles published on this day over the years.",
+  });
+
   try {
     const object = await c.env.R2.get("on-this-day-index.json");
     if (object) {

@@ -5,27 +5,20 @@ import { articles, pages } from "@jigsaw/db";
 import { and, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { useConfig } from "vike-react/useConfig";
 import { groupByYear, type DayArticle } from "./groupByYear";
+import { adjacentDays, monthDayLabel, toMonthDay } from "./monthDay";
 
 type Context = PageContextServer & {
   env: Bindings;
   routeParams: { mmdd: string };
 };
 
-// "0401" -> "04-01"。月日として読めなければ null。
-function toMonthDay(mmdd: string): string | null {
-  if (!/^\d{4}$/.test(mmdd)) return null;
-  const month = Number(mmdd.slice(0, 2));
-  const day = Number(mmdd.slice(2, 4));
-  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
-  return `${mmdd.slice(0, 2)}-${mmdd.slice(2, 4)}`;
-}
-
 const data = async (c: Context) => {
   const config = useConfig();
   const mmdd = c.routeParams.mmdd;
   const monthDay = toMonthDay(mmdd);
+  const adjacent = adjacentDays(mmdd);
 
-  if (!monthDay) {
+  if (!monthDay || !adjacent) {
     config({ title: "On This Day - I am Electrical machine" });
     return { ok: false as const, mmdd, groups: [] };
   }
@@ -50,7 +43,7 @@ const data = async (c: Context) => {
     )
     .orderBy(desc(articles.date));
 
-  const label = `${Number(mmdd.slice(0, 2))}月${Number(mmdd.slice(2, 4))}日`;
+  const label = monthDayLabel(mmdd);
   config({
     title: `${label} - I am Electrical machine`,
     description: `${label} に書いた記事`,
@@ -69,6 +62,8 @@ const data = async (c: Context) => {
     mmdd,
     label,
     groups: groupByYear(dayArticles),
+    prev: { mmdd: adjacent.prev, label: monthDayLabel(adjacent.prev) },
+    next: { mmdd: adjacent.next, label: monthDayLabel(adjacent.next) },
   };
 };
 

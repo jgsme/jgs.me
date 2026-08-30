@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { articles, pages, reactions } from "@jigsaw/db";
+import { articles, clips, pages, reactions } from "@jigsaw/db";
 import { getDB, type Env, type WebmentionMessage } from "./db";
 import { MAX_BODY_BYTES, MAX_REDIRECTS, guardURL } from "./urlguard";
 import { extractMf2 } from "./mf2extract";
@@ -120,17 +120,25 @@ export async function resolveTarget(
   const parsed = parseTarget(target, siteUrl);
   if (parsed === null) return null;
 
+  // 公開済み (article か clip の行がある) page だけを target として認める。
+  // article だけを見ると clip 宛の Webmention が全部落ちる。canonical id は
+  // /o/<pageID> で article/clip 共通なので、受け側も同じ条件で見る。
   const rows = await db
-    .select({ id: pages.id })
+    .select({ id: pages.id, articleID: articles.id, clipID: clips.id })
     .from(pages)
-    .innerJoin(articles, eq(articles.pageID, pages.id))
+    .leftJoin(articles, eq(articles.pageID, pages.id))
+    .leftJoin(clips, eq(clips.pageID, pages.id))
     .where(
       parsed.by === "id"
         ? eq(pages.id, parsed.id)
         : eq(pages.title, parsed.title),
     )
     .limit(1);
-  return rows[0]?.id ?? null;
+  // leftJoin だけだと page 単体行でも 1 件返るので、
+  // article/clip どちらの id も無いケースを別途弾く。
+  const row = rows[0];
+  if (!row || (row.articleID === null && row.clipID === null)) return null;
+  return row.id;
 }
 
 export async function processWebmention(

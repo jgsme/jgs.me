@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseEntry } from "./mf2";
+import { isClip, parseEntry } from "./mf2";
 
 const VALID = {
   type: ["h-entry"],
@@ -129,5 +129,30 @@ describe("parseEntry", () => {
         properties: { ...VALID.properties, published: ["not-a-date"] },
       }),
     ).toThrow("published is not a valid date");
+  });
+});
+
+describe("isClip", () => {
+  it("category に clip があれば true", () => {
+    expect(isClip(["clip"])).toBe(true);
+  });
+
+  it("他の category と一緒でも true", () => {
+    expect(isClip(["日記", "clip"])).toBe(true);
+  });
+
+  it("category が空なら false", () => {
+    expect(isClip([])).toBe(false);
+  });
+
+  it("clip が無ければ false", () => {
+    expect(isClip(["日記"])).toBe(false);
+  });
+
+  // タグは自分で打つので、大文字小文字を吸収する仕様にはしない。
+  // 揺れを許すと「Clip と打ったのに記事になった」が起きたときに
+  // 原因が分かりにくくなる。完全一致だけを見る。
+  it("大文字混じりは false (完全一致のみ)", () => {
+    expect(isClip(["Clip"])).toBe(false);
   });
 });

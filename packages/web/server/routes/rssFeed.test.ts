@@ -76,3 +76,43 @@ describe("buildRssXml", () => {
     expect(xml).not.toContain("<item>");
   });
 });
+
+describe("buildRssXml の feed 指定", () => {
+  it("title と selfPath を省略すると今までの値になる", () => {
+    const xml = build([item()]);
+    expect(xml).toContain("<title>I am Electrical machine</title>");
+    expect(xml).toContain(
+      '<atom:link href="https://w.jgs.me/rss.xml" rel="self" type="application/rss+xml"/>',
+    );
+  });
+
+  // reader は複数の feed を title で見分ける。同じ題の 2 本は区別できない。
+  it("title と selfPath を渡すとそちらが出る", () => {
+    const xml = buildRssXml({
+      items: [item()],
+      siteUrl: SITE_URL,
+      lastBuildDate: LAST_BUILD,
+      title: "I am Electrical machine - Clips",
+      selfPath: "/clips.xml",
+    });
+
+    expect(xml).toContain("<title>I am Electrical machine - Clips</title>");
+    expect(xml).toContain(
+      '<atom:link href="https://w.jgs.me/clips.xml" rel="self" type="application/rss+xml"/>',
+    );
+  });
+
+  it("item の link は title 指定に影響されない", () => {
+    const xml = buildRssXml({
+      items: [item({ title: "clip の題" })],
+      siteUrl: SITE_URL,
+      lastBuildDate: LAST_BUILD,
+      title: "Clips",
+      selfPath: "/clips.xml",
+    });
+
+    expect(xml).toContain(
+      `<link>https://w.jgs.me/pages/${encodeURIComponent("clip の題")}</link>`,
+    );
+  });
+});

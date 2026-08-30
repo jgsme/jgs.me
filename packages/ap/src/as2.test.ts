@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { summarize, toArticle, toISO } from "./as2";
+import { summarize, toArticle, toISO, toNote } from "./as2";
 import { ACTOR_URI } from "./actor";
 
 const PAGE = {
@@ -125,5 +125,51 @@ describe("toArticle", () => {
     );
     expect(b.published).toBe("2020-04-02T09:34:00.000Z");
     expect(b.updated).toBe("2023-04-04T03:37:35.000Z");
+  });
+});
+
+describe("toNote", () => {
+  const page = {
+    id: 42,
+    title: "clip の題",
+    created: "2026-08-29 01:00:00",
+    updated: "2026-08-29 01:00:00",
+  };
+
+  it("type は Note", () => {
+    expect(toNote(page, "<p>本文</p>").type).toBe("Note");
+  });
+
+  // id は page.id 由来。toArticle と同じ URI 体系に乗せる。
+  it("id は /o/<page.id>", () => {
+    expect(toNote(page, "<p>本文</p>").id).toBe("https://w.jgs.me/o/42");
+  });
+
+  // Mastodon は name を持つ Note を「題付き投稿」として特別扱いしない。
+  // リンク共有として自然に出したいので name は出さない。
+  it("name を持たない", () => {
+    expect("name" in toNote(page, "<p>本文</p>")).toBe(false);
+  });
+
+  // summary は CW 欄になる。clip は短いので折り畳ませない。
+  it("summary を持たない", () => {
+    expect("summary" in toNote(page, "<p>本文</p>")).toBe(false);
+  });
+
+  it("published / updated を ISO8601 で出す", () => {
+    const note = toNote(page, "<p>本文</p>");
+    expect(note.published).toBe("2026-08-29T01:00:00.000Z");
+    expect(note.updated).toBe("2026-08-29T01:00:00.000Z");
+  });
+
+  // 改題で壊れない URL を渡す。toArticle と同じ理由。
+  it("url は /p/<page.id>", () => {
+    expect(toNote(page, "<p>本文</p>").url).toBe("https://w.jgs.me/p/42");
+  });
+
+  it("公開範囲は Public", () => {
+    expect(toNote(page, "<p>本文</p>").to).toEqual([
+      "https://www.w3.org/ns/activitystreams#Public",
+    ]);
   });
 });

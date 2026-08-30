@@ -17,7 +17,7 @@ pnpm deploy       # Build and deploy to Cloudflare Pages
 pnpm gen          # Generate Drizzle migrations (drizzle-kit generate)
 
 # CLI Tools
-pnpm undo <url|id> [<url|id>...]  # Discord 通知のボタン押し間違いを取り消す（article/clip/excluded_page から削除）
+pnpm undo <url|id> [<url|id>...]  # 登録を取り消す（article/clip/excluded_page から削除）
 ```
 
 ## Architecture
@@ -28,10 +28,9 @@ pnpm ワークスペースによるモノレポ構成。
 
 - `packages/db` - 共有 Drizzle スキーマ（`@jigsaw/db` としてインポート）
 - `packages/web` - メインのWebアプリ（Vike + React + Hono、Cloudflare Workers / Universal Deploy）
-- `packages/notify` - 通知ワーカー（未登録記事を Discord にボタン付きで通知し、押下 interaction を受けて登録/クリップ/除外を実行。JST 05:00 cron）
 - `packages/og` - OG画像生成ワーカー（Satori + Resvg）
 - `packages/home` - ホームページ用ワーカー
-- `packages/cli` - undo CLI（`pnpm undo <url|id>` で Discord ボタンの押し間違いを取り消し、article/clip/excluded_page から削除）
+- `packages/cli` - undo CLI（`pnpm undo <url|id>` で登録を取り消し、article/clip/excluded_page から削除）
 
 ### Web App (packages/web)
 
@@ -83,7 +82,7 @@ Vike + React + Hono で構成された Cloudflare Workers アプリケーショ�
 - 主要エンドポイント:
   - `/rss` - RSS フィード
 
-記事登録 / クリップ / 除外は notify ワーカーの Discord ボタン経由で行う (`packages/notify`)。
+記事登録は Micropub 経由で行う (`packages/ingest`)。
 
 ### Path Alias
 
@@ -100,9 +99,4 @@ Vike + React + Hono で構成された Cloudflare Workers アプリケーショ�
 
 - `DB` - D1 データベースバインディング
 - `R2` - R2 バケットバインディング
-- `DISCORD_APPLICATION_ID` - Discord アプリの Application ID (notify ワーカー用)
-- `DISCORD_BOT_TOKEN` - Discord bot token (notify ワーカー用)
-- `DISCORD_CHANNEL_ID` - 通知先チャンネル ID (notify ワーカー用)
-- `DISCORD_PUBLIC_KEY` - Discord アプリの Public Key、interaction の署名検証用 (notify ワーカー用)
-- `COMMAND_REGISTER_TOKEN` - slash command 登録エンドポイント (`POST /register`) の共有シークレット (notify ワーカー用)
 - `SITE_URL` - サイトURL

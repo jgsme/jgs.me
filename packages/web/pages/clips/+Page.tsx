@@ -1,6 +1,6 @@
 import React from "react";
 import { useData } from "vike-react/useData";
-import { thumbURL } from "@/utils/thumbURL";
+import { cardImageSources } from "@/utils/listImage";
 import type data from "./+data";
 
 const Page = () => {
@@ -11,11 +11,11 @@ const Page = () => {
       <ul>
         {d.payload.clips.map((clip) => (
           <li key={clip.id} className="my-8">
-            <a href={`/pages/${encodeURIComponent(clip.title ?? "")}`}>
+            <a href={`/pages/${encodeURIComponent(clip.title)}`}>
               {clip.image ? (
                 <img
-                  src={thumbURL(clip.image)}
-                  alt={clip.title ?? ""}
+                  {...cardImageSources(clip.image)}
+                  alt={clip.title}
                   className="mb-2 rounded mx-auto h-[300px] object-contain"
                   loading="lazy"
                 />

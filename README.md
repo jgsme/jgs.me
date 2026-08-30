@@ -18,7 +18,6 @@ pnpm workspace monorepo.
 | ---------------------------- | ----------------------------------- |
 | `packages/web`               | Main web app                        |
 | `packages/db`                | Shared Drizzle schema               |
-| `packages/notify`            | Discord notification worker         |
 | `packages/og`                | OG image generation worker          |
 | `packages/home`              | Home page worker                    |
 | `packages/cli`               | Discord button undo CLI             |

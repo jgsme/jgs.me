@@ -1,24 +1,32 @@
 import React from "react";
 import { tileImageSources } from "@/utils/listImage";
 
-export const RelatedPages: React.FC<{
-  related: { title: string; image: string | null }[];
-}> = ({ related }) => {
-  if (related.length === 0) return null;
+type Clip = {
+  id: number;
+  title: string;
+  image: string | null;
+};
+
+// index の記事一覧に差し込む clip 一覧。
+// 記事カードは h-[300px] と大きいので、こちらは正方形タイルのグリッドにして
+// 密度で見分けが付くようにする。タイルの見た目は記事詳細の関連記事
+// (RelatedPages) と揃えてある。
+export const ClipsSection = ({ clips }: { clips: Clip[] }) => {
+  if (clips.length === 0) return null;
 
   return (
-    <section className="mt-12">
-      <h2 className="text-lg font-bold mb-3">似てるかもしれんページ</h2>
+    <section className="my-12 border-y border-black/10 py-6">
+      <h2 className="text-lg font-bold mb-3">クリップ</h2>
       <ul className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {related.map((r) => (
-          <li key={r.title}>
+        {clips.map((clip) => (
+          <li key={clip.id}>
             <a
-              href={`/pages/${encodeURIComponent(r.title)}`}
+              href={`/pages/${encodeURIComponent(clip.title)}`}
               className="relative block aspect-square overflow-hidden rounded bg-[#82221c] transition-shadow hover:shadow-md"
             >
-              {r.image ? (
+              {clip.image ? (
                 <img
-                  {...tileImageSources(r.image)}
+                  {...tileImageSources(clip.image)}
                   alt=""
                   className="absolute inset-0 h-full w-full object-cover"
                   loading="lazy"
@@ -32,13 +40,16 @@ export const RelatedPages: React.FC<{
               )}
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/55 to-transparent px-2 pt-10 pb-2">
                 <div className="line-clamp-3 text-sm font-bold leading-snug text-white break-words">
-                  {r.title}
+                  {clip.title}
                 </div>
               </div>
             </a>
           </li>
         ))}
       </ul>
+      <a href="/clips" className="block mt-4 underline text-[0.9rem]">
+        クリップをもっと見る
+      </a>
     </section>
   );
 };

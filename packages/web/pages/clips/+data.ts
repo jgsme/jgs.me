@@ -18,12 +18,14 @@ const data = async (c: Context) => {
   const [cs, totalResult] = await Promise.all([
     db
       .select({
-        id: pages.id,
+        id: clips.id,
         title: pages.title,
         image: pages.image,
       })
       .from(clips)
-      .leftJoin(pages, eq(clips.pageID, pages.id))
+      // page を引けない clip があると title が null になり、リンク先が
+      // /pages/ になって壊れる (/rss.xml が innerJoin にしているのと同じ理由)。
+      .innerJoin(pages, eq(clips.pageID, pages.id))
       .orderBy(desc(pages.created))
       .limit(PER_PAGE)
       .offset(offset),

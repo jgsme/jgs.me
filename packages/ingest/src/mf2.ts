@@ -79,3 +79,12 @@ export function parseEntry(payload: unknown): Entry {
     photo: firstString(props, "photo"),
   };
 }
+
+// clip か記事かは category で決める。IndieWeb の bookmark post type に
+// 倣って bookmark-of の有無で判別する案もあったが、それだと URL を持たない
+// メモや写真の clip を判別できない。category なら 1 ルールで全部を覆える。
+export const CLIP_CATEGORY = "clip";
+
+export function isClip(categories: readonly string[]): boolean {
+  return categories.includes(CLIP_CATEGORY);
+}

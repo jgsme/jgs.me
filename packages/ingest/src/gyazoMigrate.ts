@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/d1";
 import { eq, gt, inArray } from "drizzle-orm";
-import { articles, gyazoMedia, pages } from "@jigsaw/db";
+import { clips, gyazoMedia, pages } from "@jigsaw/db";
 import { r2KeyOf } from "@jigsaw/db/body-key";
 import {
   countScrapboxFiles,
@@ -36,7 +36,7 @@ export type ScanItem = {
 };
 
 export type ScanDeps = {
-  listArticlePages: (cursor: number, limit: number) => Promise<PageRow[]>;
+  listPages: (cursor: number, limit: number) => Promise<PageRow[]>;
   readBody: (bodyKey: string) => Promise<string | null>;
 };
 
@@ -49,7 +49,7 @@ export async function runScan(
   nextCursor: number | null;
   items: ScanItem[];
 }> {
-  const rows = await deps.listArticlePages(cursor, limit);
+  const rows = await deps.listPages(cursor, limit);
   const items: ScanItem[] = [];
 
   for (const row of rows) {
@@ -216,7 +216,7 @@ export type RewriteItem = {
 };
 
 export type RewriteDeps = {
-  listArticlePages: (cursor: number, limit: number) => Promise<PageRow[]>;
+  listPages: (cursor: number, limit: number) => Promise<PageRow[]>;
   readBody: (bodyKey: string) => Promise<string | null>;
   backupBody: (bodyKey: string, raw: string) => Promise<void>;
   writeBody: (bodyKey: string, raw: string) => Promise<void>;
@@ -233,7 +233,7 @@ export async function runRewrite(
   nextCursor: number | null;
   items: RewriteItem[];
 }> {
-  const rows = await deps.listArticlePages(cursor, limit);
+  const rows = await deps.listPages(cursor, limit);
   const items: RewriteItem[] = [];
 
   for (const row of rows) {
@@ -311,7 +311,8 @@ export async function handleGyazoMigrate(
 
   const db = drizzle(env.DB);
 
-  const listArticlePages = (cursor: number, limit: number) =>
+  // 走査対象は clip だけ。article は移行済みで、もう一度回す用は無い。
+  const listPages = (cursor: number, limit: number) =>
     db
       .select({
         id: pages.id,
@@ -320,8 +321,8 @@ export async function handleGyazoMigrate(
         image: pages.image,
         updated: pages.updated,
       })
-      .from(articles)
-      .innerJoin(pages, eq(pages.id, articles.pageID))
+      .from(clips)
+      .innerJoin(pages, eq(pages.id, clips.pageID))
       .where(gt(pages.id, cursor))
       .orderBy(pages.id)
       .limit(limit);
@@ -384,7 +385,7 @@ export async function handleGyazoMigrate(
     );
 
     return {
-      listArticlePages,
+      listPages,
       readBody,
       backupBody: async (bodyKey, raw) => {
         const key = r2KeyOf(bodyKey);
@@ -457,7 +458,7 @@ export async function handleGyazoMigrate(
   const limit = typeof body.limit === "number" ? body.limit : DEFAULT_LIMIT;
 
   if (body.phase === "scan") {
-    const r = await runScan({ listArticlePages, readBody }, cursor, limit);
+    const r = await runScan({ listPages, readBody }, cursor, limit);
     return Response.json({ phase: "scan", ...r });
   }
 

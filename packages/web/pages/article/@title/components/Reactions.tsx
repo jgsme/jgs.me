@@ -89,6 +89,9 @@ function Card({ r }: { r: Reaction }) {
     <li className="flex items-start gap-3 border rounded-lg p-3">
       <Avatar icon={r.actorIcon} size={32} />
       <div className="min-w-0 flex-1">
+        {/* kind のラベルは出さない。カードが出ている時点で言及されたことは
+            伝わるし、返信は本文が付くので文脈から分かる。粒のほうは
+            アイコンだけで判別できないので title 属性に残してある。 */}
         <p className="text-xs">
           <a
             href={r.actorURL ?? "#"}
@@ -98,7 +101,6 @@ function Card({ r }: { r: Reaction }) {
           >
             {r.actorName ?? "誰か"}
           </a>
-          <span className="ml-1 text-gray-500">{label(r)}</span>
         </p>
 
         {r.sourceTitle && href && (

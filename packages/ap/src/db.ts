@@ -28,6 +28,8 @@ export type Env = {
   DB: D1Database;
   KV: KVNamespace;
   R2: R2Bucket;
+  // 画像バケット (w-media)。r2.jgs.me で公開されている。R2 は本文用の別物。
+  MEDIA: R2Bucket;
   DELIVERY: Queue<DeliveryMessage>;
   WEBMENTION: Queue<WebmentionMessage>;
   WM_SEND: Queue<SendMessage>;

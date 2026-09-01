@@ -1,4 +1,4 @@
-// 拡張子は Content-Type から決める。クライアントのファイル名を信用しない。
+// 拡張子は Content-Type から決める。相手が付けたファイル名を信用しない。
 const EXT_BY_TYPE: Record<string, string> = {
   "image/png": "png",
   "image/jpeg": "jpg",
@@ -7,8 +7,13 @@ const EXT_BY_TYPE: Record<string, string> = {
   "image/avif": "avif",
 };
 
+export function extForType(contentType: string): string | undefined {
+  return EXT_BY_TYPE[contentType];
+}
+
 // 画像を w-media に置いてキーを返す。未対応の Content-Type なら null。
-// Micropub の media endpoint と Gyazo の取り込みで共用する。
+// Micropub の media endpoint (ingest)、Gyazo の取り込み (ingest)、Webmention の
+// 画像取り込み (ap) で共用する。worker をまたぐので独立したパッケージにある。
 export async function putMedia(
   bucket: R2Bucket,
   bytes: ArrayBuffer,

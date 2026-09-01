@@ -1,0 +1,17 @@
+{
+  "name": "@jigsaw/media",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/media.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

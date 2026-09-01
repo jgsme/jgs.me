@@ -53,6 +53,9 @@ importers:
       '@jigsaw/db':
         specifier: workspace:*
         version: link:../db
+      '@jigsaw/media':
+        specifier: workspace:*
+        version: link:../media
       '@progfay/scrapbox-parser':
         specifier: 'catalog:'
         version: 10.1.1
@@ -134,6 +137,9 @@ importers:
       '@jigsaw/db':
         specifier: workspace:*
         version: link:../db
+      '@jigsaw/media':
+        specifier: workspace:*
+        version: link:../media
       '@progfay/scrapbox-parser':
         specifier: 'catalog:'
         version: 10.1.1
@@ -153,6 +159,18 @@ importers:
       wrangler:
         specifier: 'catalog:'
         version: 4.127.1(@cloudflare/workers-types@4.20260702.1)
+
+  packages/media:
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: 'catalog:'
+        version: 4.20260702.1
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@24.13.3)(vite@7.3.6(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.12))
 
   packages/og:
     dependencies:

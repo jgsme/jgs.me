@@ -9,7 +9,7 @@ import {
   replaceGyazoURLs,
 } from "./gyazo";
 import { bodyContentType, bodyTextOf, rewriteBody } from "./gyazoBody";
-import { putMedia } from "./media";
+import { putMedia } from "@jigsaw/media";
 import type { Env } from "./index";
 
 // Workers の fetch は User-Agent を送らない。UA 無しを弾く実装が実在するので

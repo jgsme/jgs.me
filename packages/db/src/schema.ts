@@ -169,6 +169,12 @@ export const reactions = sqliteTable("reaction", {
   actorURL: text("actor_url"),
   actorIcon: text("actor_icon"),
   content: text("content"),
+  // 反応元ページ。カード表示に使う。Webmention 受信時だけ埋まる。
+  // actor_url は「著者」の URL なので、どのページから来たかはこちらで持つ。
+  sourceURL: text("source_url"),
+  sourceTitle: text("source_title"),
+  // カードのサムネ。反応元の og:image を R2 に取り込んだ URL。
+  sourceImage: text("source_image"),
   created: text("created")
     .notNull()
     .default(sql`(CURRENT_TIMESTAMP)`),

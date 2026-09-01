@@ -1,0 +1,1 @@
+ALTER TABLE `reaction` ADD `source_image` text;

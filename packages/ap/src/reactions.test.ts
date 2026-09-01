@@ -3,6 +3,7 @@ import {
   kindOf,
   pageIDFromObjectURI,
   reactionIDOf,
+  sourceURLOf,
   targetURIOf,
 } from "./reactions";
 
@@ -122,5 +123,35 @@ describe("reactionIDOf", () => {
 
   it("id が無ければ null", () => {
     expect(reactionIDOf({})).toBeNull();
+  });
+});
+
+// Create(返信) の主キーは Note の id で、Mastodon などではそのまま開ける
+// permalink になっている。カードのリンク先に使うため source_url にも入れる。
+describe("sourceURLOf", () => {
+  it("reply は id をそのまま返す", () => {
+    expect(
+      sourceURLOf("reply", "https://mstdn.jp/users/jgs/statuses/117196086787"),
+    ).toBe("https://mstdn.jp/users/jgs/statuses/117196086787");
+  });
+
+  // Like / Announce の主キーは activity の id。Mastodon だと
+  // ".../statuses/1#likes/1" のような開けない URI が来るので使わない。
+  it("reply 以外は null", () => {
+    expect(
+      sourceURLOf("like", "https://mstdn.jp/users/jgs#likes/1"),
+    ).toBeNull();
+    expect(sourceURLOf("announce", "https://m.example/a")).toBeNull();
+    expect(sourceURLOf("emoji", "https://m.example/a")).toBeNull();
+  });
+
+  // AS2 の id は IRI であって http とは限らない。開けないものは入れない。
+  it("http(s) でない id は null", () => {
+    expect(sourceURLOf("reply", "tag:example.com,2026:1")).toBeNull();
+    expect(sourceURLOf("reply", "urn:uuid:abc")).toBeNull();
+  });
+
+  it("id が無ければ null", () => {
+    expect(sourceURLOf("reply", null)).toBeNull();
   });
 });

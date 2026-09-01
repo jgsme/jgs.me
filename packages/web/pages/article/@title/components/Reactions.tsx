@@ -91,7 +91,7 @@ function Card({ r }: { r: Reaction }) {
           </a>
         </p>
 
-        {source && (
+        {source?.title && (
           <a
             href={source.url}
             rel="noopener noreferrer nofollow"
@@ -104,10 +104,17 @@ function Card({ r }: { r: Reaction }) {
 
         {text !== "" && <p className="text-sm mt-1">{text}</p>}
 
+        {/* 題があるときは上のリンクが主で、こちらは行き先を見せる補助。
+            ActivityPub の返信は題が無いのでこれが唯一のリンクになる。 */}
         {source && (
-          <span className="block text-xs text-gray-400 break-all mt-1">
+          <a
+            href={source.url}
+            rel="noopener noreferrer nofollow"
+            target="_blank"
+            className="block text-xs text-gray-400 break-all mt-1"
+          >
             {source.url}
-          </span>
+          </a>
         )}
       </div>
 

@@ -18,6 +18,7 @@ import {
   kindOf,
   pageIDFromObjectURI,
   reactionIDOf,
+  sourceURLOf,
   targetURIOf,
 } from "../reactions";
 import { notifyDiscord } from "../notify";
@@ -270,6 +271,9 @@ inbox.post("/ap/inbox", async (c) => {
         actorURL: remote?.id ?? actorURI ?? null,
         actorIcon: remote?.icon ?? null,
         content,
+        // 返信の主キーは Note の permalink。カードのリンク先に使うので
+        // Webmention と同じ欄に移す。Like / Announce は開けないので null。
+        sourceURL: sourceURLOf(kind, reactionID),
         created: new Date().toISOString(),
         undone: false,
       })

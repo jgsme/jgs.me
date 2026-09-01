@@ -69,6 +69,25 @@ describe("cardSource", () => {
     ).toEqual({ url: "https://ex.com/a", title: "題" });
   });
 
+  // ActivityPub の返信は Note の permalink だけがあって題が無い。
+  // 題を必須にすると、開けるリンクを持っているのに何も出せなくなる。
+  it("URL だけでも返す (題は null)", () => {
+    expect(
+      cardSource(
+        withSource(
+          {
+            sourceURL: "https://mstdn.jp/users/jgs/statuses/117196086787",
+            sourceTitle: null,
+          },
+          "reply",
+        ),
+      ),
+    ).toEqual({
+      url: "https://mstdn.jp/users/jgs/statuses/117196086787",
+      title: null,
+    });
+  });
+
   // ActivityPub の反応は source_url が空で actor_url がプロフィールを指す。
   // フォールバックすると「反応元ページ」の欄にプロフィール URL が出て嘘になる。
   it("source_url が無ければ actor_url にフォールバックしない", () => {
@@ -89,14 +108,6 @@ describe("cardSource", () => {
   it("題だけあって URL が無ければ出さない", () => {
     expect(
       cardSource(withSource({ sourceURL: null, sourceTitle: "題" })),
-    ).toBeNull();
-  });
-
-  it("URL だけあって題が無ければ出さない", () => {
-    expect(
-      cardSource(
-        withSource({ sourceURL: "https://ex.com/a", sourceTitle: null }),
-      ),
     ).toBeNull();
   });
 });

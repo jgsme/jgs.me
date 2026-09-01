@@ -72,3 +72,18 @@ export function reactionIDOf(activity: Activity): string | null {
   }
   return typeof activity.id === "string" ? activity.id : null;
 }
+
+// カードのリンク先。Create(返信) の主キーは Note の id で、Mastodon などでは
+// そのまま開ける permalink になっている (reactionIDOf)。それを source_url に
+// 移して、Webmention の反応と同じ欄で扱えるようにする。
+//
+// Like / Announce の主キーは activity の id で、".../statuses/1#likes/1" の
+// ような開けない URI が来るので使わない。AS2 の id は IRI であって http とも
+// 限らないため、scheme も見る。
+export function sourceURLOf(
+  kind: ReactionKind,
+  reactionID: string | null,
+): string | null {
+  if (kind !== "reply" || reactionID === null) return null;
+  return /^https?:\/\//.test(reactionID) ? reactionID : null;
+}

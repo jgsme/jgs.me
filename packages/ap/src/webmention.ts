@@ -3,6 +3,7 @@ import { articles, clips, pages, reactions } from "@jigsaw/db";
 import { getDB, type Env, type WebmentionMessage } from "./db";
 import { MAX_BODY_BYTES, MAX_REDIRECTS, guardURL } from "./urlguard";
 import { extractMf2 } from "./mf2extract";
+import { storeIcon } from "./icon";
 import { SITE_URL, USER_AGENT } from "./config";
 import { notifyDiscord } from "./notify";
 
@@ -191,6 +192,14 @@ export async function processWebmention(
   const actorName = mf2.authorName ?? new URL(msg.source).hostname;
   const actorURL = mf2.authorURL ?? msg.source;
 
+  // アバターは自分の R2 に取り込む。相手の URL を直に読ませると、相手が画像を
+  // 消したとき壊れるうえ、記事を開いた読者の IP が相手のサーバに出る。
+  // 取れなければ null。相手の URL へのフォールバックはしない (icon.ts)。
+  const actorIcon = await storeIcon(mf2.authorPhoto, env.MEDIA);
+
+  // リダイレクト後の URL を持つ。カードのリンク先がもう一度飛ぶのを避ける。
+  const sourceURL = fetched.finalURL;
+
   await db
     .insert(reactions)
     .values({
@@ -201,10 +210,12 @@ export async function processWebmention(
       emoji: null,
       actorName,
       actorURL,
-      actorIcon: mf2.authorPhoto,
-      // 本文は取らない (完全な mf2 パーサを書かないため)。計画5 の Reactions は
-      // content が空なら段落ごと出さない実装にしてある。
+      actorIcon,
+      // 本文は取らない (完全な mf2 パーサを書かないため)。表示側は題と URL の
+      // カードで出すので、content が無くても空箱にはならない。
       content: null,
+      sourceURL,
+      sourceTitle: mf2.title,
       created: new Date().toISOString(),
       undone: false,
     })
@@ -214,7 +225,9 @@ export async function processWebmention(
         kind,
         actorName,
         actorURL,
-        actorIcon: mf2.authorPhoto,
+        actorIcon,
+        sourceURL,
+        sourceTitle: mf2.title,
         undone: false,
       },
     });

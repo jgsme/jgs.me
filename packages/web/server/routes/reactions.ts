@@ -14,6 +14,9 @@ export type ReactionJSON = {
   actorURL: string | null;
   actorIcon: string | null;
   content: string | null;
+  // 反応元ページ。Webmention 受信のときだけ入る (ActivityPub 側は null)。
+  sourceURL: string | null;
+  sourceTitle: string | null;
   created: string;
 };
 
@@ -41,6 +44,8 @@ reactions.get("/api/reactions/:pageID", async (c) => {
       actorURL: reactionTable.actorURL,
       actorIcon: reactionTable.actorIcon,
       content: reactionTable.content,
+      sourceURL: reactionTable.sourceURL,
+      sourceTitle: reactionTable.sourceTitle,
       created: reactionTable.created,
     })
     .from(reactionTable)

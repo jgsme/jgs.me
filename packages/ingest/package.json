@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@jigsaw/db": "workspace:*",
+    "@jigsaw/media": "workspace:*",
     "@progfay/scrapbox-parser": "catalog:",
     "drizzle-orm": "catalog:"
   },

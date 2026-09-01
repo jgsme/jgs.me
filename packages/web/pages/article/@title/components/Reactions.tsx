@@ -120,6 +120,19 @@ function Card({ r }: { r: Reaction }) {
           </span>
         )}
       </div>
+
+      {r.sourceImage && (
+        // og:image は 1.91:1 が既定。正方形に押し込むと文字入りの画像が
+        // 両端から切れるので、比率のほうを合わせる。
+        <img
+          src={thumbURL(r.sourceImage, 192)}
+          alt=""
+          width={96}
+          height={50}
+          className="rounded flex-none object-cover w-24 h-[50px]"
+          loading="lazy"
+        />
+      )}
     </li>
   );
 }

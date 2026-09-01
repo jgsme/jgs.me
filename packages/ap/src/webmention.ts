@@ -3,7 +3,7 @@ import { articles, clips, pages, reactions } from "@jigsaw/db";
 import { getDB, type Env, type WebmentionMessage } from "./db";
 import { MAX_BODY_BYTES, MAX_REDIRECTS, guardURL } from "./urlguard";
 import { extractMf2 } from "./mf2extract";
-import { storeIcon } from "./icon";
+import { storeImage } from "./image";
 import { SITE_URL, USER_AGENT } from "./config";
 import { notifyDiscord } from "./notify";
 
@@ -194,8 +194,12 @@ export async function processWebmention(
 
   // アバターは自分の R2 に取り込む。相手の URL を直に読ませると、相手が画像を
   // 消したとき壊れるうえ、記事を開いた読者の IP が相手のサーバに出る。
-  // 取れなければ null。相手の URL へのフォールバックはしない (icon.ts)。
-  const actorIcon = await storeIcon(mf2.authorPhoto, env.MEDIA);
+  // 取れなければ null。相手の URL へのフォールバックはしない (image.ts)。
+  const actorIcon = await storeImage(mf2.authorPhoto, env.MEDIA);
+
+  // カードのサムネ。og:image がサイト共通のロゴのこともあるが、ページ固有か
+  // どうかはプログラムから見分けられないので、あるものはそのまま出す。
+  const sourceImage = await storeImage(mf2.image, env.MEDIA);
 
   // リダイレクト後の URL を持つ。カードのリンク先がもう一度飛ぶのを避ける。
   const sourceURL = fetched.finalURL;
@@ -216,6 +220,7 @@ export async function processWebmention(
       content: null,
       sourceURL,
       sourceTitle: mf2.title,
+      sourceImage,
       created: new Date().toISOString(),
       undone: false,
     })
@@ -228,6 +233,7 @@ export async function processWebmention(
         actorIcon,
         sourceURL,
         sourceTitle: mf2.title,
+        sourceImage,
         undone: false,
       },
     });

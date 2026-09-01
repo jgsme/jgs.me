@@ -12,8 +12,8 @@ export function extForType(contentType: string): string | undefined {
 }
 
 // 画像を w-media に置いてキーを返す。未対応の Content-Type なら null。
-// ingest 側にも同じものがある (packages/ingest/src/media.ts)。worker 同士を
-// 依存させたくないので写しで持つ。3 つ目が要るようになったら共有パッケージへ。
+// Micropub の media endpoint (ingest)、Gyazo の取り込み (ingest)、Webmention の
+// 画像取り込み (ap) で共用する。worker をまたぐので独立したパッケージにある。
 export async function putMedia(
   bucket: R2Bucket,
   bytes: ArrayBuffer,

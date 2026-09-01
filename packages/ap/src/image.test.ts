@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { storeIcon } from "./icon";
+import { MAX_IMAGE_BYTES, storeImage } from "./image";
 import { MEDIA_BASE_URL, USER_AGENT } from "./config";
 
 afterEach(() => {
@@ -34,12 +34,12 @@ function imageResponse(type = "image/png", body: ArrayBuffer = PNG): Response {
   });
 }
 
-describe("storeIcon", () => {
+describe("storeImage", () => {
   it("画像を取って R2 に置き、r2 の URL を返す", async () => {
     const { bucket, puts } = fakeBucket();
     vi.stubGlobal("fetch", async () => imageResponse());
 
-    const url = await storeIcon("https://ex.com/a.png", bucket);
+    const url = await storeImage("https://ex.com/a.png", bucket);
 
     expect(url).toBe(`${MEDIA_BASE_URL}/${HELLO_SHA256}.png`);
     expect(puts).toEqual([
@@ -51,7 +51,7 @@ describe("storeIcon", () => {
     const { bucket } = fakeBucket();
     vi.stubGlobal("fetch", async () => imageResponse("image/png; charset=x"));
 
-    expect(await storeIcon("https://ex.com/a.png", bucket)).toBe(
+    expect(await storeImage("https://ex.com/a.png", bucket)).toBe(
       `${MEDIA_BASE_URL}/${HELLO_SHA256}.png`,
     );
   });
@@ -64,7 +64,7 @@ describe("storeIcon", () => {
       return imageResponse();
     });
 
-    await storeIcon("https://ex.com/a.png", bucket);
+    await storeImage("https://ex.com/a.png", bucket);
 
     const headers = calls[0]!.headers as Record<string, string>;
     expect(headers["User-Agent"]).toBe(USER_AGENT);
@@ -86,7 +86,7 @@ describe("storeIcon", () => {
       return imageResponse();
     });
 
-    expect(await storeIcon("https://ex.com/a.png", bucket)).toBe(
+    expect(await storeImage("https://ex.com/a.png", bucket)).toBe(
       `${MEDIA_BASE_URL}/${HELLO_SHA256}.png`,
     );
     expect(seen).toEqual(["https://ex.com/a.png", "https://cdn.example/a.png"]);
@@ -102,7 +102,7 @@ describe("storeIcon", () => {
       });
     });
 
-    expect(await storeIcon("https://ex.com/a.png", bucket)).toBeNull();
+    expect(await storeImage("https://ex.com/a.png", bucket)).toBeNull();
     expect(puts).toHaveLength(0);
   });
 
@@ -114,7 +114,7 @@ describe("storeIcon", () => {
       return imageResponse();
     });
 
-    expect(await storeIcon(null, bucket)).toBeNull();
+    expect(await storeImage(null, bucket)).toBeNull();
     expect(called).toBe(false);
   });
 
@@ -126,7 +126,7 @@ describe("storeIcon", () => {
       return imageResponse();
     });
 
-    expect(await storeIcon("http://127.0.0.1/a.png", bucket)).toBeNull();
+    expect(await storeImage("http://127.0.0.1/a.png", bucket)).toBeNull();
     expect(called).toBe(false);
   });
 
@@ -134,7 +134,7 @@ describe("storeIcon", () => {
     const { bucket, puts } = fakeBucket();
     vi.stubGlobal("fetch", async () => imageResponse("text/html"));
 
-    expect(await storeIcon("https://ex.com/a.png", bucket)).toBeNull();
+    expect(await storeImage("https://ex.com/a.png", bucket)).toBeNull();
     expect(puts).toHaveLength(0);
   });
 
@@ -152,24 +152,35 @@ describe("storeIcon", () => {
         }),
     );
 
-    expect(await storeIcon("https://ex.com/a.png", bucket)).toBeNull();
+    expect(await storeImage("https://ex.com/a.png", bucket)).toBeNull();
     expect(puts).toHaveLength(0);
   });
 
   it("Content-Length が無くても実バイトが上限を超えたら置かない", async () => {
     const { bucket, puts } = fakeBucket();
-    const big = new Uint8Array(1_000_001).buffer as ArrayBuffer;
+    const big = new Uint8Array(MAX_IMAGE_BYTES + 1).buffer as ArrayBuffer;
     vi.stubGlobal("fetch", async () => imageResponse("image/png", big));
 
-    expect(await storeIcon("https://ex.com/a.png", bucket)).toBeNull();
+    expect(await storeImage("https://ex.com/a.png", bucket)).toBeNull();
     expect(puts).toHaveLength(0);
+  });
+
+  // og:image は 1200x630 の PNG で 1MB を超えることがある。HTML 用の
+  // MAX_BODY_BYTES (1MB) を流用したままだと、その手の画像が丸ごと落ちる。
+  it("1MB を超えても上限内なら置く", async () => {
+    const { bucket, puts } = fakeBucket();
+    const big = new Uint8Array(1_500_000).buffer as ArrayBuffer;
+    vi.stubGlobal("fetch", async () => imageResponse("image/png", big));
+
+    expect(await storeImage("https://ex.com/a.png", bucket)).not.toBeNull();
+    expect(puts).toHaveLength(1);
   });
 
   it("応答が ok でなければ null", async () => {
     const { bucket } = fakeBucket();
     vi.stubGlobal("fetch", async () => new Response("", { status: 404 }));
 
-    expect(await storeIcon("https://ex.com/a.png", bucket)).toBeNull();
+    expect(await storeImage("https://ex.com/a.png", bucket)).toBeNull();
   });
 
   // 名前解決できないホストで fetch は throw する。ここで握らないと
@@ -180,6 +191,6 @@ describe("storeIcon", () => {
       throw new Error("dns");
     });
 
-    expect(await storeIcon("https://ex.com/a.png", bucket)).toBeNull();
+    expect(await storeImage("https://ex.com/a.png", bucket)).toBeNull();
   });
 });

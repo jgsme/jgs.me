@@ -9,6 +9,9 @@ export type Extracted = {
   authorPhoto: string | null;
   // カード表示用。h-entry の p-name → <title> → ホスト名 の順で決まる。
   title: string;
+  // カードのサムネ。og:image。mf2 で記事の画像を宣言している相手は
+  // 実在しなかったので u-featured / entry の u-photo は見ない。
+  image: string | null;
 };
 
 // 外部由来の文字列をそのまま DB に入れない。
@@ -66,6 +69,19 @@ export function pickSourceTitle(
   } catch {
     return sourceURL.slice(0, MAX_TITLE_LENGTH);
   }
+}
+
+// og:image の候補かどうかだけを見る。property と name の両方を受けるのは、
+// name= で書くジェネレータが実在するため。og:image:width のような前方一致の
+// 別物を拾わないよう、完全一致で見る。
+export function ogImageCandidate(
+  property: string | null,
+  name: string | null,
+  content: string | null,
+): string | null {
+  const key = (property ?? name ?? "").toLowerCase();
+  if (key !== "og:image") return null;
+  return content ? content : null;
 }
 
 // 種別の優先順位。より具体的なものを優先する。
@@ -149,6 +165,8 @@ export async function extractMf2(
   let titleDepth = 0;
   let titleDone = false;
   const titleParts: string[] = [];
+
+  let image: string | null = null;
 
   const rewriter = new HTMLRewriter()
     // 著者の範囲を最初に登録する。ハンドラは登録順に呼ばれるので、
@@ -235,6 +253,17 @@ export async function extractMf2(
         if (titleDepth > 0) titleParts.push(t.text);
       },
     })
+    .on("meta[content]", {
+      element(el) {
+        if (image !== null) return;
+        const found = ogImageCandidate(
+          el.getAttribute("property"),
+          el.getAttribute("name"),
+          el.getAttribute("content"),
+        );
+        if (found !== null) image = absolute(found, baseURL);
+      },
+    })
     .on("a[href], link[href], area[href]", {
       element(el) {
         const href = el.getAttribute("href")!;
@@ -275,5 +304,6 @@ export async function extractMf2(
       collapse(titleParts),
       baseURL,
     ),
+    image,
   };
 }

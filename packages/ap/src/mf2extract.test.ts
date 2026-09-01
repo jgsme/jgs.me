@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   MAX_TITLE_LENGTH,
   decodeEntities,
+  ogImageCandidate,
   pickSourceTitle,
 } from "./mf2extract";
 
@@ -82,5 +83,42 @@ describe("decodeEntities", () => {
 
   it("実体が無ければそのまま", () => {
     expect(decodeEntities("plain text")).toBe("plain text");
+  });
+});
+
+describe("ogImageCandidate", () => {
+  it("property=og:image の content を返す", () => {
+    expect(ogImageCandidate("og:image", null, "https://ex.com/a.png")).toBe(
+      "https://ex.com/a.png",
+    );
+  });
+
+  // name= で書くジェネレータが実在する。property だけ見ると取り逃す。
+  it("name=og:image でも取る", () => {
+    expect(ogImageCandidate(null, "og:image", "https://ex.com/a.png")).toBe(
+      "https://ex.com/a.png",
+    );
+  });
+
+  it("大文字小文字を無視する", () => {
+    expect(ogImageCandidate("OG:Image", null, "https://ex.com/a.png")).toBe(
+      "https://ex.com/a.png",
+    );
+  });
+
+  it("別の meta は候補にしない", () => {
+    expect(ogImageCandidate("og:title", null, "題")).toBeNull();
+    expect(ogImageCandidate(null, "description", "説明")).toBeNull();
+    expect(ogImageCandidate(null, null, "https://ex.com/a.png")).toBeNull();
+  });
+
+  // og:image:width と紛れさせない。前方一致で拾うと数値が URL の位置に入る。
+  it("og:image で始まるだけの property は候補にしない", () => {
+    expect(ogImageCandidate("og:image:width", null, "1200")).toBeNull();
+  });
+
+  it("content が無ければ候補にしない", () => {
+    expect(ogImageCandidate("og:image", null, null)).toBeNull();
+    expect(ogImageCandidate("og:image", null, "")).toBeNull();
   });
 });

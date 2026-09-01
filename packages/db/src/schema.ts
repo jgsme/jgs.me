@@ -173,6 +173,8 @@ export const reactions = sqliteTable("reaction", {
   // actor_url は「著者」の URL なので、どのページから来たかはこちらで持つ。
   sourceURL: text("source_url"),
   sourceTitle: text("source_title"),
+  // カードのサムネ。反応元の og:image を R2 に取り込んだ URL。
+  sourceImage: text("source_image"),
   created: text("created")
     .notNull()
     .default(sql`(CURRENT_TIMESTAMP)`),

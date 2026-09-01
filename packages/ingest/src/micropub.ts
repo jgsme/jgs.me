@@ -8,7 +8,7 @@ import { parseEntry, isClip } from "./mf2";
 import { applyUpdate, parseUpdateAction } from "./mf2update";
 import { buildSbBody } from "./body";
 import { parseTargetURL } from "./target";
-import { putMedia } from "./media";
+import { putMedia } from "@jigsaw/media";
 import { pageImage } from "./firstImage";
 import { uniqueTitle } from "./uniqueTitle";
 import type { Env } from "./index";

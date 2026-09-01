@@ -13,6 +13,7 @@ function r(kind: string, id = kind): ReactionJSON {
     content: null,
     sourceURL: null,
     sourceTitle: null,
+    sourceImage: null,
     created: "2026-09-01T00:00:00.000Z",
   };
 }

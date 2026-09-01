@@ -18,3 +18,14 @@ export function splitReactions(rs: ReactionJSON[]): ReactionGroups {
   }
   return { cards, glyphs };
 }
+
+// カードに出す反応元リンク。actor_url へはフォールバックしない。
+// ActivityPub の反応は source_url が空で actor_url がプロフィールを指すので、
+// 埋めると「反応元ページ」の欄にプロフィール URL が出て嘘になる。
+// 題と URL は Webmention 受信時に必ず揃うので、片方だけの行は出さない。
+export function cardSource(
+  r: ReactionJSON,
+): { url: string; title: string } | null {
+  if (!r.sourceURL || !r.sourceTitle) return null;
+  return { url: r.sourceURL, title: r.sourceTitle };
+}

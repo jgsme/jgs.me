@@ -2,7 +2,7 @@ import React from "react";
 import { useEffect, useState } from "react";
 import type { ReactionJSON } from "@/server/routes/reactions";
 import { thumbURL } from "@/utils/thumbURL";
-import { splitReactions } from "./reactionGroups";
+import { cardSource, splitReactions } from "./reactionGroups";
 
 type Reaction = ReactionJSON;
 
@@ -83,7 +83,7 @@ export default function Reactions({ pageId }: { pageId: number | null }) {
 function Card({ r }: { r: Reaction }) {
   // content は外部由来。タグを落としてテキストだけ出す。
   const text = stripTags(r.content ?? "");
-  const href = r.sourceURL ?? r.actorURL;
+  const source = cardSource(r);
 
   return (
     <li className="flex items-start gap-3 border rounded-lg p-3">
@@ -103,22 +103,22 @@ function Card({ r }: { r: Reaction }) {
           </a>
         </p>
 
-        {r.sourceTitle && href && (
+        {source && (
           <a
-            href={href}
+            href={source.url}
             rel="noopener noreferrer nofollow"
             target="_blank"
             className="block text-sm mt-1"
           >
-            {r.sourceTitle}
+            {source.title}
           </a>
         )}
 
         {text !== "" && <p className="text-sm mt-1">{text}</p>}
 
-        {href && (
+        {source && (
           <span className="block text-xs text-gray-400 break-all mt-1">
-            {href}
+            {source.url}
           </span>
         )}
       </div>

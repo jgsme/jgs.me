@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { ReactionJSON } from "@/server/routes/reactions";
-import { splitReactions } from "./reactionGroups";
+import { cardSource, splitReactions } from "./reactionGroups";
+
+function withSource(
+  over: Partial<ReactionJSON>,
+  kind = "mention",
+): ReactionJSON {
+  return { ...r(kind), ...over };
+}
 
 function r(kind: string, id = kind): ReactionJSON {
   return {
@@ -47,5 +54,49 @@ describe("splitReactions", () => {
   it("順序を保つ", () => {
     const { cards } = splitReactions([r("reply", "a"), r("mention", "b")]);
     expect(cards.map((x) => x.id)).toEqual(["a", "b"]);
+  });
+});
+
+describe("cardSource", () => {
+  it("source_url と source_title が揃っていれば返す", () => {
+    expect(
+      cardSource(
+        withSource({
+          sourceURL: "https://ex.com/a",
+          sourceTitle: "題",
+        }),
+      ),
+    ).toEqual({ url: "https://ex.com/a", title: "題" });
+  });
+
+  // ActivityPub の反応は source_url が空で actor_url がプロフィールを指す。
+  // フォールバックすると「反応元ページ」の欄にプロフィール URL が出て嘘になる。
+  it("source_url が無ければ actor_url にフォールバックしない", () => {
+    expect(
+      cardSource(
+        withSource(
+          {
+            sourceURL: null,
+            sourceTitle: null,
+            actorURL: "https://mstdn.jp/users/jgs",
+          },
+          "reply",
+        ),
+      ),
+    ).toBeNull();
+  });
+
+  it("題だけあって URL が無ければ出さない", () => {
+    expect(
+      cardSource(withSource({ sourceURL: null, sourceTitle: "題" })),
+    ).toBeNull();
+  });
+
+  it("URL だけあって題が無ければ出さない", () => {
+    expect(
+      cardSource(
+        withSource({ sourceURL: "https://ex.com/a", sourceTitle: null }),
+      ),
+    ).toBeNull();
   });
 });

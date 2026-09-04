@@ -92,4 +92,15 @@ describe("renderPage", () => {
   it("画像の直リンクを出す", () => {
     expect(renderPage(view())).toContain(`https://r2.jgs.me/${ID}.png`);
   });
+
+  // sourceTitle 無しのときの "jgs.me" は og:title 用のフォールバックで、
+  // 出典リンクのラベルに使うと example.com へのリンクなのに自サイトを
+  // 名乗る嘘の表示になる。ホスト名を出すのが正しい。
+  it("source_title が無ければ出典リンクのラベルはホスト名になる", () => {
+    const html = renderPage(
+      view({ sourceTitle: null, sourceURL: "https://example.com/x" }),
+    );
+    expect(html).toContain('<a href="https://example.com/x">example.com</a>');
+    expect(html).not.toContain(">jgs.me</a>");
+  });
 });

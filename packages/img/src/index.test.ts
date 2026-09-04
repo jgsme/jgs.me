@@ -35,4 +35,23 @@ describe("routing", () => {
     expect((await app.request("/notahash")).status).toBe(404);
     expect((await app.request(`/${"z".repeat(64)}`)).status).toBe(404);
   });
+
+  // Content-Length が上限を超えていれば formData() を読む前に 413 で落とす。
+  // 実際に 20MB のボディを送ると遅いので、ヘッダだけ偽って検証する。
+  it("Content-Length が上限を超える POST は 413", async () => {
+    const res = await app.request(
+      "/api/images",
+      {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer secret",
+          "Content-Length": "30000000",
+        },
+        body: new FormData(),
+      },
+      { IMG_TOKEN: "secret" },
+    );
+    expect(res.status).toBe(413);
+    expect(await res.json()).toMatchObject({ error: "too_large" });
+  });
 });

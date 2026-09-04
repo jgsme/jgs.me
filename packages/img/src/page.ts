@@ -57,10 +57,14 @@ export function renderPage(v: SharedImageView): string {
     .filter(Boolean)
     .join("\n");
 
+  // og:title 用の title (sourceTitle ?? "jgs.me") は出典リンクのラベルには
+  // 使えない。sourceTitle が無いのに "jgs.me" と出すと、リンク先は
+  // example.com なのにラベルだけ自サイトを名乗る嘘の表示になる。
+  // href は safeHref を通っているので http/https のみで、new URL() は必ず成功する。
   const source =
     href === null
       ? ""
-      : `<p class="source">from <a href="${esc(href)}">${esc(title)}</a></p>`;
+      : `<p class="source">from <a href="${esc(href)}">${esc(v.sourceTitle ?? new URL(href).host)}</a></p>`;
 
   return `<!doctype html>
 <html lang="ja">
@@ -79,15 +83,16 @@ body { margin: 0; background: #111; color: #eee; font: 14px system-ui, sans-seri
 main { max-width: 1200px; margin: 0 auto; padding: 16px; }
 img { max-width: 100%; height: auto; display: block; }
 a { color: #8ab4f8; }
+.source { margin-top: 12px; color: #ccc; }
 .meta { margin-top: 12px; color: #aaa; font-size: 12px; }
 .meta code { user-select: all; }
 </style>
 </head>
 <body>
 <main>
-<img src="${direct}" alt="">
+<img src="${esc(direct)}" alt="">
 ${source}
-<p class="meta">${esc(v.created)}<br><code>${direct}</code></p>
+<p class="meta">${esc(v.created)}<br><code>${esc(direct)}</code></p>
 </main>
 </body>
 </html>

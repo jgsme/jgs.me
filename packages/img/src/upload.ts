@@ -67,8 +67,10 @@ export async function parseUpload(
     };
   }
 
-  // 本文を読む前に落とす。putMedia は ArrayBuffer を丸ごとメモリに載せるので、
-  // 読んでから測ると 128MB 制限に踏み込む。
+  // 宣言サイズ (Content-Length) は index.ts 側で formData() より先に見ている。
+  // ここはパートの実サイズに対する 2 段目のチェック。file.size は既に
+  // formData() がメモリに載せた後の値だが、この後の arrayBuffer() で
+  // 2 コピー目を作る前、かつ R2 への put の前に落とせる。
   if (file.size > MAX_UPLOAD_BYTES) {
     return {
       status: 413,

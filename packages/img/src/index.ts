@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { sharedImages } from "@jigsaw/db";
 import { putMedia } from "@jigsaw/media";
 import { isAuthorized } from "./auth";
+import { MAX_UPLOAD_BYTES } from "./config";
 import { renderPage, type SharedImageView } from "./page";
 import { isUploadError, parseUpload } from "./upload";
 import { storeUpload, type StoreDeps } from "./store";
@@ -16,9 +17,33 @@ const ID = /^[0-9a-f]{64}$/;
 
 app.get("/health", (c) => c.text("ok"));
 
+// API のエラーは JSON で返す契約なので、想定外の例外も JSON に揃える。
+// 既定のハンドラは plain text を返し、拡張側がエラーの中身を出せなくなる。
+// 401 (unauthorized) は各ハンドラが text で返しており、それは ingest の
+// 既存慣習に揃えているのでここでは変えない。
+app.onError((err, c) => {
+  console.error(err);
+  return c.json({ error: "server_error" }, 500);
+});
+
 app.post("/api/images", async (c) => {
   if (!isAuthorized(c.req.header("Authorization") ?? null, c.env.IMG_TOKEN)) {
     return c.text("unauthorized", 401);
+  }
+
+  // formData() はリクエストボディ全体をメモリに載せる。upload.ts の
+  // MAX_UPLOAD_BYTES はその後にしか効かないので、宣言サイズの時点で落とす。
+  // multipart のヘッダぶんの余裕を見る。Content-Length を送らない
+  // chunked リクエストには効かないが、その場合も upload.ts 側で捕まる。
+  const declared = Number(c.req.header("Content-Length") ?? "");
+  if (Number.isFinite(declared) && declared > MAX_UPLOAD_BYTES + 4096) {
+    return c.json(
+      {
+        error: "too_large",
+        error_description: `max ${MAX_UPLOAD_BYTES} bytes`,
+      },
+      413,
+    );
   }
 
   let form: FormData;
@@ -54,7 +79,10 @@ app.post("/api/images", async (c) => {
     },
     put: (bytes, contentType) => putMedia(c.env.MEDIA, bytes, contentType),
     insert: async (row) => {
-      await db.insert(sharedImages).values(row);
+      // exists → insert は check-then-act なので、同じ画像の POST が重なると
+      // 2 本目が PK 衝突する。行が既にあるなら何もしないのが正しい
+      // (出典は最初の投稿のものを残す、という重複時の扱いと同じ)。
+      await db.insert(sharedImages).values(row).onConflictDoNothing();
     },
   };
 
@@ -89,7 +117,9 @@ app.delete("/api/images/:id", async (c) => {
   return c.body(null, 204);
 });
 
-app.get("/:id", async (c) => {
+// Hono は GET から HEAD を合成しないので、明示的に同じハンドラを登録する。
+// unfurl 系のクローラには HEAD を先に打ってから GET するものがある。
+app.on(["GET", "HEAD"], "/:id", async (c) => {
   const id = c.req.param("id");
   if (!ID.test(id)) return c.notFound();
 

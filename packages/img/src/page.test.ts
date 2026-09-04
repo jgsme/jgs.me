@@ -20,7 +20,7 @@ describe("ogImageURL", () => {
   // 元画像が大きいと unfurl 側が諦める (X は 5MB 上限)。変換を噛ませる。
   it("Image Transformations を経由した URL を返す", () => {
     expect(ogImageURL(ID, "png")).toBe(
-      `https://r2.jgs.me/cdn-cgi/image/width=1200,format=auto/${ID}.png`,
+      `https://r2.jgs.me/cdn-cgi/image/width=1200,format=auto,onerror=redirect/${ID}.png`,
     );
   });
 });
@@ -53,7 +53,7 @@ describe("renderPage", () => {
   it("og:image と寸法を出す", () => {
     const html = renderPage(view());
     expect(html).toContain(
-      `<meta property="og:image" content="https://r2.jgs.me/cdn-cgi/image/width=1200,format=auto/${ID}.png">`,
+      `<meta property="og:image" content="https://r2.jgs.me/cdn-cgi/image/width=1200,format=auto,onerror=redirect/${ID}.png">`,
     );
     expect(html).toContain('<meta property="og:image:width" content="1200">');
     expect(html).toContain('<meta property="og:image:height" content="800">');

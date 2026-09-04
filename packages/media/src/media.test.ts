@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { putMedia } from "./media";
+import { mediaKey, putMedia } from "./media";
 
 type Put = {
   key: string;
@@ -52,5 +52,25 @@ describe("putMedia", () => {
     const { bucket, puts } = fakeBucket();
     expect(await putMedia(bucket, bytes, "application/pdf")).toBeNull();
     expect(puts).toHaveLength(0);
+  });
+});
+
+describe("mediaKey", () => {
+  it("内容の sha256 と Content-Type 由来の拡張子でキーを組む", async () => {
+    expect(await mediaKey(bytes, "image/png")).toBe(`${HELLO_SHA256}.png`);
+  });
+
+  it("未対応の Content-Type なら null", async () => {
+    expect(await mediaKey(bytes, "image/svg+xml")).toBeNull();
+  });
+
+  // putMedia が自前で計算し直すと二重実装になり、片方だけ直る事故が起きる。
+  it("putMedia が置くキーと一致する", async () => {
+    const { bucket, puts } = fakeBucket();
+
+    const key = await putMedia(bucket, bytes, "image/jpeg");
+
+    expect(key).toBe(await mediaKey(bytes, "image/jpeg"));
+    expect(puts.map((p) => p.key)).toEqual([key]);
   });
 });

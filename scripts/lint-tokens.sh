@@ -40,9 +40,7 @@ fi
 # トークン化済みの値。接頭辞を問わず「値の語彙」で弾く。
 # 以前は max-w-[600px] のような完全一致で見ていたので、h-[64px] や w-[600px] のような
 # 同じ値の別表記が素通りしていた (ヘッダー高さの px 表記はまさに今回直した症状)。
-# コメント行は除外する。listImage.ts のように srcset の px 計算をコメントで
-# 説明していると、実際のクラス指定ではないのに語彙だけ一致してしまうため。
-if grep -rnE "${ex[@]}" '\[(600px|200px|300px|4rem|64px)\]' "$target" | grep -vE ':[[:space:]]*//'; then
+if grep -rnE "${ex[@]}" '\[(600px|200px|300px|4rem|64px)\]' "$target"; then
   echo "!! 共有サイズは token を使う (max-w-content / pb-page-end / h-hero / h-header)"
   status=1
 fi

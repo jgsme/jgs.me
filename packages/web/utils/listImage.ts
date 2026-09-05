@@ -25,8 +25,8 @@ function build(
 }
 
 // 一覧 (トップ / クリップ) の大きいカード。
-// コンテナは max-w-[600px] から px-4 の左右 2rem を引いた 568px。
-// 画像は h-[300px] object-contain なので、縦長なら幅は 300px 未満に収まるが、
+// コンテナは max-w-content (600px) から px-4 の左右 2rem を引いた 568px。
+// 画像は h-hero (300px) object-contain なので、縦長なら幅は 300px 未満に収まるが、
 // 横長だとコンテナ幅いっぱいの 568px まで伸びる。最悪ケースに合わせる。
 export function cardImageSources(image: string): Sources {
   return build(

@@ -17,7 +17,7 @@ export function Page() {
   };
 
   return (
-    <div className="h-[calc(100vh-64px)] w-full bg-black text-white relative overflow-hidden">
+    <div className="h-[calc(100vh-var(--spacing-header))] w-full bg-black text-white relative overflow-hidden">
       <div className="absolute top-6 left-6 z-10 pointer-events-none select-none">
         <div className="mt-6 flex flex-col gap-1.5 bg-slate-950/30 p-4 rounded-xl backdrop-blur-sm border border-white/5 w-fit pointer-events-auto">
           <span className="text-xs font-bold text-slate-500 mb-1 uppercase tracking-wider">

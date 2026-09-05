@@ -10,7 +10,7 @@ const Page = () => {
 
   if (!d.ok) {
     return (
-      <main className="max-w-3xl mx-auto px-4 py-8">
+      <main className="max-w-content mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-4">On This Day</h1>
         <p className="text-fg-muted">日付として読めない</p>
         <WarpButton />
@@ -19,7 +19,7 @@ const Page = () => {
   }
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-8">
+    <main className="max-w-content mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-4">{d.label}</h1>
 
       <nav className="flex justify-between text-sm text-fg-muted mb-8">

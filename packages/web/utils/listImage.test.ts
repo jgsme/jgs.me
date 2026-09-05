@@ -7,28 +7,28 @@ const at = (w: number) =>
   `${CDN}/width=${w},format=auto,onerror=redirect/deadbeef.png`;
 
 describe("cardImageSources", () => {
-  it("R2 の画像は 600w を src にする", () => {
-    expect(cardImageSources(R2).src).toBe(at(600));
+  it("R2 の画像は 736w を src にする", () => {
+    expect(cardImageSources(R2).src).toBe(at(736));
   });
 
-  // 横長の画像は h-hero (300px) に合わせると幅がコンテナ上限の 568px まで伸びる。
-  // 600 が 1x、1200 が 2x を賄う。
-  it("R2 の画像は 600w / 1200w を並べる", () => {
+  // 横長の画像は h-hero (300px) に合わせると幅がコンテナ上限の 736px まで伸びる。
+  // 736 が 1x、1472 が 2x を賄う。
+  it("R2 の画像は 736w / 1472w を並べる", () => {
     expect(cardImageSources(R2).srcSet).toBe(
-      `${at(600)} 600w, ${at(1200)} 1200w`,
+      `${at(736)} 736w, ${at(1472)} 1472w`,
     );
   });
 
   it("sizes はコンテナの実幅を表す", () => {
     expect(cardImageSources(R2).sizes).toBe(
-      "(max-width: 600px) calc(100vw - 2rem), 568px",
+      "(max-width: 768px) calc(100vw - 2rem), 736px",
     );
   });
 
   it("Gyazo の画像は src だけ返す", () => {
     const gyazo = "https://gyazo.com/abc123/raw";
     expect(cardImageSources(gyazo)).toEqual({
-      src: "https://gyazo.com/abc123/thumb/600",
+      src: "https://gyazo.com/abc123/thumb/736",
     });
   });
 

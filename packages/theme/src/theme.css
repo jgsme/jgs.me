@@ -64,7 +64,9 @@
      以前は 4rem と 64px で書き分けられていて grep で追えなかった。 */
   --spacing-header: 4rem;
 
-  --container-content: 600px;
+  /* コンテンツ幅。値は語彙の 192 (48rem) と同じだが、5 箇所から参照される決定なので
+     名前で持つ。数値 (max-w-192) で書くと「なぜこの幅か」が消える。 */
+  --container-content: 48rem;
   --spacing-page-end: 200px;
   --spacing-hero: 300px;
 

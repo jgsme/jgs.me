@@ -20,7 +20,7 @@ const Page = () => {
 
   if (!d.ok) {
     return (
-      <main className="max-w-3xl mx-auto px-4 py-8">
+      <main className="max-w-content mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-4">{d.title}</h1>
         <p className="text-fg-muted">Page not found</p>
       </main>
@@ -34,7 +34,7 @@ const Page = () => {
   const canonical = `https://w.jgs.me/pages/${encodeURIComponent(d.title)}`;
 
   return (
-    <main className="max-w-3xl mx-auto px-4 py-8">
+    <main className="max-w-content mx-auto px-4 py-8">
       {/* h-entry はタイトル・日付・本文を全部含む。反応と関連記事はこの外。
           中に入れると mf2 パーサが反応側の要素を記事のプロパティとして読む。 */}
       <article className="h-entry">

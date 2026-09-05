@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "w-img",
   "compatibility_date": "2025-08-28",
-  "main": "src/index.ts",
+  "main": "./+server.ts",
   // i.jgs.me だけで受ける。workers.dev を開けたままにすると、後から
   // i.jgs.me/list* に Cloudflare Access を張っても
   // w-img.<subdomain>.workers.dev/list から素通しで読めてしまう。

@@ -5,15 +5,13 @@ import { sharedImages } from "@jigsaw/db";
 import { putMedia } from "@jigsaw/media";
 import { isAuthorized } from "./auth";
 import { MAX_UPLOAD_BYTES } from "./config";
-import { renderPage, type SharedImageView } from "./page";
 import { isUploadError, parseUpload } from "./upload";
 import { storeUpload, type StoreDeps } from "./store";
 import type { Env } from "./env";
 
+// 拡張が叩く API とヘルスチェック。個別ページ (/:id) は Vike が受けるので
+// ここには無い。Vike を import しないので、この app は単体でテストできる。
 const app = new Hono<{ Bindings: Env }>();
-
-// id は内容の sha256。この形でないものは D1 を引くまでもなく無い。
-const ID = /^[0-9a-f]{64}$/;
 
 app.get("/health", (c) => c.text("ok"));
 
@@ -107,7 +105,7 @@ app.delete("/api/images/:id", async (c) => {
   }
 
   const id = c.req.param("id");
-  if (!ID.test(id)) return c.notFound();
+  if (!/^[0-9a-f]{64}$/.test(id)) return c.notFound();
 
   // R2 のオブジェクトは消さない。キーが内容の sha256 なので、同じ画像が
   // micropub 由来や Gyazo 取り込み由来でも w-media に入っている可能性がある。
@@ -115,35 +113,6 @@ app.delete("/api/images/:id", async (c) => {
   await drizzle(c.env.DB).delete(sharedImages).where(eq(sharedImages.id, id));
 
   return c.body(null, 204);
-});
-
-// Hono は GET から HEAD を合成しないので、明示的に同じハンドラを登録する。
-// unfurl 系のクローラには HEAD を先に打ってから GET するものがある。
-app.on(["GET", "HEAD"], "/:id", async (c) => {
-  const id = c.req.param("id");
-  if (!ID.test(id)) return c.notFound();
-
-  const [row] = await drizzle(c.env.DB)
-    .select()
-    .from(sharedImages)
-    .where(eq(sharedImages.id, id))
-    .limit(1);
-  if (!row) return c.notFound();
-
-  const view: SharedImageView = {
-    id: row.id,
-    ext: row.ext,
-    sourceURL: row.sourceURL,
-    sourceTitle: row.sourceTitle,
-    width: row.width,
-    height: row.height,
-    created: row.created,
-  };
-
-  return c.html(renderPage(view), 200, {
-    // unfurl する側が取りに来る。行は消えうるので immutable にはしない。
-    "Cache-Control": "public, max-age=300",
-  });
 });
 
 export default app;

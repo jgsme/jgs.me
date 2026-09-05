@@ -1,20 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { ogImageURL, renderPage, safeHref, type SharedImageView } from "./page";
+import { ogImageURL, safeHref, sourceLink } from "./page";
 
 const ID = "a".repeat(64);
-
-function view(over: Partial<SharedImageView> = {}): SharedImageView {
-  return {
-    id: ID,
-    ext: "png",
-    sourceURL: "https://example.com/article",
-    sourceTitle: "元記事",
-    width: 1200,
-    height: 800,
-    created: "2026-09-04 12:00:00",
-    ...over,
-  };
-}
 
 describe("ogImageURL", () => {
   // 元画像が大きいと unfurl 側が諦める (X は 5MB 上限)。変換を噛ませる。
@@ -49,58 +36,28 @@ describe("safeHref", () => {
   });
 });
 
-describe("renderPage", () => {
-  it("og:image と寸法を出す", () => {
-    const html = renderPage(view());
-    expect(html).toContain(
-      `<meta property="og:image" content="https://r2.jgs.me/cdn-cgi/image/width=1200,format=auto,onerror=redirect/${ID}.png">`,
-    );
-    expect(html).toContain('<meta property="og:image:width" content="1200">');
-    expect(html).toContain('<meta property="og:image:height" content="800">');
-    expect(html).toContain(
-      '<meta name="twitter:card" content="summary_large_image">',
-    );
+describe("sourceLink", () => {
+  it("題があればそれをラベルにする", () => {
+    expect(sourceLink("https://example.com/x", "元記事")).toEqual({
+      href: "https://example.com/x",
+      label: "元記事",
+    });
   });
 
-  it("寸法が無ければ width/height の meta を出さない", () => {
-    const html = renderPage(view({ width: null, height: null }));
-    expect(html).not.toContain("og:image:width");
-    expect(html).not.toContain("og:image:height");
+  // 題が無いときの "jgs.me" は og:title 用のフォールバックで、出典リンクの
+  // ラベルに使うと example.com へのリンクなのに自サイトを名乗る嘘になる。
+  it("題が無ければホスト名をラベルにする", () => {
+    expect(sourceLink("https://example.com/x", null)).toEqual({
+      href: "https://example.com/x",
+      label: "example.com",
+    });
   });
 
-  it("source_title が無ければ og:title は jgs.me", () => {
-    expect(renderPage(view({ sourceTitle: null }))).toContain(
-      '<meta property="og:title" content="jgs.me">',
-    );
+  it("javascript: の出典はリンクにしない", () => {
+    expect(sourceLink("javascript:alert(1)", "元記事")).toBeNull();
   });
 
-  // 他所のページのタイトルがそのまま属性値に入ると、" で属性を閉じて
-  // 任意のタグを差し込める。
-  it("タイトルの引用符と山括弧をエスケープする", () => {
-    const html = renderPage(
-      view({ sourceTitle: '"><script>alert(1)</script>' }),
-    );
-    expect(html).not.toContain("<script>alert(1)</script>");
-    expect(html).toContain("&quot;&gt;&lt;script&gt;");
-  });
-
-  it("javascript: の出典 URL はリンクにしない", () => {
-    const html = renderPage(view({ sourceURL: "javascript:alert(1)" }));
-    expect(html).not.toContain("javascript:");
-  });
-
-  it("画像の直リンクを出す", () => {
-    expect(renderPage(view())).toContain(`https://r2.jgs.me/${ID}.png`);
-  });
-
-  // sourceTitle 無しのときの "jgs.me" は og:title 用のフォールバックで、
-  // 出典リンクのラベルに使うと example.com へのリンクなのに自サイトを
-  // 名乗る嘘の表示になる。ホスト名を出すのが正しい。
-  it("source_title が無ければ出典リンクのラベルはホスト名になる", () => {
-    const html = renderPage(
-      view({ sourceTitle: null, sourceURL: "https://example.com/x" }),
-    );
-    expect(html).toContain('<a href="https://example.com/x">example.com</a>');
-    expect(html).not.toContain(">jgs.me</a>");
+  it("出典が無ければ null", () => {
+    expect(sourceLink(null, null)).toBeNull();
   });
 });

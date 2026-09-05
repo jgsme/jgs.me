@@ -1,24 +1,4 @@
-import { MEDIA_BASE_URL, SITE_URL } from "./config";
-
-export interface SharedImageView {
-  id: string;
-  ext: string;
-  sourceURL: string | null;
-  sourceTitle: string | null;
-  width: number | null;
-  height: number | null;
-  created: string;
-}
-
-// 属性値に入れる用。& を先に置き換えないと二重エスケープになる。
-function esc(s: string): string {
-  return s
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
+import { MEDIA_BASE_URL } from "./config";
 
 // 出典 URL は他所のページから来る。javascript: や data: を href に出すと
 // クリックで実行される。http/https 以外はリンクにしない。
@@ -41,60 +21,17 @@ export function ogImageURL(id: string, ext: string): string {
   return `${MEDIA_BASE_URL}/cdn-cgi/image/width=1200,format=auto,onerror=redirect/${id}.${ext}`;
 }
 
-export function renderPage(v: SharedImageView): string {
-  const title = v.sourceTitle ?? "jgs.me";
-  const direct = `${MEDIA_BASE_URL}/${v.id}.${v.ext}`;
-  const href = safeHref(v.sourceURL);
+export type SourceLink = { href: string; label: string };
 
-  const dims = [
-    v.width === null
-      ? ""
-      : `<meta property="og:image:width" content="${v.width}">`,
-    v.height === null
-      ? ""
-      : `<meta property="og:image:height" content="${v.height}">`,
-  ]
-    .filter(Boolean)
-    .join("\n");
-
-  // og:title 用の title (sourceTitle ?? "jgs.me") は出典リンクのラベルには
-  // 使えない。sourceTitle が無いのに "jgs.me" と出すと、リンク先は
-  // example.com なのにラベルだけ自サイトを名乗る嘘の表示になる。
-  // href は safeHref を通っているので http/https のみで、new URL() は必ず成功する。
-  const source =
-    href === null
-      ? ""
-      : `<p class="source">from <a href="${esc(href)}">${esc(v.sourceTitle ?? new URL(href).host)}</a></p>`;
-
-  return `<!doctype html>
-<html lang="ja">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(title)}</title>
-<meta property="og:type" content="website">
-<meta property="og:title" content="${esc(title)}">
-<meta property="og:url" content="${SITE_URL}/${v.id}">
-<meta property="og:image" content="${ogImageURL(v.id, v.ext)}">
-${dims}
-<meta name="twitter:card" content="summary_large_image">
-<style>
-body { margin: 0; background: #111; color: #eee; font: 14px system-ui, sans-serif; }
-main { max-width: 1200px; margin: 0 auto; padding: 16px; }
-img { max-width: 100%; height: auto; display: block; }
-a { color: #8ab4f8; }
-.source { margin-top: 12px; color: #ccc; }
-.meta { margin-top: 12px; color: #aaa; font-size: 12px; }
-.meta code { user-select: all; }
-</style>
-</head>
-<body>
-<main>
-<img src="${esc(direct)}" alt="">
-${source}
-<p class="meta">${esc(v.created)}<br><code>${esc(direct)}</code></p>
-</main>
-</body>
-</html>
-`;
+// 出典リンク。ページの題 (sourceTitle ?? "jgs.me") はラベルに使えない。
+// sourceTitle が無いのに "jgs.me" と出すと、リンク先は example.com なのに
+// ラベルだけ自サイトを名乗る嘘の表示になる。ホスト名なら嘘にならない。
+export function sourceLink(
+  sourceURL: string | null,
+  sourceTitle: string | null,
+): SourceLink | null {
+  const href = safeHref(sourceURL);
+  if (href === null) return null;
+  // href は safeHref を通っているので http/https のみ。new URL() は必ず成功する。
+  return { href, label: sourceTitle ?? new URL(href).host };
 }

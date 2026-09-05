@@ -3,19 +3,35 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --persist-to ../../.wrangler/state",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "wrangler dev",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@jigsaw/db": "workspace:*",
     "@jigsaw/media": "workspace:*",
+    "@jigsaw/theme": "workspace:*",
+    "@vikejs/hono": "^0.2.1",
+    "@vitejs/plugin-react": "^5.2.0",
     "drizzle-orm": "catalog:",
-    "hono": "catalog:"
+    "hono": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "vike": "^0.4.262",
+    "vike-react": "^0.6.13"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.54.2",
     "@cloudflare/workers-types": "catalog:",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "postcss": "^8.5.26",
+    "tailwindcss": "^4.3.3",
     "typescript": "catalog:",
+    "vite": "^7.3.6",
     "vitest": "catalog:",
     "wrangler": "catalog:"
   }

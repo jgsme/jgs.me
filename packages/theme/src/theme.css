@@ -52,4 +52,13 @@
   --container-content: 600px;
   --spacing-page-end: 200px;
   --spacing-hero: 300px;
+
+  /* --- 封じるパレット --- */
+  /* gray / zinc / stone は neutral と役割が重複する。混在が今回の散らかりの
+     原因だったので、クラス自体を生成させない。書いても効かないので気づける。
+     neutral はトークンの実体なので残す。slate は on-this-day のグローブ UI が
+     使っているので残す。 */
+  --color-gray-*: initial;
+  --color-zinc-*: initial;
+  --color-stone-*: initial;
 }

@@ -10,6 +10,7 @@
     "dev:ap": "pnpm --filter ap dev",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
+    "lint:tokens": "bash scripts/lint-tokens.sh",
     "undo": "pnpm --filter cli undo",
     "gyazo": "pnpm --filter cli gyazo"
   },

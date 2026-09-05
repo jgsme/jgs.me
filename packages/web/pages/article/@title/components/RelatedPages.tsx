@@ -14,7 +14,7 @@ export const RelatedPages: React.FC<{
           <li key={r.title}>
             <a
               href={`/pages/${encodeURIComponent(r.title)}`}
-              className="relative block aspect-square overflow-hidden rounded bg-[#82221c] transition-shadow hover:shadow-md"
+              className="relative block aspect-square overflow-hidden rounded bg-brand transition-shadow hover:shadow-md"
             >
               {r.image ? (
                 <img

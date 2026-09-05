@@ -111,7 +111,7 @@ function Card({ r }: { r: Reaction }) {
             href={source.url}
             rel="noopener noreferrer nofollow"
             target="_blank"
-            className="block text-xs text-gray-400 break-all mt-1"
+            className="block text-xs text-fg-subtle break-all mt-1"
           >
             {source.url}
           </a>
@@ -124,7 +124,7 @@ function Card({ r }: { r: Reaction }) {
           alt=""
           width={96}
           height={50}
-          className="rounded flex-none object-cover w-24 h-[50px]"
+          className="rounded flex-none object-cover w-24 h-12.5"
           loading="lazy"
         />
       )}
@@ -136,7 +136,7 @@ function Avatar({ icon, size }: { icon: string | null; size: number }) {
   if (!icon) {
     return (
       <span
-        className="inline-block rounded-full bg-gray-300 flex-none"
+        className="inline-block rounded-full bg-border flex-none"
         style={{ width: size, height: size }}
       />
     );

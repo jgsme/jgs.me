@@ -38,7 +38,7 @@ export const ScrapboxNode: React.FC<{ node: NodeType }> = ({ node }) => {
         return (
           <a
             href={`/pages/${encodeURIComponent(node.href)}`}
-            className="text-blue-600 hover:underline"
+            className="text-link hover:underline"
           >
             {node.href}
           </a>
@@ -64,7 +64,7 @@ export const ScrapboxNode: React.FC<{ node: NodeType }> = ({ node }) => {
           href={node.href}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-600 hover:underline"
+          className="text-link hover:underline"
         >
           {node.content || node.href}
         </a>
@@ -75,7 +75,7 @@ export const ScrapboxNode: React.FC<{ node: NodeType }> = ({ node }) => {
       return (
         <a
           href={`/pages/${encodeURIComponent(node.href)}`}
-          className="text-blue-600 hover:underline"
+          className="text-link hover:underline"
         >
           #{node.href}
         </a>
@@ -118,7 +118,7 @@ export const ScrapboxNode: React.FC<{ node: NodeType }> = ({ node }) => {
 
     case "code":
       return (
-        <code className="bg-neutral-100 px-1 py-0.5 rounded text-sm font-mono">
+        <code className="bg-surface-strong px-1 py-0.5 rounded text-sm font-mono">
           {node.text}
         </code>
       );
@@ -128,7 +128,7 @@ export const ScrapboxNode: React.FC<{ node: NodeType }> = ({ node }) => {
         return (
           <a
             href={`/pages/${encodeURIComponent(node.path)}`}
-            className="text-blue-600 hover:underline"
+            className="text-link hover:underline"
           >
             {node.path}
           </a>
@@ -139,7 +139,7 @@ export const ScrapboxNode: React.FC<{ node: NodeType }> = ({ node }) => {
 
     case "quote":
       return (
-        <blockquote className="bg-black/1 border-l-4 border-gray-200 pl-1 py-0.5">
+        <blockquote className="bg-black/1 border-l-4 border-border pl-1 py-0.5">
           {node.nodes.map((n, i) => (
             <ScrapboxNode key={i} node={n} />
           ))}

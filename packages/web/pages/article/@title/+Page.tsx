@@ -22,7 +22,7 @@ const Page = () => {
     return (
       <main className="max-w-3xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-4">{d.title}</h1>
-        <p className="text-neutral-500">Page not found</p>
+        <p className="text-fg-muted">Page not found</p>
       </main>
     );
   }
@@ -42,7 +42,7 @@ const Page = () => {
           <h1 className="p-name text-2xl font-bold">{d.title}</h1>
           <div className="flex gap-2">
             {d.fromDate && (
-              <p className="text-neutral-500 text-sm mt-1">
+              <p className="text-fg-subtle text-sm mt-1">
                 <time className="dt-published" dateTime={d.fromDate!}>
                   {publishedDisplay}
                 </time>

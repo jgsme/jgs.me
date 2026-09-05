@@ -36,7 +36,7 @@ export const ScrapboxBlock: React.FC<{ block: BlockType }> = ({ block }) => {
                 href={card.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex flex-col border border-neutral-300 rounded overflow-hidden hover:bg-neutral-50 sm:flex-row"
+                className="flex flex-col border border-border rounded overflow-hidden hover:bg-surface sm:flex-row"
               >
                 {/* 余白はテキスト側だけに付ける。画像は枠にぴったり付く。
                     狭いときは全幅の 16:9、広いときは正方形のサムネ。
@@ -51,16 +51,16 @@ export const ScrapboxBlock: React.FC<{ block: BlockType }> = ({ block }) => {
                   />
                 )}
                 <span className="flex min-w-0 flex-col justify-center gap-1 p-3 sm:px-4">
-                  <span className="line-clamp-2 font-bold text-blue-600">
+                  <span className="line-clamp-2 font-bold text-link">
                     {card.title ?? card.url}
                   </span>
                   {card.description && (
-                    <span className="line-clamp-2 text-sm text-neutral-600">
+                    <span className="line-clamp-2 text-sm text-fg-muted">
                       {card.description}
                     </span>
                   )}
                   {card.siteName && (
-                    <span className="text-xs text-neutral-400">
+                    <span className="text-xs text-fg-subtle">
                       {card.siteName}
                     </span>
                   )}
@@ -71,7 +71,7 @@ export const ScrapboxBlock: React.FC<{ block: BlockType }> = ({ block }) => {
         }
       }
       return (
-        <pre className="bg-neutral-100 p-4 rounded overflow-x-auto my-4">
+        <pre className="bg-surface-strong p-4 rounded overflow-x-auto my-4">
           <code className="text-sm font-mono">{block.content}</code>
         </pre>
       );
@@ -84,7 +84,7 @@ export const ScrapboxBlock: React.FC<{ block: BlockType }> = ({ block }) => {
             {block.cells.map((row, i) => (
               <tr key={i}>
                 {row.map((cell, j) => (
-                  <td key={j} className="border border-neutral-300 px-2 py-1">
+                  <td key={j} className="border border-border px-2 py-1">
                     {cell.map((node, k) => (
                       <ScrapboxNode key={k} node={node} />
                     ))}

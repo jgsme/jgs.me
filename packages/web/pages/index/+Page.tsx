@@ -10,7 +10,7 @@ const Page = () => {
   const d = useData<Awaited<ReturnType<typeof data>>>();
 
   return (
-    <main className="max-w-content mx-auto px-4 pb-page-end">
+    <main className="max-w-content mx-auto px-4 pb-48">
       <div className="flex gap-4 my-2">
         <div className="grow">
           <SearchForm />
@@ -28,11 +28,11 @@ const Page = () => {
                   <img
                     {...cardImageSources(article.image)}
                     alt={article.title ?? ""}
-                    className="mb-2 rounded mx-auto h-hero object-contain"
+                    className="mb-2 rounded mx-auto h-96 object-contain"
                     loading="lazy"
                   />
                 ) : (
-                  <div className="h-hero text-center mx-auto font-bold flex justify-center items-center bg-black/[0.04] mb-2 rounded text-4xl">
+                  <div className="h-96 text-center mx-auto font-bold flex justify-center items-center bg-black/[0.04] mb-2 rounded text-4xl">
                     {article.title}
                   </div>
                 )}

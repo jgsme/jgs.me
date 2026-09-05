@@ -67,8 +67,6 @@
   /* コンテンツ幅。値は語彙の 192 (48rem) と同じだが、5 箇所から参照される決定なので
      名前で持つ。数値 (max-w-192) で書くと「なぜこの幅か」が消える。 */
   --container-content: 48rem;
-  --spacing-page-end: 200px;
-  --spacing-hero: 300px;
 
   /* --- 封じるパレット --- */
   /* gray / zinc / stone は neutral と役割が重複する。混在が今回の散らかりの

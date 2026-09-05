@@ -11,7 +11,7 @@ describe("cardImageSources", () => {
     expect(cardImageSources(R2).src).toBe(at(736));
   });
 
-  // 横長の画像は h-hero (300px) に合わせると幅がコンテナ上限の 736px まで伸びる。
+  // 横長の画像は h-96 (384px) に合わせると幅がコンテナ上限の 736px まで伸びる。
   // 736 が 1x、1472 が 2x を賄う。
   it("R2 の画像は 736w / 1472w を並べる", () => {
     expect(cardImageSources(R2).srcSet).toBe(

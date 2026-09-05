@@ -7,7 +7,7 @@ const Page = () => {
   const d = useData<Awaited<ReturnType<typeof data>>>();
 
   return (
-    <main className="max-w-content mx-auto px-4 pb-page-end">
+    <main className="max-w-content mx-auto px-4 pb-48">
       <SearchForm />
       {d.payload.query && (
         <p className="mb-4 text-fg-muted">

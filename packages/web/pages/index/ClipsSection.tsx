@@ -8,7 +8,7 @@ type Clip = {
 };
 
 // index の記事一覧に差し込む clip 一覧。
-// 記事カードは h-hero と大きいので、こちらは正方形タイルのグリッドにして
+// 記事カードは h-96 と大きいので、こちらは正方形タイルのグリッドにして
 // 密度で見分けが付くようにする。タイルの見た目は記事詳細の関連記事
 // (RelatedPages) と揃えてある。
 export const ClipsSection = ({ clips }: { clips: Clip[] }) => {

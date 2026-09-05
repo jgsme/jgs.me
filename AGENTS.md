@@ -19,13 +19,14 @@ This document provides context for the `jgs.me` personal website project.
 
 The project is a monorepo containing several packages within the `packages/` directory:
 
-| Package         | Description                                                                                                     |
-| --------------- | --------------------------------------------------------------------------------------------------------------- |
-| `packages/web`  | The main web application serving the UI and API.                                                                |
-| `packages/db`   | Shared Drizzle ORM schema for database access.                                                                  |
-| `packages/og`   | A Worker for dynamic Open Graph image generation.                                                               |
-| `packages/home` | A Worker that serves the home page.                                                                             |
-| `packages/cli`  | A CLI (`pnpm undo <url\|id>`) to undo a mis-clicked Discord button by deleting from article/clip/excluded_page. |
+| Package          | Description                                                                                                     |
+| ---------------- | --------------------------------------------------------------------------------------------------------------- |
+| `packages/web`   | The main web application serving the UI and API.                                                                |
+| `packages/db`    | Shared Drizzle ORM schema for database access.                                                                  |
+| `packages/theme` | Shared Tailwind CSS design tokens (colors, spacing, container widths).                                          |
+| `packages/og`    | A Worker for dynamic Open Graph image generation.                                                               |
+| `packages/home`  | A Worker that serves the home page.                                                                             |
+| `packages/cli`   | A CLI (`pnpm undo <url\|id>`) to undo a mis-clicked Discord button by deleting from article/clip/excluded_page. |
 
 The `web` package is the core, handling most user-facing functionality. It's a server-side rendered (SSR) React application using Vike, with a Hono backend for API routes, all running on Cloudflare Pages.
 

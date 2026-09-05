@@ -37,13 +37,27 @@ if grep -rnE "${ex[@]}" '(color|background|border|fill|stroke)[^:]*:[^;"]*#[0-9a
   status=1
 fi
 
+# spacing スケールを消費する utility の接頭辞。下の 2 つのチェックが共有する。
+size_prefix='m|mt|mb|ml|mr|mx|my|ms|me|p|pt|pb|pl|pr|px|py|ps|pe|gap|gap-x|gap-y|space-x|space-y|scroll-m|scroll-mt|scroll-mb|scroll-ml|scroll-mr|scroll-mx|scroll-my|scroll-p|scroll-pt|scroll-pb|scroll-pl|scroll-pr|scroll-px|scroll-py|w|h|size|min-w|min-h|max-w|max-h|basis|indent|inset|inset-x|inset-y|top|bottom|left|right|start|end'
+
 # 余白と寸法を arbitrary value で書かない。語彙外の値はクラス自体が生成されないが、
 # arbitrary value は生成されてしまうので、こちらは grep で止める。
 # 語彙に無い値が要るなら、その場で [] で書かずに語彙を見直す。
-# 対象は spacing 系の接頭辞だけ。line-height / duration / z-index / transform /
-# font-size / letter-spacing は別の体系なので触らない。
-if grep -rnE "${ex[@]}" '(^|[^a-z-])(m|mt|mb|ml|mr|mx|my|p|pt|pb|pl|pr|px|py|gap|gap-x|gap-y|space-x|space-y|w|h|size|min-w|min-h|max-w|max-h|inset|inset-x|inset-y|top|bottom|left|right)-\[[0-9]' "$target"; then
+# 先頭の -? は負の margin (-mt-[13px]) を拾うため。これが無いと記法ひとつで素通りする。
+# translate は spacing 由来だが 1px 単位の微調整 (-translate-y-[2px]) に使うので対象外。
+# line-height / duration / z-index / font-size / letter-spacing も別の体系なので触らない。
+if grep -rnE "${ex[@]}" "(^|[^a-z0-9])-?(${size_prefix})-\[[0-9]" "$target"; then
   echo "!! 余白と寸法を arbitrary value で書かない。packages/theme の語彙から選ぶ"
+  status=1
+fi
+
+# 語彙外の数値。--spacing: initial で語彙外はクラスが生成されないが、生成されないだけで
+# build も test も通ってしまい、本番で余白だけが消える。書いた時点で落とす。
+# 分数 (w-1/3) と非数値 (h-full / max-w-none) は抽出の時点で外れる。
+vocab='0|1|2|3|4|6|8|12|16|24|32|48|64|96|128|192|256'
+if grep -rnoE "${ex[@]}" "(^|[^a-z0-9-])-?(${size_prefix})-[0-9]+(\.[0-9]+)?([^0-9/.]|$)" "$target" \
+  | grep -vE -- "-(${vocab})([^0-9/.]?)$"; then
+  echo "!! 語彙に無いサイズを書かない。packages/theme の語彙 (0 1 2 3 4 6 8 12 16 24 32 48 64 96 128 192 256) から選ぶ"
   status=1
 fi
 

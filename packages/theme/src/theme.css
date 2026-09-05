@@ -3,9 +3,12 @@
    OKLCH で定義されており、hex を書き写すと色がズレるため。
 
    なぜ `@theme` ではなく `@theme static` か:
-   このパッケージは packages/web 以外の worker からも @import される前提で作っている。
+   今 import しているのは packages/web/pages/index.css だけだが、今後 worker を
+   足すときにこのパッケージから @import する想定で作っている (packages/og と
+   packages/home は今のところ Tailwind も CSS も持たず、色を tsx に直書きしている)。
    使う側が何を書くかに依存せず、全トークンが常に定義されている状態にしたい。
-   増えるのは CSS 変数 16 個ぶんでサイズは無視できる。 */
+   増えるのは色とサイズの語彙ぶんの CSS 変数だけで、ファイルサイズへの影響は
+   無視できる。 */
 @theme static {
   /* --- ブランド --- */
   --color-brand: #82221c;
@@ -64,11 +67,24 @@
   --spacing-256: 64rem;
 
   /* ヘッダーの高さ。Layout の h/w と、全画面ページの calc が参照する。
-     以前は 4rem と 64px で書き分けられていて grep で追えなかった。 */
+     以前は 4rem と 64px で書き分けられていて grep で追えなかった。
+     spacing 名前空間に居るので pt-header / mt-header / gap-header も生成されるが、
+     これは calc の参照を一本化するための別名であって、そういう使い方はしない。 */
   --spacing-header: 4rem;
 
-  /* コンテンツ幅。値は語彙の 192 (48rem) と同じだが、5 箇所から参照される決定なので
-     名前で持つ。数値 (max-w-192) で書くと「なぜこの幅か」が消える。 */
+  /* コンテナ幅も語彙を 1 つに絞る。これが無いと max-w-3xl (48rem) が今も書けてしまい、
+     幅の決定を --container-content に集約した意味が無くなる。
+     --container-content の「前」に置くこと。後ろに置くと --container-content 自身も
+     消えて max-w-content が生成されなくなる。 */
+  --container-*: initial;
+
+  /* コンテンツ幅。値は語彙の 192 (48rem) と同じだが、複数箇所から参照される決定なので
+     名前で持つ。数値 (max-w-192) で書くと「なぜこの幅か」が消える。
+     この値を動かすと CSS だけが変わり、packages/web/utils/listImage.ts と
+     packages/web/utils/bodyImage.ts の sizes 文字列 (768 / 736) は自動では追随しない。
+     変えたらこの 2 ファイルの数値も直すこと。
+     値は --spacing-192 とも同値 (48rem) なので max-w-192 も同じ幅を指すが、
+     これは幅の意味付けのための別名であって、そういう使い方はしない。 */
   --container-content: 48rem;
 
   /* --- 封じるパレット --- */

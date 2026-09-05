@@ -37,17 +37,13 @@ if grep -rnE "${ex[@]}" '(color|background|border|fill|stroke)[^:]*:[^;"]*#[0-9a
   status=1
 fi
 
-# トークン化済みの値。接頭辞を問わず「値の語彙」で弾く。
-# 以前は max-w-[600px] のような完全一致で見ていたので、h-[64px] や w-[600px] のような
-# 同じ値の別表記が素通りしていた (ヘッダー高さの px 表記はまさに今回直した症状)。
-if grep -rnE "${ex[@]}" '\[(600px|200px|300px|4rem|64px)\]' "$target"; then
-  echo "!! 共有サイズは token を使う (max-w-content / pb-page-end / h-hero / h-header)"
-  status=1
-fi
-
-# ヘッダー高さの直書き。calc の中に混ぜても弾く。
-if grep -rnE "${ex[@]}" 'calc\(100[sd]?vh *- *(4rem|64px)\)' "$target"; then
-  echo "!! ヘッダー高さは var(--spacing-header) を参照する"
+# 余白と寸法を arbitrary value で書かない。語彙外の値はクラス自体が生成されないが、
+# arbitrary value は生成されてしまうので、こちらは grep で止める。
+# 語彙に無い値が要るなら、その場で [] で書かずに語彙を見直す。
+# 対象は spacing 系の接頭辞だけ。line-height / duration / z-index / transform /
+# font-size / letter-spacing は別の体系なので触らない。
+if grep -rnE "${ex[@]}" '(^|[^a-z-])(m|mt|mb|ml|mr|mx|my|p|pt|pb|pl|pr|px|py|gap|gap-x|gap-y|space-x|space-y|w|h|size|min-w|min-h|max-w|max-h|inset|inset-x|inset-y|top|bottom|left|right)-\[[0-9]' "$target"; then
+  echo "!! 余白と寸法を arbitrary value で書かない。packages/theme の語彙から選ぶ"
   status=1
 fi
 

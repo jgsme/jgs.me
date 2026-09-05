@@ -1,6 +1,6 @@
 import { thumbURL } from "./thumbURL";
 
-// 本文の横幅。max-w-3xl (768px) から px-4 の左右 2rem を引いた値。
+// 本文の横幅。max-w-content (768px) から px-4 の左右 2rem を引いた値。
 const BODY_WIDTH = 736;
 
 // 候補の幅。420 は 1x のスマホ、840 は 2x のスマホと 1x の PC、

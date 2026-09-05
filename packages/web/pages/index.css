@@ -1,1 +1,10 @@
 @import "tailwindcss";
+@import "@jigsaw/theme/theme.css";
+
+/* 本文色と地の色。以前はブラウザ既定に暗黙に乗っていた。 */
+@layer base {
+  body {
+    color: var(--color-fg);
+    background: var(--color-bg);
+  }
+}

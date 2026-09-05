@@ -11,6 +11,7 @@
   "license": "MIT",
   "dependencies": {
     "@jigsaw/db": "workspace:*",
+    "@jigsaw/theme": "workspace:*",
     "@paralleldrive/cuid2": "^3.3.0",
     "@progfay/scrapbox-parser": "catalog:",
     "@react-three/drei": "^10.7.8",

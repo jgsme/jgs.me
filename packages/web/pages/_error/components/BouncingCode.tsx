@@ -117,7 +117,7 @@ export const BouncingCode = () => {
   return (
     <div
       ref={puckRef}
-      className="pointer-events-none absolute top-0 left-0 z-[1] font-mono text-[clamp(3.5rem,18vw,7.5rem)] leading-none font-medium tracking-[-0.05em] text-[#efefef] opacity-60 transition-opacity duration-200 will-change-transform"
+      className="pointer-events-none absolute top-0 left-0 z-[1] font-mono text-[clamp(3.5rem,18vw,7.5rem)] leading-none font-medium tracking-[-0.05em] text-paper opacity-60 transition-opacity duration-200 will-change-transform"
       style={{ transform: `translate(${START_X}px, ${START_Y}px)` }}
     >
       404

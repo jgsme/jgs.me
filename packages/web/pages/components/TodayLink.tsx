@@ -16,7 +16,7 @@ export const TodayLink = () => {
     <div className="flex justify-center w-28 h-full">
       <a
         href={today ? `/on-this-day/${today}` : "/on-this-day"}
-        className="group relative inline-flex items-center justify-center px-8 font-bold text-white bg-neutral-900 rounded-full overflow-hidden hover:scale-105 active:scale-95 w-full h-full duration-700"
+        className="group relative inline-flex items-center justify-center px-8 font-bold text-white bg-ink rounded-full overflow-hidden hover:scale-105 active:scale-95 w-full h-full duration-700"
       >
         <div className="absolute inset-0 w-full h-full bg-[url('/warp.gif')] bg-cover opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <span

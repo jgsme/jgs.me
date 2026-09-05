@@ -200,11 +200,16 @@ importers:
         specifier: 'catalog:'
         version: 4.127.1(@cloudflare/workers-types@4.20260702.1)
 
+  packages/theme: {}
+
   packages/web:
     dependencies:
       '@jigsaw/db':
         specifier: workspace:*
         version: link:../db
+      '@jigsaw/theme':
+        specifier: workspace:*
+        version: link:../theme
       '@paralleldrive/cuid2':
         specifier: ^3.3.0
         version: 3.3.0

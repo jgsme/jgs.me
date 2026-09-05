@@ -206,3 +206,28 @@ export const gyazoMedia = sqliteTable("gyazo_media", {
     .notNull()
     .default(sql`(CURRENT_TIMESTAMP)`),
 });
+
+// Chrome 拡張 (clipper) から投稿した画像。他所のページで見つけた画像を
+// w-media に取り込み、i.jgs.me/<id> を OG 付きページとして配る。
+// id は内容の sha256 で、R2 のキー (<id>.<ext>) と一致する。同じ画像を
+// 二度投稿しても 1 行にまとまる。
+//
+// micropub の media endpoint 由来の画像と同じバケットに同居するが、
+// この表に載るのは「出典を持つ、シェアのために置いた画像」だけ。
+export const sharedImages = sqliteTable("shared_image", {
+  id: text("id").primaryKey(),
+  ext: text("ext").notNull(),
+  // 出典ページの URL (拡張の tab.url)。取れないことがあるので nullable。
+  sourceURL: text("source_url"),
+  // 元画像の URL (拡張の info.srcUrl)。data: は巨大になるので保存しない。
+  srcURL: text("src_url"),
+  // 出典ページのタイトル。og:title に出す。
+  sourceTitle: text("source_title"),
+  // og:image:width / height に出す。unfurl のレイアウトが安定する。
+  width: integer("width", { mode: "number" }),
+  height: integer("height", { mode: "number" }),
+  bytes: integer("bytes", { mode: "number" }).notNull(),
+  created: text("created")
+    .notNull()
+    .default(sql`(CURRENT_TIMESTAMP)`),
+});

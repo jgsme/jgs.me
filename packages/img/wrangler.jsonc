@@ -1,0 +1,35 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "w-img",
+  "compatibility_date": "2025-08-28",
+  "main": "./+server.ts",
+  // i.jgs.me だけで受ける。workers.dev を開けたままにすると、後から
+  // i.jgs.me/list* に Cloudflare Access を張っても
+  // w-img.<subdomain>.workers.dev/list から素通しで読めてしまう。
+  // w-ap が同じ理由で false にしている。
+  "workers_dev": false,
+  "routes": [{ "pattern": "i.jgs.me", "custom_domain": true }],
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "invocation_logs": true,
+      "persist": true,
+    },
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "w",
+      "database_id": "bd809baf-e2e6-41e2-9561-f77981b43ba5",
+      "migrations_dir": "../db/drizzle",
+    },
+  ],
+  "r2_buckets": [
+    {
+      // 画像。r2.jgs.me で公開している。micropub / Gyazo / Webmention と同居する。
+      "binding": "MEDIA",
+      "bucket_name": "w-media",
+    },
+  ],
+}

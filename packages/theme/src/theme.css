@@ -3,18 +3,9 @@
    OKLCH で定義されており、hex を書き写すと色がズレるため。
 
    なぜ `@theme` ではなく `@theme static` か:
-   Tailwind v4 は `@theme` ブロックのトークンのうち、実際にユーティリティクラスとして
-   「使われている」と検出できたものだけを生成 CSS に出力し、それ以外は tree-shake で
-   消す。ところがこのリポジトリでは
-     min-h-[calc(100svh-var(--spacing-header))]
-     h-[calc(100vh-var(--spacing-header))]
-   のように arbitrary value の中で var() を参照する書き方をする (Task 5, 6)。この
-   var() は Tailwind から見るとただの文字列で「トークンの使用」として検出されない。
-   その結果 tree-shake で --spacing-header 自体が消え、calc が未定義変数を参照して
-   レイアウトが壊れる。
-   加えてこのパッケージは将来 packages/img (別の worker) からも @import される前提で
-   作っている。使う側が誰か・何を使うかに依存せず、全トークンが常に定義されている
-   べき。static にして増える CSS 変数は 16 個ぶんでサイズは無視できる。 */
+   このパッケージは packages/web 以外の worker からも @import される前提で作っている。
+   使う側が何を書くかに依存せず、全トークンが常に定義されている状態にしたい。
+   増えるのは CSS 変数 16 個ぶんでサイズは無視できる。 */
 @theme static {
   /* --- ブランド --- */
   --color-brand: #82221c;
@@ -37,6 +28,8 @@
   /* 無印が薄く -strong が濃い。surface と border で段階の向きを揃えている。 */
   --color-surface: var(--color-neutral-50);
   --color-surface-strong: var(--color-neutral-100);
+  /* 引用の左罫と検索結果の区切りに使う、border より 1 段薄い線。 */
+  --color-border-subtle: var(--color-neutral-200);
   --color-border: var(--color-neutral-300);
   --color-border-strong: var(--color-neutral-500);
 

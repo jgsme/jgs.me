@@ -17,7 +17,7 @@ const Page = () => {
 
       <ul>
         {d.payload.results.map((result, i) => (
-          <li key={i} className="my-6 pb-6 border-b border-border">
+          <li key={i} className="my-6 pb-6 border-b border-border-subtle">
             <a
               href={`/pages/${encodeURIComponent(result.title)}`}
               className="block hover:opacity-70"

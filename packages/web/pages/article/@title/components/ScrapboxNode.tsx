@@ -139,7 +139,7 @@ export const ScrapboxNode: React.FC<{ node: NodeType }> = ({ node }) => {
 
     case "quote":
       return (
-        <blockquote className="bg-black/1 border-l-4 border-border pl-1 py-0.5">
+        <blockquote className="bg-black/1 border-l-4 border-border-subtle pl-1 py-0.5">
           {node.nodes.map((n, i) => (
             <ScrapboxNode key={i} node={n} />
           ))}

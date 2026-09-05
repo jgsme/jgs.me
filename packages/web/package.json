@@ -23,8 +23,8 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "three": "^0.185.1",
-    "vike": "^0.4.262",
-    "vike-react": "^0.6.13",
+    "vike": "^0.4.266",
+    "vike-react": "^0.6.26",
     "vite-tsconfig-paths": "^5.1.4"
   },
   "devDependencies": {

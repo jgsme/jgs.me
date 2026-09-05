@@ -18,11 +18,11 @@ export const SearchForm: React.FC = () => {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="検索..."
-          className="flex-1 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-gray-500"
+          className="flex-1 px-4 py-2 border border-border rounded focus:outline-none focus:border-border-strong"
         />
         <button
           type="submit"
-          className="px-4 py-2 rounded border border-solid border-gray-500 hover:bg-gray-100"
+          className="px-4 py-2 rounded border border-solid border-border-strong hover:bg-surface-strong"
         >
           検索
         </button>

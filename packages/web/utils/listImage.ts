@@ -25,14 +25,14 @@ function build(
 }
 
 // 一覧 (トップ / クリップ) の大きいカード。
-// コンテナは max-w-[600px] から px-4 の左右 2rem を引いた 568px。
-// 画像は h-[300px] object-contain なので、縦長なら幅は 300px 未満に収まるが、
-// 横長だとコンテナ幅いっぱいの 568px まで伸びる。最悪ケースに合わせる。
+// コンテナは max-w-content (768px) から px-4 の左右 2rem を引いた 736px。
+// 画像は h-96 (384px) object-contain なので、縦長なら幅は 384px 未満に収まるが、
+// 横長だとコンテナ幅いっぱいの 736px まで伸びる。最悪ケースに合わせる。
 export function cardImageSources(image: string): Sources {
   return build(
     image,
-    [600, 1200],
-    "(max-width: 600px) calc(100vw - 2rem), 568px",
+    [736, 1472],
+    "(max-width: 768px) calc(100vw - 2rem), 736px",
   );
 }
 

@@ -19,13 +19,14 @@ This document provides context for the `jgs.me` personal website project.
 
 The project is a monorepo containing several packages within the `packages/` directory:
 
-| Package         | Description                                                                                                     |
-| --------------- | --------------------------------------------------------------------------------------------------------------- |
-| `packages/web`  | The main web application serving the UI and API.                                                                |
-| `packages/db`   | Shared Drizzle ORM schema for database access.                                                                  |
-| `packages/og`   | A Worker for dynamic Open Graph image generation.                                                               |
-| `packages/home` | A Worker that serves the home page.                                                                             |
-| `packages/cli`  | A CLI (`pnpm undo <url\|id>`) to undo a mis-clicked Discord button by deleting from article/clip/excluded_page. |
+| Package          | Description                                                                                                     |
+| ---------------- | --------------------------------------------------------------------------------------------------------------- |
+| `packages/web`   | The main web application serving the UI and API.                                                                |
+| `packages/db`    | Shared Drizzle ORM schema for database access.                                                                  |
+| `packages/theme` | Shared Tailwind CSS design tokens (colors, spacing, container widths).                                          |
+| `packages/og`    | A Worker for dynamic Open Graph image generation.                                                               |
+| `packages/home`  | A Worker that serves the home page.                                                                             |
+| `packages/cli`   | A CLI (`pnpm undo <url\|id>`) to undo a mis-clicked Discord button by deleting from article/clip/excluded_page. |
 
 The `web` package is the core, handling most user-facing functionality. It's a server-side rendered (SSR) React application using Vike, with a Hono backend for API routes, all running on Cloudflare Pages.
 
@@ -87,41 +88,39 @@ pnpm undo <url|id> [<url|id>...]
 - **Code Style:** Use Prettier for code formatting. Always run `pnpm format` before creating a commit.
 - **API Routes:** Backend API logic for the `web` app is located in `packages/web/server/routes/`. New API endpoints should be added here.
 - **UI Pages:** Frontend pages are located in `packages/web/pages/`. The application uses Vike's file-based routing.
-- **Commit Tracing:** Ensure traceability by executing the `jj describe` command after each step.
+- **Commit Tracing:** Commit at each meaningful step so the history stays traceable.
 - **Approval Flow:** NEVER start implementation before the user explicitly approves the proposed plan in `docs/`.
 
-## Version Control Workflow (Jujutsu)
+## Version Control Workflow
 
 **IMPORTANT:** Do NOT push directly to the `main` branch. Always use Pull Requests.
 
-### Initial Setup
-
-Configure `jj` to automatically track bookmarks from the remote to simplify the push workflow.
-
-```bash
-jj config set --user remotes.origin.auto-track-bookmarks '"glob:*"'
-```
-
 ### Development Cycle
 
-1.  **Create a Bookmark:** Start a new bookmark for your task.
+1.  **Create a Branch:** Start from an up-to-date `main`.
     ```bash
-    jj new main -m "feat: description of changes"
-    jj bookmark set feat/your-feature-name
+    git fetch origin
+    git switch -c feat/your-feature-name origin/main
+    ```
+    For work that needs isolation from the current workspace, use a worktree:
+    ```bash
+    git worktree add .claude/worktrees/<name> -b feat/your-feature-name origin/main
     ```
 2.  **Develop & Format:** Make changes, then format the code before committing.
     ```bash
     pnpm format
-    jj describe -m "feat: updated description"
+    git commit -m "feat: description of changes"
     ```
-3.  **Push Bookmark:** **Wait for user approval.** Once approved, push your specific bookmark to the remote to create/update the Pull Request.
+3.  **Push:** **Wait for user approval.** Once approved, push the branch.
     ```bash
-    jj git push --bookmark feat/your-feature-name
+    git push -u origin feat/your-feature-name
     ```
-4.  **Create Pull Request:** Open a Pull Request on GitHub targeting `main`.
+4.  **Create Pull Request:** Open a Pull Request targeting `main` with the `gh` CLI.
+    ```bash
+    gh pr create --base main
+    ```
 5.  **Merge:** After approval, merge the PR on GitHub.
-6.  **Update Local:** Fetch changes and start a new task.
+6.  **Update Local:** Return to `main` and pick up the merged changes.
     ```bash
-    jj git fetch
-    jj new main
+    git switch main && git pull
     ```

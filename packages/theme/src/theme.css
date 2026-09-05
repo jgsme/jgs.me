@@ -1,0 +1,98 @@
+/* jgs.me の design token。worker をまたいで共有するので独立したパッケージにある。
+   値をハードコードせず Tailwind のデフォルト変数を参照するのは、v4 のパレットが
+   OKLCH で定義されており、hex を書き写すと色がズレるため。
+
+   なぜ `@theme` ではなく `@theme static` か:
+   今 import しているのは packages/web/pages/index.css だけだが、今後 worker を
+   足すときにこのパッケージから @import する想定で作っている (packages/og と
+   packages/home は今のところ Tailwind も CSS も持たず、色を tsx に直書きしている)。
+   使う側が何を書くかに依存せず、全トークンが常に定義されている状態にしたい。
+   増えるのは色とサイズの語彙ぶんの CSS 変数だけで、ファイルサイズへの影響は
+   無視できる。 */
+@theme static {
+  /* --- ブランド --- */
+  --color-brand: #82221c;
+  --color-paper: #efefef;
+
+  /* --- 文字と地 --- */
+  /* 現状のブラウザ既定を明示しているだけで、値は変えていない。指定しないままだと
+     「本文は黒」という決定がどこにも記録されず、grep しても出てこない。 */
+  --color-fg: black;
+  --color-bg: white;
+
+  /* muted は読ませる文 (説明・抜粋・エラー・空状態・見出し)、
+     subtle は添え物 (日付・ドメイン名・URL)。この 2 段階で足りている。 */
+  --color-fg-muted: var(--color-neutral-600);
+  --color-fg-subtle: var(--color-neutral-400);
+
+  --color-link: var(--color-blue-600);
+
+  /* --- 面と境界 --- */
+  /* 無印が薄く -strong が濃い。surface と border で段階の向きを揃えている。 */
+  --color-surface: var(--color-neutral-50);
+  --color-surface-strong: var(--color-neutral-100);
+  /* 引用の左罫と検索結果の区切りに使う、border より 1 段薄い線。 */
+  --color-border-subtle: var(--color-neutral-200);
+  --color-border: var(--color-neutral-300);
+  --color-border-strong: var(--color-neutral-500);
+
+  /* 黒く塗った面 (ピルボタン)。文字の色である --color-fg とは役割が違う。
+     この上に載る文字は text-white のまま。 */
+  --color-ink: var(--color-neutral-900);
+
+  /* --- サイズ --- */
+  /* 使ってよいサイズの語彙。刻みは帯ごとに ×1.5 → ×1.33 で、2 倍になるまでに
+     中間点を 1 つ置く形:
+       0 1 2 3 4 / 4 6 8 / 8 12 16 / 16 24 32 / 32 48 64 / 64 96 128 / 128 192 256 */
+  /* 動的スケールを止める。これが無いと h-13 も h-75 も書けてしまい、
+     語彙を定義した意味が無くなる。語彙外を書くとクラス自体が生成されないので、
+     書いた時点で見た目で気づける。 */
+  --spacing: initial;
+  --spacing-0: 0px;
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+  --spacing-24: 6rem;
+  --spacing-32: 8rem;
+  --spacing-48: 12rem;
+  --spacing-64: 16rem;
+  --spacing-96: 24rem;
+  --spacing-128: 32rem;
+  --spacing-192: 48rem;
+  --spacing-256: 64rem;
+
+  /* ヘッダーの高さ。Layout の h/w と、全画面ページの calc が参照する。
+     以前は 4rem と 64px で書き分けられていて grep で追えなかった。
+     spacing 名前空間に居るので pt-header / mt-header / gap-header も生成されるが、
+     これは calc の参照を一本化するための別名であって、そういう使い方はしない。 */
+  --spacing-header: 4rem;
+
+  /* コンテナ幅も語彙を 1 つに絞る。これが無いと max-w-3xl (48rem) が今も書けてしまい、
+     幅の決定を --container-content に集約した意味が無くなる。
+     --container-content の「前」に置くこと。後ろに置くと --container-content 自身も
+     消えて max-w-content が生成されなくなる。 */
+  --container-*: initial;
+
+  /* コンテンツ幅。値は語彙の 192 (48rem) と同じだが、複数箇所から参照される決定なので
+     名前で持つ。数値 (max-w-192) で書くと「なぜこの幅か」が消える。
+     この値を動かすと CSS だけが変わり、packages/web/utils/listImage.ts と
+     packages/web/utils/bodyImage.ts の sizes 文字列 (768 / 736) は自動では追随しない。
+     変えたらこの 2 ファイルの数値も直すこと。
+     値は --spacing-192 とも同値 (48rem) なので max-w-192 も同じ幅を指すが、
+     これは幅の意味付けのための別名であって、そういう使い方はしない。 */
+  --container-content: 48rem;
+
+  /* --- 封じるパレット --- */
+  /* gray / zinc / stone は neutral と役割が重複する。混在が今回の散らかりの
+     原因だったので、クラス自体を生成させない。書いても効かないので気づける。
+     neutral はトークンの実体なので残す。slate は on-this-day のグローブ UI が
+     使っているので残す。 */
+  --color-gray-*: initial;
+  --color-zinc-*: initial;
+  --color-stone-*: initial;
+}

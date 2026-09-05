@@ -18,6 +18,9 @@ pnpm gen          # Generate Drizzle migrations (drizzle-kit generate)
 
 # CLI Tools
 pnpm undo <url|id> [<url|id>...]  # 登録を取り消す（article/clip/excluded_page から削除）
+
+# Lint
+pnpm lint:tokens  # design token から外れた書き方を検出する
 ```
 
 ## Architecture
@@ -28,6 +31,7 @@ pnpm ワークスペースによるモノレポ構成。
 
 - `packages/db` - 共有 Drizzle スキーマ（`@jigsaw/db` としてインポート）
 - `packages/web` - メインのWebアプリ（Vike + React + Hono、Cloudflare Workers / Universal Deploy）
+- `packages/theme` - design token（Tailwind v4 の `@theme`。`packages/web` が import する）
 - `packages/og` - OG画像生成ワーカー（Satori + Resvg）
 - `packages/home` - ホームページ用ワーカー
 - `packages/cli` - undo CLI（`pnpm undo <url|id>` で登録を取り消し、article/clip/excluded_page から削除）

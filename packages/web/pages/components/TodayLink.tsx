@@ -13,7 +13,7 @@ export const TodayLink = () => {
   }, []);
 
   return (
-    <div className="flex justify-center w-28 h-full">
+    <div className="flex justify-center w-32 h-full">
       <a
         href={today ? `/on-this-day/${today}` : "/on-this-day"}
         className="group relative inline-flex items-center justify-center px-8 font-bold text-white bg-ink rounded-full overflow-hidden hover:scale-105 active:scale-95 w-full h-full duration-700"

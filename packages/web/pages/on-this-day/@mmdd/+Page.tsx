@@ -36,7 +36,7 @@ const Page = () => {
       )}
 
       {d.groups.map((group) => (
-        <section key={group.year} className="mb-10">
+        <section key={group.year} className="mb-12">
           <h2 className="text-lg font-bold text-fg-muted mb-3">{group.year}</h2>
           <ul className="space-y-2">
             {group.articles.map((article) => (

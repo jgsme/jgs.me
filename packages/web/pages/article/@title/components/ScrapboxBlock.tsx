@@ -46,7 +46,7 @@ export const ScrapboxBlock: React.FC<{ block: BlockType }> = ({ block }) => {
                   <img
                     src={card.image}
                     alt=""
-                    className="w-full aspect-video shrink-0 object-cover object-center sm:w-40 sm:aspect-square sm:self-center"
+                    className="w-full aspect-video shrink-0 object-cover object-center sm:w-48 sm:aspect-square sm:self-center"
                     loading="lazy"
                   />
                 )}

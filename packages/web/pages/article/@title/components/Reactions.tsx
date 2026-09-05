@@ -123,8 +123,8 @@ function Card({ r }: { r: Reaction }) {
           src={thumbURL(r.sourceImage, 192)}
           alt=""
           width={96}
-          height={50}
-          className="rounded flex-none object-cover w-24 h-12.5"
+          height={48}
+          className="rounded flex-none object-cover w-24 h-12"
           loading="lazy"
         />
       )}

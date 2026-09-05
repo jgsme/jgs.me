@@ -38,7 +38,7 @@ export const ClipsSection = ({ clips }: { clips: Clip[] }) => {
                   className="absolute left-1/2 top-1/2 w-1/3 -translate-x-1/2 -translate-y-1/2 opacity-25"
                 />
               )}
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/55 to-transparent px-2 pt-10 pb-2">
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/55 to-transparent px-2 pt-12 pb-2">
                 <div className="line-clamp-3 text-sm font-bold leading-snug text-white break-words">
                   {clip.title}
                 </div>

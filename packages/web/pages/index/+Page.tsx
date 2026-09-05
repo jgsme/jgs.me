@@ -50,7 +50,7 @@ const Page = () => {
         ))}
       </ul>
 
-      <div className="flex justify-between mt-20">
+      <div className="flex justify-between mt-24">
         {d.payload.page === 1 && <div />}
         {d.payload.page === 2 && (
           <a href="/" className="block underline">

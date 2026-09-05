@@ -8,8 +8,8 @@ const Page = () => {
   if (is404) return <NotFound />;
 
   return (
-    <main className="max-w-[600px] mx-auto px-4 pt-8 pb-[200px]">
-      <h1 className="font-bold text-[1.5rem] mb-4">ERROR</h1>
+    <main className="max-w-content mx-auto px-4 pt-8 pb-page-end">
+      <h1 className="font-bold text-2xl mb-4">ERROR</h1>
       <a href="/" className="underline">
         TOP
       </a>

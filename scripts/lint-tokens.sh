@@ -32,7 +32,9 @@ if grep -rnE "${ex[@]}" '(bg|text|border|ring|divide|fill|stroke|outline|shadow|
 fi
 
 # インライン style の生 hex。JSX の style={{ color: "#82221c" }} を拾う。
-if grep -rnE "${ex[@]}" '(color|background|border|fill|stroke)[^:]*:[^;"]*#[0-9a-fA-F]{3,8}' "$target" --include='*.tsx' --include='*.ts' --include='*.css'; then
+# 値の側で除外するのは ; だけ。以前は " も除外していて、Prettier が揃える
+# ダブルクォートの JSX (まさに拾いたい形) だけがすり抜けていた。
+if grep -rnE "${ex[@]}" '(color|background|border|fill|stroke)[^:]*:[^;]*#[0-9a-fA-F]{3,8}' "$target" --include='*.tsx' --include='*.ts' --include='*.css'; then
   echo "!! style や CSS に色を直書きしない。packages/theme にトークンを足す"
   status=1
 fi

@@ -38,6 +38,28 @@
   --color-ink: var(--color-neutral-900);
 
   /* --- サイズ --- */
+  /* 使ってよいサイズの語彙。Tailwind の動的スケール (--spacing の任意倍) は
+     Task 6 で止める。刻みは帯ごとに ×1.5 → ×1.33 で、2 倍になるまでに
+     中間点を 1 つ置く形:
+       0 1 2 3 4 / 4 6 8 / 8 12 16 / 16 24 32 / 32 48 64 / 64 96 128 / 128 192 256 */
+  --spacing-0: 0px;
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+  --spacing-24: 6rem;
+  --spacing-32: 8rem;
+  --spacing-48: 12rem;
+  --spacing-64: 16rem;
+  --spacing-96: 24rem;
+  --spacing-128: 32rem;
+  --spacing-192: 48rem;
+  --spacing-256: 64rem;
+
   /* ヘッダーの高さ。Layout の h/w と、全画面ページの calc が参照する。
      以前は 4rem と 64px で書き分けられていて grep で追えなかった。 */
   --spacing-header: 4rem;

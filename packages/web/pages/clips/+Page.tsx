@@ -7,7 +7,7 @@ const Page = () => {
   const d = useData<Awaited<ReturnType<typeof data>>>();
 
   return (
-    <main className="max-w-[600px] mx-auto px-4 pb-[200px]">
+    <main className="max-w-content mx-auto px-4 pb-page-end">
       <ul>
         {d.payload.clips.map((clip) => (
           <li key={clip.id} className="my-8">
@@ -16,21 +16,21 @@ const Page = () => {
                 <img
                   {...cardImageSources(clip.image)}
                   alt={clip.title}
-                  className="mb-2 rounded mx-auto h-[300px] object-contain"
+                  className="mb-2 rounded mx-auto h-hero object-contain"
                   loading="lazy"
                 />
               ) : (
-                <div className="h-[300px] text-center mx-auto font-bold flex justify-center items-center bg-black/[0.04] mb-2 rounded text-[2rem]">
+                <div className="h-hero text-center mx-auto font-bold flex justify-center items-center bg-black/[0.04] mb-2 rounded text-4xl">
                   {clip.title}
                 </div>
               )}
-              <div className="font-bold text-[1.2rem]">{clip.title}</div>
+              <div className="font-bold text-xl">{clip.title}</div>
             </a>
           </li>
         ))}
       </ul>
 
-      <div className="flex justify-between mt-[80px]">
+      <div className="flex justify-between mt-20">
         {d.payload.page === 1 && <div />}
         {d.payload.page === 2 && (
           <a href="/clips" className="block underline">

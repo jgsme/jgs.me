@@ -8,7 +8,7 @@ type Clip = {
 };
 
 // index の記事一覧に差し込む clip 一覧。
-// 記事カードは h-[300px] と大きいので、こちらは正方形タイルのグリッドにして
+// 記事カードは h-hero と大きいので、こちらは正方形タイルのグリッドにして
 // 密度で見分けが付くようにする。タイルの見た目は記事詳細の関連記事
 // (RelatedPages) と揃えてある。
 export const ClipsSection = ({ clips }: { clips: Clip[] }) => {
@@ -22,7 +22,7 @@ export const ClipsSection = ({ clips }: { clips: Clip[] }) => {
           <li key={clip.id}>
             <a
               href={`/pages/${encodeURIComponent(clip.title)}`}
-              className="relative block aspect-square overflow-hidden rounded bg-[#82221c] transition-shadow hover:shadow-md"
+              className="relative block aspect-square overflow-hidden rounded bg-brand transition-shadow hover:shadow-md"
             >
               {clip.image ? (
                 <img
@@ -47,7 +47,7 @@ export const ClipsSection = ({ clips }: { clips: Clip[] }) => {
           </li>
         ))}
       </ul>
-      <a href="/clips" className="block mt-4 underline text-[0.9rem]">
+      <a href="/clips" className="block mt-4 underline text-sm">
         クリップをもっと見る
       </a>
     </section>

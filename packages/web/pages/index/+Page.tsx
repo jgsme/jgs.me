@@ -10,7 +10,7 @@ const Page = () => {
   const d = useData<Awaited<ReturnType<typeof data>>>();
 
   return (
-    <main className="max-w-[600px] mx-auto px-4 pb-[200px]">
+    <main className="max-w-content mx-auto px-4 pb-page-end">
       <div className="flex gap-4 my-2">
         <div className="grow">
           <SearchForm />
@@ -28,15 +28,15 @@ const Page = () => {
                   <img
                     {...cardImageSources(article.image)}
                     alt={article.title ?? ""}
-                    className="mb-2 rounded mx-auto h-[300px] object-contain"
+                    className="mb-2 rounded mx-auto h-hero object-contain"
                     loading="lazy"
                   />
                 ) : (
-                  <div className="h-[300px] text-center mx-auto font-bold flex justify-center items-center bg-black/[0.04] mb-2 rounded text-[2rem]">
+                  <div className="h-hero text-center mx-auto font-bold flex justify-center items-center bg-black/[0.04] mb-2 rounded text-4xl">
                     {article.title}
                   </div>
                 )}
-                <div className="font-bold text-[1.2rem]">{article.title}</div>
+                <div className="font-bold text-xl">{article.title}</div>
               </a>
             </li>
             {/* 最新記事を 3 件見せてから clip を挟む。先頭に置くと
@@ -50,7 +50,7 @@ const Page = () => {
         ))}
       </ul>
 
-      <div className="flex justify-between mt-[80px]">
+      <div className="flex justify-between mt-20">
         {d.payload.page === 1 && <div />}
         {d.payload.page === 2 && (
           <a href="/" className="block underline">

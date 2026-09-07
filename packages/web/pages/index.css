@@ -8,3 +8,18 @@
     background: var(--color-bg);
   }
 }
+
+/* 引用を本文のコンテンツ幅 (--container-content) の外にはみ出させる。
+   引用は max-w-content で中央寄せした main の中に居るので、素直に width を
+   広げても親に切られる。left: 50% で親の中央に寄せてから自分の幅の半分だけ
+   戻すことで、親の幅と無関係に画面の中央へ置く。
+
+   100vw はスクロールバーの幅を含むので、そのまま使うと横スクロールが出る。
+   --spacing-8 (2rem) 引いて逃がしている。スクロールバーが 2rem を超える環境は
+   想定しない。 */
+@utility quote-bleed {
+  width: min(var(--container-quote), calc(100vw - var(--spacing-8)));
+  position: relative;
+  left: 50%;
+  translate: -50% 0;
+}

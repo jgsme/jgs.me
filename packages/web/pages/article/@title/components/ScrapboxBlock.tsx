@@ -20,7 +20,9 @@ export const ScrapboxBlock: React.FC<{ block: BlockType }> = ({ block }) => {
           style={{ paddingLeft: `${block.indent * 1.5}rem` }}
         >
           {block.nodes.map((node, i) => (
-            <ScrapboxNode key={i} node={node} />
+            // indent は引用にだけ効く。インデントされた行の引用は、画面中央を
+            // 基準にはみ出させるとインデントぶんの位置を失うので、はみ出させない。
+            <ScrapboxNode key={i} node={node} indent={block.indent} />
           ))}
         </Tag>
       );

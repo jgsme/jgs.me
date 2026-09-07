@@ -87,6 +87,12 @@
      これは幅の意味付けのための別名であって、そういう使い方はしない。 */
   --container-content: 48rem;
 
+  /* 引用をコンテンツ幅の外にはみ出させるときの幅 (packages/web の quote-bleed)。
+     --container-content より広い値であることに意味があるので、数値ではなく
+     名前で持つ。ここを --container-content 以下にすると、はみ出しの計算は
+     生きたまま見た目だけが本文幅に戻り、utility が効いていないように見える。 */
+  --container-quote: 60rem;
+
   /* --- 封じるパレット --- */
   /* gray / zinc / stone は neutral と役割が重複する。混在が今回の散らかりの
      原因だったので、クラス自体を生成させない。書いても効かないので気づける。

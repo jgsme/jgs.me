@@ -3,6 +3,7 @@ import { useData } from "vike-react/useData";
 import type data from "./+data";
 import { ScrapboxBlock } from "./components/ScrapboxBlock";
 import { CopyButton } from "./components/CopyButton";
+import { shareUrlPath } from "./components/shareUrl";
 import { RelatedPages } from "./components/RelatedPages";
 import { clientOnly } from "vike-react/clientOnly";
 import { WarpButton } from "../../components/WarpButton";
@@ -48,7 +49,9 @@ const Page = () => {
                 </time>
               </p>
             )}
-            <CopyButton articleId={d.articleId} />
+            <CopyButton
+              path={shareUrlPath({ articleId: d.articleId, clipId: d.clipId })}
+            />
           </div>
         </div>
 

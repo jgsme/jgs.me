@@ -1,7 +1,7 @@
 import type { PageContextServer } from "vike/types";
 import type { Bindings } from "@/server/types";
 import { getDB } from "@/db/getDB";
-import { articles, pageSimilarities, pages } from "@jigsaw/db";
+import { articles, clips, pageSimilarities, pages } from "@jigsaw/db";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { useConfig } from "vike-react/useConfig";
 import { fetchBody } from "@jigsaw/db/fetch-body";
@@ -29,18 +29,21 @@ const data = async (c: Context) => {
     .select({
       pageId: pages.id,
       articleId: articles.id,
+      clipId: clips.id,
       bodyKey: pages.bodyKey,
       created: pages.created,
       date: articles.date,
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
+    .leftJoin(clips, eq(clips.pageID, pages.id))
     .where(eq(pages.title, title))
     .limit(1);
 
   const pageId = pageInfo[0]?.pageId ?? null;
   const bodyKey = pageInfo[0]?.bodyKey ?? "";
   const articleId = pageInfo[0]?.articleId ?? null;
+  const clipId = pageInfo[0]?.clipId ?? null;
   const created = pageInfo[0]?.created ?? "";
   const storedDate = pageInfo[0]?.date ?? null;
 
@@ -77,6 +80,7 @@ const data = async (c: Context) => {
       title,
       pageId,
       articleId,
+      clipId,
       blocks: [],
       description: null,
       related: [],
@@ -105,6 +109,7 @@ const data = async (c: Context) => {
     title,
     pageId,
     articleId,
+    clipId,
     blocks: filteredBlocks,
     fromDate,
     description,

@@ -65,7 +65,7 @@ const Page = () => {
         {/* 本文全体を e-content で包む。 */}
         <div className="e-content space-y-1">
           {d.blocks.map((block, i) => (
-            <ScrapboxBlock key={i} block={block} />
+            <ScrapboxBlock key={i} block={block} isClip={d.isClip} />
           ))}
         </div>
       </article>

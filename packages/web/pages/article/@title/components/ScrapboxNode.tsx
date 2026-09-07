@@ -1,19 +1,7 @@
 import React from "react";
 import type { Node as NodeType } from "@progfay/scrapbox-parser";
 import { bodyImageSources } from "@/utils/bodyImage";
-import { quoteTier } from "./quote";
-
-/* 引用の見た目を長さで 3 段階に振る。短い引用は 1 行で読み切れるので大きく殴れるが、
-   長い引用を同じ大きさで出すと 1 行が長くなりすぎて視線が戻れない。だから長いものは
-   本文幅に留め、はみ出しは short / medium だけに効かせる。 */
-const QUOTE_STYLE = {
-  short: "text-3xl leading-snug pl-6 py-4",
-  medium: "text-xl pl-4 py-3",
-  long: "text-lg pl-4 py-3",
-} as const;
-
-/* はみ出させない tier。long は幅を広げると 1 行が長くなりすぎる。 */
-const QUOTE_IN_COLUMN = new Set(["long"]);
+import { quoteClassName } from "./quote";
 
 function getYouTubeVideoId(url: string): string | null {
   try {
@@ -46,7 +34,10 @@ export const ScrapboxNode: React.FC<{
   /* 行のインデント段数。引用のはみ出しを止めるためだけに使う。ScrapboxBlock が
      行から渡し、子の node へはそのまま伝える。 */
   indent?: number;
-}> = ({ node, indent = 0 }) => {
+  /* clip のページか。引用の見た目を切り替えるためだけに使う。indent と同じく
+     子の node へそのまま伝える。 */
+  isClip?: boolean;
+}> = ({ node, indent = 0, isClip = false }) => {
   switch (node.type) {
     case "plain":
       return <>{node.text}</>;
@@ -128,7 +119,7 @@ export const ScrapboxNode: React.FC<{
       return (
         <span className={classes.join(" ")}>
           {node.nodes.map((n, i) => (
-            <ScrapboxNode key={i} node={n} indent={indent} />
+            <ScrapboxNode key={i} node={n} indent={indent} isClip={isClip} />
           ))}
         </span>
       );
@@ -155,27 +146,20 @@ export const ScrapboxNode: React.FC<{
       return <>{node.path}</>;
     }
 
-    case "quote": {
-      const tier = quoteTier(node);
-      // インデントされた引用ははみ出させない。はみ出しは画面中央を基準に置くので、
-      // インデントで右にずらした位置を無視して中央に飛んでしまう。
-      const bleed = !QUOTE_IN_COLUMN.has(tier) && indent === 0;
+    case "quote":
       return (
-        <blockquote
-          className={`bg-black/1 border-l-4 border-border-subtle my-4 ${QUOTE_STYLE[tier]} ${bleed ? "quote-bleed" : ""}`}
-        >
+        <blockquote className={quoteClassName(node, { isClip, indent })}>
           {node.nodes.map((n, i) => (
-            <ScrapboxNode key={i} node={n} indent={indent} />
+            <ScrapboxNode key={i} node={n} indent={indent} isClip={isClip} />
           ))}
         </blockquote>
       );
-    }
 
     case "strong":
       return (
         <strong>
           {node.nodes.map((n, i) => (
-            <ScrapboxNode key={i} node={n} indent={indent} />
+            <ScrapboxNode key={i} node={n} indent={indent} isClip={isClip} />
           ))}
         </strong>
       );
@@ -187,7 +171,7 @@ export const ScrapboxNode: React.FC<{
         <>
           {node.number}.{" "}
           {node.nodes.map((n, i) => (
-            <ScrapboxNode key={i} node={n} indent={indent} />
+            <ScrapboxNode key={i} node={n} indent={indent} isClip={isClip} />
           ))}
         </>
       );

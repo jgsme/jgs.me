@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Node } from "@progfay/scrapbox-parser";
-import { quoteText, quoteTier } from "./quote";
+import { quoteClassName, quoteText, quoteTier } from "./quote";
 
 const plain = (text: string): Node => ({ type: "plain", raw: text, text });
 
@@ -97,5 +97,81 @@ describe("quoteTier", () => {
     // "𠮷" は UTF-16 で 2 単位。String.length で数えると 30 文字ちょうどの
     // 引用が medium に落ちる。
     expect(quoteTier(quote([plain("𠮷".repeat(30))]))).toBe("short");
+  });
+});
+
+describe("quoteClassName", () => {
+  const short = quote([plain("あ".repeat(10))]);
+  const medium = quote([plain("あ".repeat(50))]);
+  const long = quote([plain("あ".repeat(200))]);
+
+  // clip は引用が本体なので大きく出す。普通の記事の引用は地の文の一部なので、
+  // 大きくすると本文の流れが切れる。切り替えは呼び出し側から渡る isClip 1 つ。
+  it("clip でなければ長さに関係なく同じ見た目", () => {
+    const plainLook = quoteClassName(short, { isClip: false, indent: 0 });
+    expect(quoteClassName(medium, { isClip: false, indent: 0 })).toBe(plainLook);
+    expect(quoteClassName(long, { isClip: false, indent: 0 })).toBe(plainLook);
+  });
+
+  it("clip でなければ大きくもはみ出しもしない", () => {
+    const c = quoteClassName(short, { isClip: false, indent: 0 });
+    expect(c).not.toMatch(/text-(xl|3xl)/);
+    expect(c).not.toContain("quote-bleed");
+  });
+
+  it("clip なら長さで文字の大きさが変わる", () => {
+    expect(quoteClassName(short, { isClip: true, indent: 0 })).toContain(
+      "text-3xl",
+    );
+    expect(quoteClassName(medium, { isClip: true, indent: 0 })).toContain(
+      "text-xl",
+    );
+    expect(quoteClassName(long, { isClip: true, indent: 0 })).toContain(
+      "text-lg",
+    );
+  });
+
+  it("clip の short / medium だけはみ出す", () => {
+    expect(quoteClassName(short, { isClip: true, indent: 0 })).toContain(
+      "quote-bleed",
+    );
+    expect(quoteClassName(medium, { isClip: true, indent: 0 })).toContain(
+      "quote-bleed",
+    );
+    // long は幅を広げると 1 行が長くなりすぎる。
+    expect(quoteClassName(long, { isClip: true, indent: 0 })).not.toContain(
+      "quote-bleed",
+    );
+  });
+
+  it("インデントされた行でははみ出さない", () => {
+    // はみ出しは画面中央を基準に置くので、インデントぶんの位置を失う。
+    expect(quoteClassName(short, { isClip: true, indent: 1 })).not.toContain(
+      "quote-bleed",
+    );
+    // 大きさは残る。止めたいのは横位置だけ。
+    expect(quoteClassName(short, { isClip: true, indent: 1 })).toContain(
+      "text-3xl",
+    );
+  });
+
+  it("clip でなければ上下の余白も足さない", () => {
+    // 行の間隔は e-content の space-y-1 が作っている。ここで my を足すと、
+    // clip でないページの引用まわりの間隔が変わってしまう。
+    expect(quoteClassName(short, { isClip: false, indent: 0 })).not.toMatch(
+      /\bmy-/,
+    );
+  });
+
+  it("clip の引用は上下に余白を取る", () => {
+    expect(quoteClassName(short, { isClip: true, indent: 0 })).toContain("my-4");
+  });
+
+  it("罫と背景はどちらでも付く", () => {
+    for (const isClip of [true, false]) {
+      const c = quoteClassName(medium, { isClip, indent: 0 });
+      expect(c).toContain("border-l-4");
+      expect(c).toContain("border-border-subtle");
+    }
   });
 });

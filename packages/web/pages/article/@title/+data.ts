@@ -1,7 +1,7 @@
 import type { PageContextServer } from "vike/types";
 import type { Bindings } from "@/server/types";
 import { getDB } from "@/db/getDB";
-import { articles, pageSimilarities, pages } from "@jigsaw/db";
+import { articles, clips, pageSimilarities, pages } from "@jigsaw/db";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { useConfig } from "vike-react/useConfig";
 import { fetchBody } from "@jigsaw/db/fetch-body";
@@ -32,9 +32,11 @@ const data = async (c: Context) => {
       bodyKey: pages.bodyKey,
       created: pages.created,
       date: articles.date,
+      clipId: clips.id,
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
+    .leftJoin(clips, eq(clips.pageID, pages.id))
     .where(eq(pages.title, title))
     .limit(1);
 
@@ -43,6 +45,10 @@ const data = async (c: Context) => {
   const articleId = pageInfo[0]?.articleId ?? null;
   const created = pageInfo[0]?.created ?? "";
   const storedDate = pageInfo[0]?.date ?? null;
+  // clip かどうか。引用の見た目 (ScrapboxNode) を切り替えるためだけに使う。
+  // clip は引用が本体なので大きく出すが、普通の記事の引用は地の文の一部なので
+  // 従来どおり本文と同じ大きさに留める。
+  const isClip = pageInfo[0]?.clipId != null;
 
   // 関連記事。article でないページには出さない。
   let related: { title: string; image: string | null }[] = [];
@@ -80,6 +86,7 @@ const data = async (c: Context) => {
       blocks: [],
       description: null,
       related: [],
+      isClip,
     };
   }
 
@@ -109,6 +116,7 @@ const data = async (c: Context) => {
     fromDate,
     description,
     related,
+    isClip,
   };
 };
 

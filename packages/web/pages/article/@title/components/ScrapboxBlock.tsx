@@ -3,7 +3,11 @@ import type { Block as BlockType } from "@progfay/scrapbox-parser";
 import { parseCardBlock } from "./card";
 import { ScrapboxNode } from "./ScrapboxNode";
 
-export const ScrapboxBlock: React.FC<{ block: BlockType }> = ({ block }) => {
+export const ScrapboxBlock: React.FC<{
+  block: BlockType;
+  /* clip のページか。引用の見た目を切り替えるためだけに使う。 */
+  isClip?: boolean;
+}> = ({ block, isClip = false }) => {
   switch (block.type) {
     case "title":
       return null;
@@ -22,7 +26,12 @@ export const ScrapboxBlock: React.FC<{ block: BlockType }> = ({ block }) => {
           {block.nodes.map((node, i) => (
             // indent は引用にだけ効く。インデントされた行の引用は、画面中央を
             // 基準にはみ出させるとインデントぶんの位置を失うので、はみ出させない。
-            <ScrapboxNode key={i} node={node} indent={block.indent} />
+            <ScrapboxNode
+              key={i}
+              node={node}
+              indent={block.indent}
+              isClip={isClip}
+            />
           ))}
         </Tag>
       );
@@ -88,7 +97,7 @@ export const ScrapboxBlock: React.FC<{ block: BlockType }> = ({ block }) => {
                 {row.map((cell, j) => (
                   <td key={j} className="border border-border px-2 py-1">
                     {cell.map((node, k) => (
-                      <ScrapboxNode key={k} node={node} />
+                      <ScrapboxNode key={k} node={node} isClip={isClip} />
                     ))}
                   </td>
                 ))}

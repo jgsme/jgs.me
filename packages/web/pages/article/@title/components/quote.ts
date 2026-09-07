@@ -54,3 +54,40 @@ export function quoteTier(node: Node): QuoteTier {
   if (length <= MEDIUM_MAX) return "medium";
   return "long";
 }
+
+/* clip の引用の見た目。tier ごとに文字の大きさと余白を振る。 */
+const CLIP_STYLE: Record<QuoteTier, string> = {
+  short: "text-3xl leading-snug pl-6 py-4",
+  medium: "text-xl pl-4 py-3",
+  long: "text-lg pl-4 py-3",
+};
+
+/* clip でないページの引用。従来どおり本文と同じ大きさで、余白も最小のまま。
+   上下の間隔は e-content の space-y-1 が作っているので、ここでは my を付けない。 */
+const ARTICLE_STYLE = "pl-1 py-1";
+
+/* 罫と背景。clip かどうかに関係なく「これは引用」を示す。 */
+const QUOTE_BASE = "bg-black/1 border-l-4 border-border-subtle";
+
+/* はみ出させない tier。long は幅を広げると 1 行が長くなりすぎて視線が戻れない。 */
+const IN_COLUMN: QuoteTier[] = ["long"];
+
+export type QuoteContext = {
+  /* clip のページか。clip は引用が本体なので大きく出すが、普通の記事の引用は
+     地の文の一部なので大きくすると本文の流れが切れる。 */
+  isClip: boolean;
+  /* 行のインデント段数。はみ出しは画面中央を基準に置くので、インデントされた行では
+     インデントぶんの位置を失う。横位置だけ止めて、大きさは残す。 */
+  indent: number;
+};
+
+/** blockquote に付ける class を決める。 */
+export function quoteClassName(node: Node, ctx: QuoteContext): string {
+  if (!ctx.isClip) {
+    return `${QUOTE_BASE} ${ARTICLE_STYLE}`;
+  }
+  const tier = quoteTier(node);
+  const bleed = !IN_COLUMN.includes(tier) && ctx.indent === 0;
+  // clip の引用は大きいので、space-y-1 の間隔だと前後の行とくっついて見える。
+  return `${QUOTE_BASE} my-4 ${CLIP_STYLE[tier]}${bleed ? " quote-bleed" : ""}`;
+}

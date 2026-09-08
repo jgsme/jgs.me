@@ -68,7 +68,7 @@ export function quoteTier(node: Node): QuoteTier {
    ちょうどいい詰めが 20px の medium では食い込みすぎる。tier ごとに持つ。 */
 const DISPLAY_STYLE: Record<"short" | "medium", string> = {
   short:
-    "text-5xl leading-tight italic quote-marks [--quote-mark-inset:-0.4em] text-center py-6",
+    "text-5xl leading-tight italic quote-marks [--quote-mark-inset:-0.25em] text-center py-6",
   medium:
     "text-xl italic quote-marks [--quote-mark-inset:-0.2em] text-center py-4",
 };

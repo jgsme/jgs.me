@@ -195,7 +195,7 @@ describe("quoteClassName", () => {
     // 光学的な詰めは字のサイズに線形比例しない。em の比率を揃えると、
     // 48px の short でちょうどいい詰めが 20px の medium では食い込みすぎる。
     expect(quoteClassName(short, { emphasize: true, indent: 0 })).toContain(
-      "[--quote-mark-inset:-0.4em]",
+      "[--quote-mark-inset:-0.25em]",
     );
     expect(quoteClassName(medium, { emphasize: true, indent: 0 })).toContain(
       "[--quote-mark-inset:-0.2em]",

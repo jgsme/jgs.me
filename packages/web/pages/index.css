@@ -8,3 +8,54 @@
     background: var(--color-bg);
   }
 }
+
+/* 引用を本文のコンテンツ幅 (--container-content) の外にはみ出させる。
+   引用は max-w-content で中央寄せした main の中に居るので、素直に width を
+   広げても親に切られる。left: 50% で親の中央に寄せてから自分の幅の半分だけ
+   戻すことで、親の幅と無関係に画面の中央へ置く。
+
+   100vw はスクロールバーの幅を含むので、そのまま使うと横スクロールが出る。
+   --spacing-8 (2rem) 引いて逃がしている。スクロールバーが 2rem を超える環境は
+   想定しない。 */
+@utility quote-bleed {
+  width: min(var(--container-quote), calc(100vw - var(--spacing-8)));
+  position: relative;
+  left: 50%;
+  translate: -50% 0;
+}
+
+/* 大きく出す引用に付けるダブルクォート。DOM のテキストにしないので、
+   引用を選択してコピーしても引用符が混ざらない。
+
+   font-style: normal を打つのは、引用本体が italic のため。引用符まで傾けると
+   開きと閉じが同じ向きに寝て、対になって見えなくなる。 */
+@utility quote-marks {
+  /* 引用符は本文より大きく出す。同じ大きさだと 48px の引用の横で点にしか見えず、
+     飾りとして効かない。以下の em は全てこの 2.2em を基準にした値になる。 */
+  &::before,
+  &::after {
+    color: var(--color-fg-subtle);
+    font-style: normal;
+    font-size: 2.2em;
+    /* 本文の sans を継ぐと “ が直線的な棒 2 本になる。serif の “ は点にカンマの尾が
+       付いた形で、引用符として読める。ここだけ font-family を上書きする。
+       Georgia を先頭に置くのは macOS / Windows どちらにも標準で入っていて字形が
+       安定しているため。Web フォントは要らない。 */
+    font-family: Georgia, "Times New Roman", serif;
+  }
+  /* 開きは字に食い込ませる。“ はグリフの右に余白を持っていて、そのままだと本文との
+     間が空きすぎる。詰める量は tier ごとに違うので、呼び出し側 (quote.ts の
+     DISPLAY_STYLE) が --quote-mark-inset で渡す。
+     spacing の語彙を使わないのは、これが余白ではなく字面の光学調整だから。 */
+  &::before {
+    content: "\201C";
+    margin-right: var(--quote-mark-inset, -0.2em);
+  }
+  /* 閉じは下に付ける。” は本来上付きの字形なので、既定だと最終行の右上に浮く。
+     vertical-align: bottom では行ボックスの下端に揃うだけでグリフは上のままなので、
+     em で直接下げる。 */
+  &::after {
+    content: "\201D";
+    vertical-align: -0.7em;
+  }
+}

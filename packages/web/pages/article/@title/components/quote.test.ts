@@ -115,13 +115,13 @@ describe("quoteClassName", () => {
 
   it("clip でなければ大きくもはみ出しもしない", () => {
     const c = quoteClassName(short, { isClip: false, indent: 0 });
-    expect(c).not.toMatch(/text-(xl|3xl)/);
+    expect(c).not.toMatch(/text-(xl|5xl)/);
     expect(c).not.toContain("quote-bleed");
   });
 
   it("clip なら長さで文字の大きさが変わる", () => {
     expect(quoteClassName(short, { isClip: true, indent: 0 })).toContain(
-      "text-3xl",
+      "text-5xl",
     );
     expect(quoteClassName(medium, { isClip: true, indent: 0 })).toContain(
       "text-xl",
@@ -151,7 +151,7 @@ describe("quoteClassName", () => {
     );
     // 大きさは残る。止めたいのは横位置だけ。
     expect(quoteClassName(short, { isClip: true, indent: 1 })).toContain(
-      "text-3xl",
+      "text-5xl",
     );
   });
 

@@ -57,7 +57,7 @@ export function quoteTier(node: Node): QuoteTier {
 
 /* clip の引用の見た目。tier ごとに文字の大きさと余白を振る。 */
 const CLIP_STYLE: Record<QuoteTier, string> = {
-  short: "text-3xl leading-snug pl-6 py-4",
+  short: "text-5xl leading-tight pl-8 py-6",
   medium: "text-xl pl-4 py-3",
   long: "text-lg pl-4 py-3",
 };

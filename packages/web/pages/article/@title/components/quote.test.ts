@@ -190,6 +190,15 @@ describe("quoteClassName", () => {
     }
   });
 
+  it("はみ出す 2 段は中央寄せ", () => {
+    // 1 行に収まる短い引用が左端に寄っていると、右に空きができて据わりが悪い。
+    for (const node of [short, medium]) {
+      expect(quoteClassName(node, { isClip: true, indent: 0 })).toContain(
+        "text-center",
+      );
+    }
+  });
+
   it("clip の long は罫と背景のまま", () => {
     // 本文幅に留まる引用は地の文に混ざるので、囲いが無いと引用だと分からない。
     const c = quoteClassName(long, { isClip: true, indent: 0 });
@@ -197,6 +206,9 @@ describe("quoteClassName", () => {
     expect(c).toContain("bg-black/1");
     expect(c).not.toContain("italic");
     expect(c).not.toContain("quote-marks");
+    // 中央寄せは 1 行前後の引用のためのもの。本文幅で何行も続く引用を中央に
+    // 寄せると行頭が揃わず読めない。
+    expect(c).not.toContain("text-center");
   });
 
   it("clip でないページも罫と背景のまま", () => {

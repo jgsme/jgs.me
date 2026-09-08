@@ -58,10 +58,13 @@ export function quoteTier(node: Node): QuoteTier {
 /* 大きく出す引用 (short / medium) の見た目。
    罫と背景で囲うのをやめ、italic とダブルクォート (quote-marks) で引用だと示す。
    囲いは本文の中で引用を切り出すための記号だが、本文幅の外に出て 20px 以上で
-   組まれた時点でそれ自体が引用だと分かるので、囲いが二重になる。 */
+   組まれた時点でそれ自体が引用だと分かるので、囲いが二重になる。
+
+   中央寄せにするのは、1 行前後で終わる引用が左端に寄っていると右に空きができて
+   据わりが悪いため。本文幅に留まる long には掛けない (行頭が揃わないと読めない)。 */
 const DISPLAY_STYLE: Record<"short" | "medium", string> = {
-  short: "text-5xl leading-tight italic quote-marks py-6",
-  medium: "text-xl italic quote-marks py-4",
+  short: "text-5xl leading-tight italic quote-marks text-center py-6",
+  medium: "text-xl italic quote-marks text-center py-4",
 };
 
 /* 本文幅に留まる引用 (clip の long と、clip でないページ) の見た目。

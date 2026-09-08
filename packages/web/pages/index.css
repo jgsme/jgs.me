@@ -30,24 +30,26 @@
    font-style: normal を打つのは、引用本体が italic のため。引用符まで傾けると
    開きと閉じが同じ向きに寝て、対になって見えなくなる。 */
 @utility quote-marks {
+  /* 引用符は本文より大きく出す。同じ大きさだと 48px の引用の横で点にしか見えず、
+     飾りとして効かない。以下の em は全てこの 2.2em を基準にした値になる。 */
   &::before,
   &::after {
     color: var(--color-fg-subtle);
     font-style: normal;
+    font-size: 2.2em;
   }
-  /* 開きは字に寄せる。“ はグリフの右に余白を持っていて、そのままだと本文との間が
-     空きすぎる。em で詰めるので font-size (tier ごとに違う) に追随する。
+  /* 開きは字に食い込ませる。“ はグリフの右に余白を持っていて、そのままだと本文との
+     間が空きすぎる。em で詰めるので tier ごとに違う font-size に追随する。
      spacing の語彙を使わないのは、これが余白ではなく字面の光学調整だから。 */
   &::before {
     content: "\201C";
-    margin-right: -0.12em;
+    margin-right: -0.4em;
   }
   /* 閉じは下に付ける。” は本来上付きの字形なので、既定だと最終行の右上に浮く。
      vertical-align: bottom では行ボックスの下端に揃うだけでグリフは上のままなので、
-     em で直接下げる。-0.5em が開き (行の上端) と対称に見える位置。それ以上下げると
-     行から離れて別の記号に見える。 */
+     em で直接下げる。 */
   &::after {
     content: "\201D";
-    vertical-align: -0.5em;
+    vertical-align: -0.7em;
   }
 }

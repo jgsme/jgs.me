@@ -4,7 +4,7 @@ import { articles, clips, objects, pages } from "@jigsaw/db";
 import { newSbBodyKey, r2KeyOf, bodyFormatOf } from "@jigsaw/db/body-key";
 import { jstDate } from "@jigsaw/db/article-date";
 import { isAuthorized } from "./auth";
-import { parseEntry, isClip } from "./mf2";
+import { parseEntry, isClip, clipKind } from "./mf2";
 import { applyUpdate, parseUpdateAction } from "./mf2update";
 import { buildSbBody } from "./body";
 import { parseTargetURL } from "./target";
@@ -154,7 +154,11 @@ async function handleMicropubCreate(
   // clip / article の分岐も含めて 3 件とも drizzle で組み立てる。
   await db.batch([
     clip
-      ? db.insert(clips).values({ pageID: page.id, created })
+      ? db.insert(clips).values({
+          pageID: page.id,
+          created,
+          kind: clipKind(entry.categories),
+        })
       : db.insert(articles).values({
           pageID: page.id,
           created,

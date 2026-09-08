@@ -29,10 +29,10 @@ const data = async (c: Context) => {
     .select({
       pageId: pages.id,
       articleId: articles.id,
+      clipId: clips.id,
       bodyKey: pages.bodyKey,
       created: pages.created,
       date: articles.date,
-      clipId: clips.id,
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
@@ -43,12 +43,9 @@ const data = async (c: Context) => {
   const pageId = pageInfo[0]?.pageId ?? null;
   const bodyKey = pageInfo[0]?.bodyKey ?? "";
   const articleId = pageInfo[0]?.articleId ?? null;
+  const clipId = pageInfo[0]?.clipId ?? null;
   const created = pageInfo[0]?.created ?? "";
   const storedDate = pageInfo[0]?.date ?? null;
-  // clip かどうか。引用の見た目 (ScrapboxNode) を切り替えるためだけに使う。
-  // clip は引用が本体なので大きく出すが、普通の記事の引用は地の文の一部なので
-  // 従来どおり本文と同じ大きさに留める。
-  const isClip = pageInfo[0]?.clipId != null;
 
   // 関連記事。article でないページには出さない。
   let related: { title: string; image: string | null }[] = [];
@@ -83,10 +80,10 @@ const data = async (c: Context) => {
       title,
       pageId,
       articleId,
+      clipId,
       blocks: [],
       description: null,
       related: [],
-      isClip,
     };
   }
 
@@ -112,11 +109,11 @@ const data = async (c: Context) => {
     title,
     pageId,
     articleId,
+    clipId,
     blocks: filteredBlocks,
     fromDate,
     description,
     related,
-    isClip,
   };
 };
 

@@ -3,6 +3,7 @@ import { useData } from "vike-react/useData";
 import type data from "./+data";
 import { ScrapboxBlock } from "./components/ScrapboxBlock";
 import { CopyButton } from "./components/CopyButton";
+import { shareUrlPath } from "./components/shareUrl";
 import { RelatedPages } from "./components/RelatedPages";
 import { clientOnly } from "vike-react/clientOnly";
 import { WarpButton } from "../../components/WarpButton";
@@ -34,9 +35,13 @@ const Page = () => {
   const publishedDisplay = d.fromDate ? d.fromDate.replaceAll("-", "/") : null;
   const canonical = `https://w.jgs.me/pages/${encodeURIComponent(d.title)}`;
 
+  // clip かどうか。引用の見た目 (ScrapboxNode) と題の位置を決めるのに使う。
+  // clip は引用が本体なので大きく出すが、普通の記事の引用は地の文の一部なので
+  // 従来どおり本文と同じ大きさに留める。
+  const isClip = d.clipId !== null;
   // clip で題が本文の引用そのものだと、同じ文が h1 と引用で二度大きく出る。
   // その場合だけ題を本文の下に回して小さくし、引用を主役にする。
-  const titleBelow = d.isClip && isTitleQuoted(d.blocks, d.title);
+  const titleBelow = isClip && isTitleQuoted(d.blocks, d.title);
   const header = (
     <div className={titleBelow ? "mt-8" : "mb-8"}>
       <h1
@@ -52,7 +57,9 @@ const Page = () => {
             </time>
           </p>
         )}
-        <CopyButton articleId={d.articleId} />
+        <CopyButton
+          path={shareUrlPath({ articleId: d.articleId, clipId: d.clipId })}
+        />
       </div>
     </div>
   );
@@ -78,7 +85,7 @@ const Page = () => {
         {/* 本文全体を e-content で包む。 */}
         <div className="e-content space-y-1">
           {d.blocks.map((block, i) => (
-            <ScrapboxBlock key={i} block={block} isClip={d.isClip} />
+            <ScrapboxBlock key={i} block={block} isClip={isClip} />
           ))}
         </div>
 

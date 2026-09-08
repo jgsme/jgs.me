@@ -1,15 +1,13 @@
 import React from "react";
 import { useState } from "react";
 
-export const CopyButton: React.FC<{ articleId: number | null }> = ({
-  articleId,
-}) => {
+export const CopyButton: React.FC<{ path: string | null }> = ({ path }) => {
   const [copied, setCopied] = useState(false);
 
-  if (!articleId) return null;
+  if (!path) return null;
 
   const handleCopy = async () => {
-    const url = `${window.location.origin}/a/${articleId}`;
+    const url = `${window.location.origin}${path}`;
     await navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);

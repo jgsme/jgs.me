@@ -35,10 +35,19 @@
     color: var(--color-fg-subtle);
     font-style: normal;
   }
+  /* 開きは字に寄せる。“ はグリフの右に余白を持っていて、そのままだと本文との間が
+     空きすぎる。em で詰めるので font-size (tier ごとに違う) に追随する。
+     spacing の語彙を使わないのは、これが余白ではなく字面の光学調整だから。 */
   &::before {
     content: "\201C";
+    margin-right: -0.12em;
   }
+  /* 閉じは下に付ける。” は本来上付きの字形なので、既定だと最終行の右上に浮く。
+     vertical-align: bottom では行ボックスの下端に揃うだけでグリフは上のままなので、
+     em で直接下げる。-0.5em が開き (行の上端) と対称に見える位置。それ以上下げると
+     行から離れて別の記号に見える。 */
   &::after {
     content: "\201D";
+    vertical-align: -0.5em;
   }
 }

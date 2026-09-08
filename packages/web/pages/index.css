@@ -37,6 +37,11 @@
     color: var(--color-fg-subtle);
     font-style: normal;
     font-size: 2.2em;
+    /* 本文の sans を継ぐと “ が直線的な棒 2 本になる。serif の “ は点にカンマの尾が
+       付いた形で、引用符として読める。ここだけ font-family を上書きする。
+       Georgia を先頭に置くのは macOS / Windows どちらにも標準で入っていて字形が
+       安定しているため。Web フォントは要らない。 */
+    font-family: Georgia, "Times New Roman", serif;
   }
   /* 開きは字に食い込ませる。“ はグリフの右に余白を持っていて、そのままだと本文との
      間が空きすぎる。詰める量は tier ごとに違うので、呼び出し側 (quote.ts の

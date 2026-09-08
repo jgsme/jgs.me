@@ -7,7 +7,7 @@ import { useConfig } from "vike-react/useConfig";
 import { fetchBody } from "@jigsaw/db/fetch-body";
 import { resolveArticleDate } from "@jigsaw/db/article-date";
 import { pickRandom } from "@/utils/pickRandom";
-import { routeTitleToPageTitle } from "@/utils/routeTitle";
+import { pageTitleFromUrl } from "@/utils/pageTitle";
 import { buildArticleBody } from "./articleBody";
 
 // bge-m3 の cosine は下駄が高く 0.5 未満がほぼ出ないため、絶対的な意味はない。
@@ -17,12 +17,11 @@ const RELATED_COUNT = 5;
 
 type Context = PageContextServer & {
   env: Bindings;
-  routeParams: { title: string };
 };
 
 const data = async (c: Context) => {
   const config = useConfig();
-  const title = routeTitleToPageTitle(c.routeParams.title);
+  const title = pageTitleFromUrl(c.urlOriginal);
   const db = getDB(c.env.DB);
 
   const pageInfo = await db

@@ -55,22 +55,23 @@ export function quoteTier(node: Node): QuoteTier {
   return "long";
 }
 
-/* clip の引用の見た目。tier ごとに文字の大きさと余白を振る。 */
-const CLIP_STYLE: Record<QuoteTier, string> = {
-  short: "text-5xl leading-tight pl-8 py-6",
-  medium: "text-xl pl-4 py-3",
-  long: "text-lg pl-4 py-3",
+/* 大きく出す引用 (short / medium) の見た目。
+   罫と背景で囲うのをやめ、italic とダブルクォート (quote-marks) で引用だと示す。
+   囲いは本文の中で引用を切り出すための記号だが、本文幅の外に出て 20px 以上で
+   組まれた時点でそれ自体が引用だと分かるので、囲いが二重になる。 */
+const DISPLAY_STYLE: Record<"short" | "medium", string> = {
+  short: "text-5xl leading-tight italic quote-marks py-6",
+  medium: "text-xl italic quote-marks py-4",
 };
+
+/* 本文幅に留まる引用 (clip の long と、clip でないページ) の見た目。
+   地の文に混ざるので、囲いが無いと引用だと分からない。 */
+const QUOTE_BASE = "bg-black/1 border-l-4 border-border-subtle";
+const IN_COLUMN_STYLE = "pl-4 py-3 text-lg";
 
 /* clip でないページの引用。従来どおり本文と同じ大きさで、余白も最小のまま。
    上下の間隔は e-content の space-y-1 が作っているので、ここでは my を付けない。 */
 const ARTICLE_STYLE = "pl-1 py-1";
-
-/* 罫と背景。clip かどうかに関係なく「これは引用」を示す。 */
-const QUOTE_BASE = "bg-black/1 border-l-4 border-border-subtle";
-
-/* はみ出させない tier。long は幅を広げると 1 行が長くなりすぎて視線が戻れない。 */
-const IN_COLUMN: QuoteTier[] = ["long"];
 
 export type QuoteContext = {
   /* clip のページか。clip は引用が本体なので大きく出すが、普通の記事の引用は
@@ -87,9 +88,15 @@ export function quoteClassName(node: Node, ctx: QuoteContext): string {
     return `${QUOTE_BASE} ${ARTICLE_STYLE}`;
   }
   const tier = quoteTier(node);
-  const bleed = !IN_COLUMN.includes(tier) && ctx.indent === 0;
   // clip の引用は大きいので、space-y-1 の間隔だと前後の行とくっついて見える。
-  return `${QUOTE_BASE} my-4 ${CLIP_STYLE[tier]}${bleed ? " quote-bleed" : ""}`;
+  // long を本文幅に留めるのは、幅を広げると 1 行が長くなりすぎて視線が戻れないため。
+  if (tier === "long") {
+    return `${QUOTE_BASE} my-4 ${IN_COLUMN_STYLE}`;
+  }
+  // 見た目は長さだけで決める。はみ出しはインデントされた行では止めるが、
+  // 大きさと囲いの有無まで戻すと、同じ長さの引用がインデントの有無で別物に見える。
+  const bleed = ctx.indent === 0;
+  return `my-4 ${DISPLAY_STYLE[tier]}${bleed ? " quote-bleed" : ""}`;
 }
 
 /* 空白を落とす。引用側にだけ改行や全角空白が入っていることがあり、

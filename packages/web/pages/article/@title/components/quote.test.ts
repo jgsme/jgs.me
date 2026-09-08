@@ -172,12 +172,48 @@ describe("quoteClassName", () => {
     expect(quoteClassName(short, { isClip: true, indent: 0 })).toContain("my-4");
   });
 
-  it("罫と背景はどちらでも付く", () => {
-    for (const isClip of [true, false]) {
-      const c = quoteClassName(medium, { isClip, indent: 0 });
-      expect(c).toContain("border-l-4");
-      expect(c).toContain("border-border-subtle");
+  // はみ出す 2 段 (short / medium) は「大きく出す引用」として見た目を変える。
+  // 罫と背景で囲うのをやめ、italic とダブルクォートで引用だと示す。
+  it("はみ出す 2 段は罫も背景も付けない", () => {
+    for (const node of [short, medium]) {
+      const c = quoteClassName(node, { isClip: true, indent: 0 });
+      expect(c).not.toContain("border-l-4");
+      expect(c).not.toContain("bg-black/1");
     }
+  });
+
+  it("はみ出す 2 段は italic とダブルクォートを付ける", () => {
+    for (const node of [short, medium]) {
+      const c = quoteClassName(node, { isClip: true, indent: 0 });
+      expect(c).toContain("italic");
+      expect(c).toContain("quote-marks");
+    }
+  });
+
+  it("clip の long は罫と背景のまま", () => {
+    // 本文幅に留まる引用は地の文に混ざるので、囲いが無いと引用だと分からない。
+    const c = quoteClassName(long, { isClip: true, indent: 0 });
+    expect(c).toContain("border-l-4");
+    expect(c).toContain("bg-black/1");
+    expect(c).not.toContain("italic");
+    expect(c).not.toContain("quote-marks");
+  });
+
+  it("clip でないページも罫と背景のまま", () => {
+    const c = quoteClassName(short, { isClip: false, indent: 0 });
+    expect(c).toContain("border-l-4");
+    expect(c).toContain("bg-black/1");
+    expect(c).not.toContain("italic");
+    expect(c).not.toContain("quote-marks");
+  });
+
+  it("はみ出さないインデント下でも見た目は大きい側のまま", () => {
+    // 止めたいのは横位置だけ。囲いの有無まで戻すと、同じ長さの引用が
+    // インデントの有無で別物に見える。
+    const c = quoteClassName(short, { isClip: true, indent: 1 });
+    expect(c).toContain("italic");
+    expect(c).toContain("quote-marks");
+    expect(c).not.toContain("border-l-4");
   });
 });
 

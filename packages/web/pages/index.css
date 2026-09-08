@@ -23,3 +23,22 @@
   left: 50%;
   translate: -50% 0;
 }
+
+/* 大きく出す引用に付けるダブルクォート。DOM のテキストにしないので、
+   引用を選択してコピーしても引用符が混ざらない。
+
+   font-style: normal を打つのは、引用本体が italic のため。引用符まで傾けると
+   開きと閉じが同じ向きに寝て、対になって見えなくなる。 */
+@utility quote-marks {
+  &::before,
+  &::after {
+    color: var(--color-fg-subtle);
+    font-style: normal;
+  }
+  &::before {
+    content: "\201C";
+  }
+  &::after {
+    content: "\201D";
+  }
+}

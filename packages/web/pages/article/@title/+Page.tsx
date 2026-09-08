@@ -6,6 +6,7 @@ import { CopyButton } from "./components/CopyButton";
 import { RelatedPages } from "./components/RelatedPages";
 import { clientOnly } from "vike-react/clientOnly";
 import { WarpButton } from "../../components/WarpButton";
+import { isTitleQuoted } from "./components/quote";
 
 // 反応は SSR に載せない。記事ページは s-maxage=86400 でエッジに載るため、
 // 含めるとキャッシュが切れるまで反応が増えない。島として切り出してクライアントで
@@ -33,24 +34,36 @@ const Page = () => {
   const publishedDisplay = d.fromDate ? d.fromDate.replaceAll("-", "/") : null;
   const canonical = `https://w.jgs.me/pages/${encodeURIComponent(d.title)}`;
 
+  // clip で題が本文の引用そのものだと、同じ文が h1 と引用で二度大きく出る。
+  // その場合だけ題を本文の下に回して小さくし、引用を主役にする。
+  const titleBelow = d.isClip && isTitleQuoted(d.blocks, d.title);
+  const header = (
+    <div className={titleBelow ? "mt-8" : "mb-8"}>
+      <h1
+        className={`p-name font-bold ${titleBelow ? "text-base" : "text-2xl"}`}
+      >
+        {d.title}
+      </h1>
+      <div className="flex gap-2">
+        {d.fromDate && (
+          <p className="text-fg-subtle text-sm mt-1">
+            <time className="dt-published" dateTime={d.fromDate!}>
+              {publishedDisplay}
+            </time>
+          </p>
+        )}
+        <CopyButton articleId={d.articleId} />
+      </div>
+    </div>
+  );
+
   return (
     <main className="max-w-content mx-auto px-4 py-8">
       {/* h-entry はタイトル・日付・本文を全部含む。反応と関連記事はこの外。
-          中に入れると mf2 パーサが反応側の要素を記事のプロパティとして読む。 */}
+          中に入れると mf2 パーサが反応側の要素を記事のプロパティとして読む。
+          header の位置は変わるが、h-entry の中に居れば mf2 の読み取りは変わらない。 */}
       <article className="h-entry">
-        <div className="mb-8">
-          <h1 className="p-name text-2xl font-bold">{d.title}</h1>
-          <div className="flex gap-2">
-            {d.fromDate && (
-              <p className="text-fg-subtle text-sm mt-1">
-                <time className="dt-published" dateTime={d.fromDate!}>
-                  {publishedDisplay}
-                </time>
-              </p>
-            )}
-            <CopyButton articleId={d.articleId} />
-          </div>
-        </div>
+        {!titleBelow && header}
 
         {/* hidden な要素も mf2 パーサは読む。表示を変えずに機械可読性だけ足せる。 */}
         <a className="u-url" href={canonical} hidden>
@@ -68,6 +81,8 @@ const Page = () => {
             <ScrapboxBlock key={i} block={block} isClip={d.isClip} />
           ))}
         </div>
+
+        {titleBelow && header}
       </article>
 
       <ReactionsIsland pageId={d.pageId} />

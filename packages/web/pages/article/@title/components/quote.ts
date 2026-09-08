@@ -1,4 +1,4 @@
-import type { Node } from "@progfay/scrapbox-parser";
+import type { Block, Node } from "@progfay/scrapbox-parser";
 
 /** 引用の見た目の段階。short ほど大きく出す。 */
 export type QuoteTier = "short" | "medium" | "long";
@@ -90,4 +90,31 @@ export function quoteClassName(node: Node, ctx: QuoteContext): string {
   const bleed = !IN_COLUMN.includes(tier) && ctx.indent === 0;
   // clip の引用は大きいので、space-y-1 の間隔だと前後の行とくっついて見える。
   return `${QUOTE_BASE} my-4 ${CLIP_STYLE[tier]}${bleed ? " quote-bleed" : ""}`;
+}
+
+/* 空白を落とす。引用側にだけ改行や全角空白が入っていることがあり、
+   そのままだと同じ文なのに一致しない。 */
+function squash(s: string): string {
+  return s.replace(/\s+/gu, "");
+}
+
+/**
+ * 記事の題が本文の引用と同じものを指しているか。
+ *
+ * clip は引用をそのまま題にすることが多く、そのとき題と引用が同じ文を二度出す。
+ * 一致ではなく「引用が題で始まる」を見るのは、題が引用を途中で切り詰めた形の
+ * ページが実在するため (完全一致だけだと取りこぼす)。
+ *
+ * 逆向き (題が引用より長い) は見ない。実データに無いうえ、題に元記事のタイトルや
+ * サイト名が足されているだけのページを巻き込む。
+ */
+export function isTitleQuoted(blocks: Block[], title: string): boolean {
+  const t = squash(title);
+  // startsWith("") は常に true。ガードが無いと引用のある clip が全部該当する。
+  if (t === "") return false;
+  return blocks.some(
+    (b) =>
+      b.type === "line" &&
+      b.nodes.some((n) => n.type === "quote" && squash(quoteText(n)).startsWith(t)),
+  );
 }

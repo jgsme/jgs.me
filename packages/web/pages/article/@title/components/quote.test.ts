@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { Node } from "@progfay/scrapbox-parser";
-import { quoteClassName, quoteText, quoteTier } from "./quote";
+import type { Block, Node } from "@progfay/scrapbox-parser";
+import {
+  isTitleQuoted,
+  quoteClassName,
+  quoteText,
+  quoteTier,
+} from "./quote";
 
 const plain = (text: string): Node => ({ type: "plain", raw: text, text });
 
@@ -173,5 +178,87 @@ describe("quoteClassName", () => {
       expect(c).toContain("border-l-4");
       expect(c).toContain("border-border-subtle");
     }
+  });
+});
+
+const line = (nodes: Node[], indent = 0): Block => ({
+  type: "line",
+  indent,
+  nodes,
+});
+
+describe("isTitleQuoted", () => {
+  // clip は引用をそのまま題にすることが多い。そのとき題と本文の引用が同じ文を
+  // 二度出すので、題を本文の下に回して小さくする。その判定。
+  it("引用が題と完全に同じなら true", () => {
+    const t = "出社という概念ぶち壊したい";
+    expect(isTitleQuoted([line([quote([plain(t)])])], t)).toBe(true);
+  });
+
+  it("題が引用を切り詰めた形でも true", () => {
+    // 題が長すぎて途中で切れているページが実在する。見た目は完全に二重。
+    const body = "本作のライターであるトム・キング自身、ＣＩＡとしてイラクに駐在した経験を持っています。DCコミックスのVERTIGOレーベルから発表された";
+    const title = "本作のライターであるトム・キング自身、ＣＩＡとしてイラクに駐在した経験を持っています。";
+    expect(isTitleQuoted([line([quote([plain(body)])])], title)).toBe(true);
+  });
+
+  it("題が引用の要約や別の文なら false", () => {
+    // 「承認欲求の行き着く先」= 題は要約、引用は別の文。二重ではない。
+    const body = "読まずに、自分の言いたいことを書くだけの人の事";
+    expect(isTitleQuoted([line([quote([plain(body)])])], "承認欲求の行き着く先")).toBe(
+      false,
+    );
+  });
+
+  it("引用が複数あってもどれか 1 つが題なら true", () => {
+    const t = "「引退」とは、時間とお金に縛られない自由な生活を送ること";
+    const blocks = [
+      line([quote([plain("書くという行為は、心を耕すために必要不可欠なんですよ。")])]),
+      line([quote([plain(t)])]),
+    ];
+    expect(isTitleQuoted(blocks, t)).toBe(true);
+  });
+
+  it("引用が複数でもどれも題でなければ false", () => {
+    // 「Maison book girl … 特設サイト」= 題はサイト名、引用は記事からの抜粋。
+    const blocks = [
+      line([quote([plain("井上　-鍛えられてるからね（笑）。")])]),
+      line([quote([plain("矢川　-皆さん物分かりがよくて、本当によかったです。")])]),
+    ];
+    expect(isTitleQuoted(blocks, "Maison book girl new single “SOUP” 特設サイト")).toBe(
+      false,
+    );
+  });
+
+  it("引用が無ければ false", () => {
+    expect(isTitleQuoted([line([plain("題と同じ文")])], "題と同じ文")).toBe(false);
+    expect(isTitleQuoted([], "題")).toBe(false);
+  });
+
+  it("空白の違いは無視する", () => {
+    // 引用側だけ全角空白や改行が入っていることがある。空白で落としたくない。
+    const blocks = [line([quote([plain("井上　-鍛えられてるからね（笑）。")])])];
+    expect(isTitleQuoted(blocks, "井上 -鍛えられてるからね（笑）。")).toBe(true);
+  });
+
+  it("題が空なら false", () => {
+    // startsWith("") は常に true。ガードが無いと引用のある clip が全部該当する。
+    const blocks = [line([quote([plain("なんらかの引用")])])];
+    expect(isTitleQuoted(blocks, "")).toBe(false);
+    expect(isTitleQuoted(blocks, "   ")).toBe(false);
+  });
+
+  it("インデントされた行の引用も見る", () => {
+    const t = "インデントの下にある引用";
+    expect(isTitleQuoted([line([quote([plain(t)])], 2)], t)).toBe(true);
+  });
+
+  it("table のセルの中は見ない", () => {
+    // 引用は行頭の > で作られるので、セルの中に quote node は現れない。
+    // 走査対象を line に絞っていることを固定しておく。
+    const blocks: Block[] = [
+      { type: "table", indent: 0, fileName: "t", cells: [[[plain("題")]]] },
+    ];
+    expect(isTitleQuoted(blocks, "題")).toBe(false);
   });
 });

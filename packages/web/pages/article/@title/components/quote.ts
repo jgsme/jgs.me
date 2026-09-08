@@ -61,10 +61,16 @@ export function quoteTier(node: Node): QuoteTier {
    組まれた時点でそれ自体が引用だと分かるので、囲いが二重になる。
 
    中央寄せにするのは、1 行前後で終わる引用が左端に寄っていると右に空きができて
-   据わりが悪いため。本文幅に留まる long には掛けない (行頭が揃わないと読めない)。 */
+   据わりが悪いため。本文幅に留まる long には掛けない (行頭が揃わないと読めない)。
+
+   --quote-mark-inset は開きの引用符を字に寄せる量 (index.css の quote-marks が読む)。
+   光学的な詰めは字のサイズに線形比例しないので、em の比率を揃えると 48px の short で
+   ちょうどいい詰めが 20px の medium では食い込みすぎる。tier ごとに持つ。 */
 const DISPLAY_STYLE: Record<"short" | "medium", string> = {
-  short: "text-5xl leading-tight italic quote-marks text-center py-6",
-  medium: "text-xl italic quote-marks text-center py-4",
+  short:
+    "text-5xl leading-tight italic quote-marks [--quote-mark-inset:-0.4em] text-center py-6",
+  medium:
+    "text-xl italic quote-marks [--quote-mark-inset:-0.2em] text-center py-4",
 };
 
 /* 本文幅に留まる引用 (clip の long と、clip でないページ) の見た目。

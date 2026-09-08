@@ -39,11 +39,12 @@
     font-size: 2.2em;
   }
   /* 開きは字に食い込ませる。“ はグリフの右に余白を持っていて、そのままだと本文との
-     間が空きすぎる。em で詰めるので tier ごとに違う font-size に追随する。
+     間が空きすぎる。詰める量は tier ごとに違うので、呼び出し側 (quote.ts の
+     DISPLAY_STYLE) が --quote-mark-inset で渡す。
      spacing の語彙を使わないのは、これが余白ではなく字面の光学調整だから。 */
   &::before {
     content: "\201C";
-    margin-right: -0.4em;
+    margin-right: var(--quote-mark-inset, -0.2em);
   }
   /* 閉じは下に付ける。” は本来上付きの字形なので、既定だと最終行の右上に浮く。
      vertical-align: bottom では行ボックスの下端に揃うだけでグリフは上のままなので、

@@ -191,6 +191,17 @@ describe("quoteClassName", () => {
     }
   });
 
+  it("開きの詰めは tier ごとに変える", () => {
+    // 光学的な詰めは字のサイズに線形比例しない。em の比率を揃えると、
+    // 48px の short でちょうどいい詰めが 20px の medium では食い込みすぎる。
+    expect(quoteClassName(short, { emphasize: true, indent: 0 })).toContain(
+      "[--quote-mark-inset:-0.4em]",
+    );
+    expect(quoteClassName(medium, { emphasize: true, indent: 0 })).toContain(
+      "[--quote-mark-inset:-0.2em]",
+    );
+  });
+
   it("はみ出す 2 段は italic とダブルクォートを付ける", () => {
     for (const node of [short, medium]) {
       const c = quoteClassName(node, { emphasize: true, indent: 0 });

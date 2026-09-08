@@ -408,19 +408,41 @@ async function handleMicropubUpdate(
   });
 
   const now = new Date().toISOString();
+
+  // clip の kind は diary が正なので、update でも運ばれてきた値に合わせる。
+  // 所属 (clip か article か) は create 時のまま触らない。update で移せる
+  // ようにすると /a/:id や /c/:id の permalink が指す先が変わる。
+  const [clipRow] = await db
+    .select({ id: clips.id })
+    .from(clips)
+    .where(eq(clips.pageID, target.pageID))
+    .limit(1);
+
   // updated を明示で渡しているので $onUpdate は発火しない (明示値が勝つ)。
   // create 同様、生 SQL ではなく drizzle の db.batch で組み立てる。
-  await db.batch([
-    db
-      .update(pages)
-      // 本文が差し替わればサムネの元も変わる。create と同じ規則で引き直す。
-      .set({ title: entry.name, image: pageImage(entry), updated: now })
-      .where(eq(pages.id, target.pageID)),
-    db
-      .update(objects)
-      .set({ mf2: JSON.stringify(nextPayload), updated: now })
-      .where(eq(objects.id, objectURI(target.pageID))),
-  ]);
+  const updatePage = db
+    .update(pages)
+    // 本文が差し替わればサムネの元も変わる。create と同じ規則で引き直す。
+    .set({ title: entry.name, image: pageImage(entry), updated: now })
+    .where(eq(pages.id, target.pageID));
+  const updateObject = db
+    .update(objects)
+    .set({ mf2: JSON.stringify(nextPayload), updated: now })
+    .where(eq(objects.id, objectURI(target.pageID)));
+
+  // 配列を動的に組むと db.batch の tuple 型に通らない。分岐を 2 本書く。
+  if (clipRow) {
+    await db.batch([
+      updatePage,
+      updateObject,
+      db
+        .update(clips)
+        .set({ kind: clipKind(entry.categories) })
+        .where(eq(clips.id, clipRow.id)),
+    ]);
+  } else {
+    await db.batch([updatePage, updateObject]);
+  }
 
   const renamed = entry.name !== target.title;
 

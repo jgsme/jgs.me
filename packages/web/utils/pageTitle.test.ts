@@ -9,9 +9,9 @@ import { pageTitleFromUrl } from "./pageTitle";
 // pageContext.urlOriginal は素の URL のままなので、そこから自前で取る。
 describe("pageTitleFromUrl", () => {
   it("通常のリクエストから title を取る", () => {
-    expect(pageTitleFromUrl("https://w.jgs.me/pages/pebble%20%E5%BE%A9%E6%B4%BB")).toBe(
-      "pebble 復活",
-    );
+    expect(
+      pageTitleFromUrl("https://w.jgs.me/pages/pebble%20%E5%BE%A9%E6%B4%BB"),
+    ).toBe("pebble 復活");
   });
 
   it(".pageContext.json のリクエストからも同じ title を取る", () => {
@@ -54,13 +54,17 @@ describe("pageTitleFromUrl", () => {
 
   it("%2F はスラッシュに戻す", () => {
     expect(
-      pageTitleFromUrl("https://w.jgs.me/pages/dev.to%2Fjgs/index.pageContext.json"),
+      pageTitleFromUrl(
+        "https://w.jgs.me/pages/dev.to%2Fjgs/index.pageContext.json",
+      ),
     ).toBe("dev.to/jgs");
   });
 
   it("末尾の空白を落とさない", () => {
     expect(
-      pageTitleFromUrl("https://w.jgs.me/pages/trailing%20/index.pageContext.json"),
+      pageTitleFromUrl(
+        "https://w.jgs.me/pages/trailing%20/index.pageContext.json",
+      ),
     ).toBe("trailing ");
   });
 
@@ -73,8 +77,8 @@ describe("pageTitleFromUrl", () => {
   });
 
   it("title 自体が index.pageContext.json でも壊れない", () => {
-    expect(pageTitleFromUrl("https://w.jgs.me/pages/index.pageContext.json")).toBe(
-      "index.pageContext.json",
-    );
+    expect(
+      pageTitleFromUrl("https://w.jgs.me/pages/index.pageContext.json"),
+    ).toBe("index.pageContext.json");
   });
 });

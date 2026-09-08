@@ -14,10 +14,7 @@ const PAGE_CONTEXT_SUFFIX = "/index.pageContext.json";
 const ORIGIN = /^[a-z][a-z0-9+.-]*:\/\/[^/]*/i;
 
 export function pageTitleFromUrl(urlOriginal: string): string {
-  const pathname = urlOriginal
-    .split("#")[0]
-    .split("?")[0]
-    .replace(ORIGIN, "");
+  const pathname = urlOriginal.split("#")[0].split("?")[0].replace(ORIGIN, "");
   const stripped = stripPageContextSuffix(pathname);
   const raw = stripped.slice(stripped.lastIndexOf("/") + 1);
   return decodeSafe(raw);

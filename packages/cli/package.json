@@ -5,6 +5,7 @@
   "scripts": {
     "undo": "node src/index.ts",
     "gyazo": "node src/gyazo.ts",
+    "kind": "node src/kind.ts",
     "test": "vitest",
     "typecheck": "tsc --noEmit"
   },

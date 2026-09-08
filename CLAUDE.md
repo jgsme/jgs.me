@@ -18,6 +18,8 @@ pnpm gen          # Generate Drizzle migrations (drizzle-kit generate)
 
 # CLI Tools
 pnpm undo <url|id> [<url|id>...]  # 登録を取り消す（article/clip/excluded_page から削除）
+pnpm kind <url|id> <kind>        # clip.kind を書き換える (link/quote/photo/video)
+pnpm kind --csv <path>           # CSV から一括で書き換える
 
 # Lint
 pnpm lint:tokens  # design token から外れた書き方を検出する
@@ -97,7 +99,7 @@ Vike + React + Hono で構成された Cloudflare Workers アプリケーショ�
 - `page` - Scrapbox ページ (id, title, created, updated, image, sbID)
 - `article` - 登録済み記事 (id, pageID, created, date)
 - `excluded_page` - 除外ページ (id, pageID, created)
-- `clip` - クリップ (id, pageID, created)
+- `clip` - クリップ (id, pageID, created, kind)
 
 ### Environment Variables
 

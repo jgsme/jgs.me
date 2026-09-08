@@ -7,7 +7,7 @@ import { shareUrlPath } from "./components/shareUrl";
 import { RelatedPages } from "./components/RelatedPages";
 import { clientOnly } from "vike-react/clientOnly";
 import { WarpButton } from "../../components/WarpButton";
-import { isTitleQuoted } from "./components/quote";
+import { countQuotes, isTitleQuoted } from "./components/quote";
 
 // 反応は SSR に載せない。記事ページは s-maxage=86400 でエッジに載るため、
 // 含めるとキャッシュが切れるまで反応が増えない。島として切り出してクライアントで
@@ -39,6 +39,10 @@ const Page = () => {
   // clip は引用が本体なので大きく出すが、普通の記事の引用は地の文の一部なので
   // 従来どおり本文と同じ大きさに留める。
   const isClip = d.clipId !== null;
+  // 引用が複数あるページでは大きくしない。記事から複数箇所を引いている記事は、
+  // どれか 1 つを殴る記事ではない。実測では clip で引用のあるページ 21 件のうち
+  // 19 件が引用 1 つなので、これで落ちるのは 2 ページ。
+  const emphasizeQuote = isClip && countQuotes(d.blocks) === 1;
   // clip で題が本文の引用そのものだと、同じ文が h1 と引用で二度大きく出る。
   // その場合だけ題を本文の下に回して小さくし、引用を主役にする。
   const titleBelow = isClip && isTitleQuoted(d.blocks, d.title);
@@ -85,7 +89,11 @@ const Page = () => {
         {/* 本文全体を e-content で包む。 */}
         <div className="e-content space-y-1">
           {d.blocks.map((block, i) => (
-            <ScrapboxBlock key={i} block={block} isClip={isClip} />
+            <ScrapboxBlock
+              key={i}
+              block={block}
+              emphasizeQuote={emphasizeQuote}
+            />
           ))}
         </div>
 

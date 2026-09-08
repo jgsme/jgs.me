@@ -77,9 +77,9 @@ const IN_COLUMN_STYLE = "pl-4 py-3 text-lg";
 const ARTICLE_STYLE = "pl-1 py-1";
 
 export type QuoteContext = {
-  /* clip のページか。clip は引用が本体なので大きく出すが、普通の記事の引用は
-     地の文の一部なので大きくすると本文の流れが切れる。 */
-  isClip: boolean;
+  /* 引用を大きく出すページか。呼び出し側 (+Page.tsx) が clip かどうかと
+     ページ内の引用の数から決める。 */
+  emphasize: boolean;
   /* 行のインデント段数。はみ出しは画面中央を基準に置くので、インデントされた行では
      インデントぶんの位置を失う。横位置だけ止めて、大きさは残す。 */
   indent: number;
@@ -87,7 +87,7 @@ export type QuoteContext = {
 
 /** blockquote に付ける class を決める。 */
 export function quoteClassName(node: Node, ctx: QuoteContext): string {
-  if (!ctx.isClip) {
+  if (!ctx.emphasize) {
     return `${QUOTE_BASE} ${ARTICLE_STYLE}`;
   }
   const tier = quoteTier(node);
@@ -126,5 +126,16 @@ export function isTitleQuoted(blocks: Block[], title: string): boolean {
     (b) =>
       b.type === "line" &&
       b.nodes.some((n) => n.type === "quote" && squash(quoteText(n)).startsWith(t)),
+  );
+}
+
+/** 本文にある引用の数。行の中だけを見る (table のセルに quote node は現れない)。 */
+export function countQuotes(blocks: Block[]): number {
+  return blocks.reduce(
+    (n, b) =>
+      b.type === "line"
+        ? n + b.nodes.filter((node) => node.type === "quote").length
+        : n,
+    0,
   );
 }

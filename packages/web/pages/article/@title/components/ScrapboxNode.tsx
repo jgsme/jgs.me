@@ -34,10 +34,10 @@ export const ScrapboxNode: React.FC<{
   /* 行のインデント段数。引用のはみ出しを止めるためだけに使う。ScrapboxBlock が
      行から渡し、子の node へはそのまま伝える。 */
   indent?: number;
-  /* clip のページか。引用の見た目を切り替えるためだけに使う。indent と同じく
-     子の node へそのまま伝える。 */
-  isClip?: boolean;
-}> = ({ node, indent = 0, isClip = false }) => {
+  /* 引用を大きく出すページか。引用の見た目を切り替えるためだけに使う。
+     indent と同じく子の node へそのまま伝える。 */
+  emphasizeQuote?: boolean;
+}> = ({ node, indent = 0, emphasizeQuote = false }) => {
   switch (node.type) {
     case "plain":
       return <>{node.text}</>;
@@ -119,7 +119,7 @@ export const ScrapboxNode: React.FC<{
       return (
         <span className={classes.join(" ")}>
           {node.nodes.map((n, i) => (
-            <ScrapboxNode key={i} node={n} indent={indent} isClip={isClip} />
+            <ScrapboxNode key={i} node={n} indent={indent} emphasizeQuote={emphasizeQuote} />
           ))}
         </span>
       );
@@ -148,9 +148,9 @@ export const ScrapboxNode: React.FC<{
 
     case "quote":
       return (
-        <blockquote className={quoteClassName(node, { isClip, indent })}>
+        <blockquote className={quoteClassName(node, { emphasize: emphasizeQuote, indent })}>
           {node.nodes.map((n, i) => (
-            <ScrapboxNode key={i} node={n} indent={indent} isClip={isClip} />
+            <ScrapboxNode key={i} node={n} indent={indent} emphasizeQuote={emphasizeQuote} />
           ))}
         </blockquote>
       );
@@ -159,7 +159,7 @@ export const ScrapboxNode: React.FC<{
       return (
         <strong>
           {node.nodes.map((n, i) => (
-            <ScrapboxNode key={i} node={n} indent={indent} isClip={isClip} />
+            <ScrapboxNode key={i} node={n} indent={indent} emphasizeQuote={emphasizeQuote} />
           ))}
         </strong>
       );
@@ -171,7 +171,7 @@ export const ScrapboxNode: React.FC<{
         <>
           {node.number}.{" "}
           {node.nodes.map((n, i) => (
-            <ScrapboxNode key={i} node={n} indent={indent} isClip={isClip} />
+            <ScrapboxNode key={i} node={n} indent={indent} emphasizeQuote={emphasizeQuote} />
           ))}
         </>
       );

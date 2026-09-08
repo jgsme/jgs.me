@@ -5,9 +5,9 @@ import { ScrapboxNode } from "./ScrapboxNode";
 
 export const ScrapboxBlock: React.FC<{
   block: BlockType;
-  /* clip のページか。引用の見た目を切り替えるためだけに使う。 */
-  isClip?: boolean;
-}> = ({ block, isClip = false }) => {
+  /* 引用を大きく出すページか。引用の見た目を切り替えるためだけに使う。 */
+  emphasizeQuote?: boolean;
+}> = ({ block, emphasizeQuote = false }) => {
   switch (block.type) {
     case "title":
       return null;
@@ -30,7 +30,7 @@ export const ScrapboxBlock: React.FC<{
               key={i}
               node={node}
               indent={block.indent}
-              isClip={isClip}
+              emphasizeQuote={emphasizeQuote}
             />
           ))}
         </Tag>
@@ -97,7 +97,7 @@ export const ScrapboxBlock: React.FC<{
                 {row.map((cell, j) => (
                   <td key={j} className="border border-border px-2 py-1">
                     {cell.map((node, k) => (
-                      <ScrapboxNode key={k} node={node} isClip={isClip} />
+                      <ScrapboxNode key={k} node={node} emphasizeQuote={emphasizeQuote} />
                     ))}
                   </td>
                 ))}

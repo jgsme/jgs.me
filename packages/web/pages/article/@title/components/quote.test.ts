@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Block, Node } from "@progfay/scrapbox-parser";
 import {
+  countQuotes,
   isTitleQuoted,
   quoteClassName,
   quoteText,
@@ -111,72 +112,72 @@ describe("quoteClassName", () => {
   const long = quote([plain("あ".repeat(200))]);
 
   // clip は引用が本体なので大きく出す。普通の記事の引用は地の文の一部なので、
-  // 大きくすると本文の流れが切れる。切り替えは呼び出し側から渡る isClip 1 つ。
-  it("clip でなければ長さに関係なく同じ見た目", () => {
-    const plainLook = quoteClassName(short, { isClip: false, indent: 0 });
-    expect(quoteClassName(medium, { isClip: false, indent: 0 })).toBe(plainLook);
-    expect(quoteClassName(long, { isClip: false, indent: 0 })).toBe(plainLook);
+  // 大きくすると本文の流れが切れる。切り替えは呼び出し側から渡る emphasize 1 つ。
+  it("emphasize でなければ長さに関係なく同じ見た目", () => {
+    const plainLook = quoteClassName(short, { emphasize: false, indent: 0 });
+    expect(quoteClassName(medium, { emphasize: false, indent: 0 })).toBe(plainLook);
+    expect(quoteClassName(long, { emphasize: false, indent: 0 })).toBe(plainLook);
   });
 
-  it("clip でなければ大きくもはみ出しもしない", () => {
-    const c = quoteClassName(short, { isClip: false, indent: 0 });
+  it("emphasize でなければ大きくもはみ出しもしない", () => {
+    const c = quoteClassName(short, { emphasize: false, indent: 0 });
     expect(c).not.toMatch(/text-(xl|5xl)/);
     expect(c).not.toContain("quote-bleed");
   });
 
-  it("clip なら長さで文字の大きさが変わる", () => {
-    expect(quoteClassName(short, { isClip: true, indent: 0 })).toContain(
+  it("emphasize なら長さで文字の大きさが変わる", () => {
+    expect(quoteClassName(short, { emphasize: true, indent: 0 })).toContain(
       "text-5xl",
     );
-    expect(quoteClassName(medium, { isClip: true, indent: 0 })).toContain(
+    expect(quoteClassName(medium, { emphasize: true, indent: 0 })).toContain(
       "text-xl",
     );
-    expect(quoteClassName(long, { isClip: true, indent: 0 })).toContain(
+    expect(quoteClassName(long, { emphasize: true, indent: 0 })).toContain(
       "text-lg",
     );
   });
 
-  it("clip の short / medium だけはみ出す", () => {
-    expect(quoteClassName(short, { isClip: true, indent: 0 })).toContain(
+  it("short / medium だけはみ出す", () => {
+    expect(quoteClassName(short, { emphasize: true, indent: 0 })).toContain(
       "quote-bleed",
     );
-    expect(quoteClassName(medium, { isClip: true, indent: 0 })).toContain(
+    expect(quoteClassName(medium, { emphasize: true, indent: 0 })).toContain(
       "quote-bleed",
     );
     // long は幅を広げると 1 行が長くなりすぎる。
-    expect(quoteClassName(long, { isClip: true, indent: 0 })).not.toContain(
+    expect(quoteClassName(long, { emphasize: true, indent: 0 })).not.toContain(
       "quote-bleed",
     );
   });
 
   it("インデントされた行でははみ出さない", () => {
     // はみ出しは画面中央を基準に置くので、インデントぶんの位置を失う。
-    expect(quoteClassName(short, { isClip: true, indent: 1 })).not.toContain(
+    expect(quoteClassName(short, { emphasize: true, indent: 1 })).not.toContain(
       "quote-bleed",
     );
     // 大きさは残る。止めたいのは横位置だけ。
-    expect(quoteClassName(short, { isClip: true, indent: 1 })).toContain(
+    expect(quoteClassName(short, { emphasize: true, indent: 1 })).toContain(
       "text-5xl",
     );
   });
 
-  it("clip でなければ上下の余白も足さない", () => {
+  it("emphasize でなければ上下の余白も足さない", () => {
     // 行の間隔は e-content の space-y-1 が作っている。ここで my を足すと、
-    // clip でないページの引用まわりの間隔が変わってしまう。
-    expect(quoteClassName(short, { isClip: false, indent: 0 })).not.toMatch(
+    // emphasize でないページの引用まわりの間隔が変わってしまう。
+    expect(quoteClassName(short, { emphasize: false, indent: 0 })).not.toMatch(
       /\bmy-/,
     );
   });
 
-  it("clip の引用は上下に余白を取る", () => {
-    expect(quoteClassName(short, { isClip: true, indent: 0 })).toContain("my-4");
+  it("emphasize の引用は上下に余白を取る", () => {
+    expect(quoteClassName(short, { emphasize: true, indent: 0 })).toContain("my-4");
   });
 
   // はみ出す 2 段 (short / medium) は「大きく出す引用」として見た目を変える。
   // 罫と背景で囲うのをやめ、italic とダブルクォートで引用だと示す。
   it("はみ出す 2 段は罫も背景も付けない", () => {
     for (const node of [short, medium]) {
-      const c = quoteClassName(node, { isClip: true, indent: 0 });
+      const c = quoteClassName(node, { emphasize: true, indent: 0 });
       expect(c).not.toContain("border-l-4");
       expect(c).not.toContain("bg-black/1");
     }
@@ -184,7 +185,7 @@ describe("quoteClassName", () => {
 
   it("はみ出す 2 段は italic とダブルクォートを付ける", () => {
     for (const node of [short, medium]) {
-      const c = quoteClassName(node, { isClip: true, indent: 0 });
+      const c = quoteClassName(node, { emphasize: true, indent: 0 });
       expect(c).toContain("italic");
       expect(c).toContain("quote-marks");
     }
@@ -193,15 +194,15 @@ describe("quoteClassName", () => {
   it("はみ出す 2 段は中央寄せ", () => {
     // 1 行に収まる短い引用が左端に寄っていると、右に空きができて据わりが悪い。
     for (const node of [short, medium]) {
-      expect(quoteClassName(node, { isClip: true, indent: 0 })).toContain(
+      expect(quoteClassName(node, { emphasize: true, indent: 0 })).toContain(
         "text-center",
       );
     }
   });
 
-  it("clip の long は罫と背景のまま", () => {
+  it("long は罫と背景のまま", () => {
     // 本文幅に留まる引用は地の文に混ざるので、囲いが無いと引用だと分からない。
-    const c = quoteClassName(long, { isClip: true, indent: 0 });
+    const c = quoteClassName(long, { emphasize: true, indent: 0 });
     expect(c).toContain("border-l-4");
     expect(c).toContain("bg-black/1");
     expect(c).not.toContain("italic");
@@ -211,8 +212,8 @@ describe("quoteClassName", () => {
     expect(c).not.toContain("text-center");
   });
 
-  it("clip でないページも罫と背景のまま", () => {
-    const c = quoteClassName(short, { isClip: false, indent: 0 });
+  it("emphasize でないページも罫と背景のまま", () => {
+    const c = quoteClassName(short, { emphasize: false, indent: 0 });
     expect(c).toContain("border-l-4");
     expect(c).toContain("bg-black/1");
     expect(c).not.toContain("italic");
@@ -222,7 +223,7 @@ describe("quoteClassName", () => {
   it("はみ出さないインデント下でも見た目は大きい側のまま", () => {
     // 止めたいのは横位置だけ。囲いの有無まで戻すと、同じ長さの引用が
     // インデントの有無で別物に見える。
-    const c = quoteClassName(short, { isClip: true, indent: 1 });
+    const c = quoteClassName(short, { emphasize: true, indent: 1 });
     expect(c).toContain("italic");
     expect(c).toContain("quote-marks");
     expect(c).not.toContain("border-l-4");
@@ -308,5 +309,41 @@ describe("isTitleQuoted", () => {
       { type: "table", indent: 0, fileName: "t", cells: [[[plain("題")]]] },
     ];
     expect(isTitleQuoted(blocks, "題")).toBe(false);
+  });
+});
+
+describe("countQuotes", () => {
+  // 引用が複数あるページでは大きくしない。記事から複数箇所を引いている記事は、
+  // どれか 1 つを殴る記事ではない。その判定に使う。
+  it("行の中の quote を数える", () => {
+    expect(countQuotes([])).toBe(0);
+    expect(countQuotes([line([plain("引用ではない")])])).toBe(0);
+    expect(countQuotes([line([quote([plain("あ")])])])).toBe(1);
+    expect(
+      countQuotes([
+        line([quote([plain("あ")])]),
+        line([plain("地の文")]),
+        line([quote([plain("い")])]),
+      ]),
+    ).toBe(2);
+  });
+
+  it("インデントされた行の引用も数える", () => {
+    expect(countQuotes([line([quote([plain("あ")])], 2)])).toBe(1);
+  });
+
+  it("1 行に 2 つあれば 2 と数える", () => {
+    expect(
+      countQuotes([line([quote([plain("あ")]), quote([plain("い")])])]),
+    ).toBe(2);
+  });
+
+  it("table のセルの中は数えない", () => {
+    // 引用は行頭の > で作られるので、セルの中に quote node は現れない。
+    // isTitleQuoted と走査対象を揃えておく。
+    const blocks: Block[] = [
+      { type: "table", indent: 0, fileName: "t", cells: [[[plain("題")]]] },
+    ];
+    expect(countQuotes(blocks)).toBe(0);
   });
 });

@@ -88,3 +88,20 @@ export const CLIP_CATEGORY = "clip";
 export function isClip(categories: readonly string[]): boolean {
   return categories.includes(CLIP_CATEGORY);
 }
+
+// clip の種類。診断ではなく投入時の宣言。diary 側の編集画面で人が選び、
+// category に混ぜて送られてくる。
+//
+// category は本来タグの器なので、将来 clip にタグを付けたくなったときに
+// kind と混ざる。そのときは専用プロパティに移す判断が要る。今は clip 判定
+// (CLIP_CATEGORY) が既に category に乗っているので、1 つの器で揃える。
+//
+// 並び順に意味がある。複数の kind が入っていたとき、この順で最初に見つかった
+// ものを採る。順序を決めておかないと category の並び順で結果が変わる。
+export const CLIP_KINDS = ["link", "quote", "photo", "video"] as const;
+export type ClipKind = (typeof CLIP_KINDS)[number];
+
+/** category から kind を読む。見つからなければ link。 */
+export function clipKind(categories: readonly string[]): ClipKind {
+  return CLIP_KINDS.find((k) => categories.includes(k)) ?? "link";
+}

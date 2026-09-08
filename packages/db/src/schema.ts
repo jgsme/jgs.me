@@ -76,6 +76,12 @@ export const clips = sqliteTable("clip", {
   created: text("created")
     .notNull()
     .default(sql`(CURRENT_TIMESTAMP)`),
+  // clip の種類。link / quote / photo / video。投入時に diary 側で人が選び、
+  // Micropub の category に混ぜて運ばれる (packages/ingest の clipKind)。
+  // CHECK 制約を付けないのは、値を増やすときに migration を要らなくするため。
+  // 既定が link なのは、kind を送らない古いクライアントからの投入と、
+  // 既存 1665 件の移行後の値を一致させるため。
+  kind: text("kind").notNull().default("link"),
 });
 
 export const clipRelations = relations(clips, ({ one }) => ({

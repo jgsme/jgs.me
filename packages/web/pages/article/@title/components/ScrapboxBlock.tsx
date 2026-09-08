@@ -97,7 +97,11 @@ export const ScrapboxBlock: React.FC<{
                 {row.map((cell, j) => (
                   <td key={j} className="border border-border px-2 py-1">
                     {cell.map((node, k) => (
-                      <ScrapboxNode key={k} node={node} emphasizeQuote={emphasizeQuote} />
+                      <ScrapboxNode
+                        key={k}
+                        node={node}
+                        emphasizeQuote={emphasizeQuote}
+                      />
                     ))}
                   </td>
                 ))}

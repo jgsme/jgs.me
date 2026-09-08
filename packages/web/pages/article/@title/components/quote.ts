@@ -125,7 +125,9 @@ export function isTitleQuoted(blocks: Block[], title: string): boolean {
   return blocks.some(
     (b) =>
       b.type === "line" &&
-      b.nodes.some((n) => n.type === "quote" && squash(quoteText(n)).startsWith(t)),
+      b.nodes.some(
+        (n) => n.type === "quote" && squash(quoteText(n)).startsWith(t),
+      ),
   );
 }
 

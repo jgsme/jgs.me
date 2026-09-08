@@ -18,7 +18,9 @@ const quote = (nodes: Node[]): Node => ({
 
 describe("quoteText", () => {
   it("plain を連結する", () => {
-    expect(quoteText(quote([plain("あい"), plain("うえお")]))).toBe("あいうえお");
+    expect(quoteText(quote([plain("あい"), plain("うえお")]))).toBe(
+      "あいうえお",
+    );
   });
 
   it("link は表示される文字だけ数える", () => {
@@ -115,8 +117,12 @@ describe("quoteClassName", () => {
   // 大きくすると本文の流れが切れる。切り替えは呼び出し側から渡る emphasize 1 つ。
   it("emphasize でなければ長さに関係なく同じ見た目", () => {
     const plainLook = quoteClassName(short, { emphasize: false, indent: 0 });
-    expect(quoteClassName(medium, { emphasize: false, indent: 0 })).toBe(plainLook);
-    expect(quoteClassName(long, { emphasize: false, indent: 0 })).toBe(plainLook);
+    expect(quoteClassName(medium, { emphasize: false, indent: 0 })).toBe(
+      plainLook,
+    );
+    expect(quoteClassName(long, { emphasize: false, indent: 0 })).toBe(
+      plainLook,
+    );
   });
 
   it("emphasize でなければ大きくもはみ出しもしない", () => {
@@ -170,7 +176,9 @@ describe("quoteClassName", () => {
   });
 
   it("emphasize の引用は上下に余白を取る", () => {
-    expect(quoteClassName(short, { emphasize: true, indent: 0 })).toContain("my-4");
+    expect(quoteClassName(short, { emphasize: true, indent: 0 })).toContain(
+      "my-4",
+    );
   });
 
   // はみ出す 2 段 (short / medium) は「大きく出す引用」として見た目を変える。
@@ -246,23 +254,29 @@ describe("isTitleQuoted", () => {
 
   it("題が引用を切り詰めた形でも true", () => {
     // 題が長すぎて途中で切れているページが実在する。見た目は完全に二重。
-    const body = "本作のライターであるトム・キング自身、ＣＩＡとしてイラクに駐在した経験を持っています。DCコミックスのVERTIGOレーベルから発表された";
-    const title = "本作のライターであるトム・キング自身、ＣＩＡとしてイラクに駐在した経験を持っています。";
+    const body =
+      "本作のライターであるトム・キング自身、ＣＩＡとしてイラクに駐在した経験を持っています。DCコミックスのVERTIGOレーベルから発表された";
+    const title =
+      "本作のライターであるトム・キング自身、ＣＩＡとしてイラクに駐在した経験を持っています。";
     expect(isTitleQuoted([line([quote([plain(body)])])], title)).toBe(true);
   });
 
   it("題が引用の要約や別の文なら false", () => {
     // 「承認欲求の行き着く先」= 題は要約、引用は別の文。二重ではない。
     const body = "読まずに、自分の言いたいことを書くだけの人の事";
-    expect(isTitleQuoted([line([quote([plain(body)])])], "承認欲求の行き着く先")).toBe(
-      false,
-    );
+    expect(
+      isTitleQuoted([line([quote([plain(body)])])], "承認欲求の行き着く先"),
+    ).toBe(false);
   });
 
   it("引用が複数あってもどれか 1 つが題なら true", () => {
     const t = "「引退」とは、時間とお金に縛られない自由な生活を送ること";
     const blocks = [
-      line([quote([plain("書くという行為は、心を耕すために必要不可欠なんですよ。")])]),
+      line([
+        quote([
+          plain("書くという行為は、心を耕すために必要不可欠なんですよ。"),
+        ]),
+      ]),
       line([quote([plain(t)])]),
     ];
     expect(isTitleQuoted(blocks, t)).toBe(true);
@@ -272,22 +286,30 @@ describe("isTitleQuoted", () => {
     // 「Maison book girl … 特設サイト」= 題はサイト名、引用は記事からの抜粋。
     const blocks = [
       line([quote([plain("井上　-鍛えられてるからね（笑）。")])]),
-      line([quote([plain("矢川　-皆さん物分かりがよくて、本当によかったです。")])]),
+      line([
+        quote([plain("矢川　-皆さん物分かりがよくて、本当によかったです。")]),
+      ]),
     ];
-    expect(isTitleQuoted(blocks, "Maison book girl new single “SOUP” 特設サイト")).toBe(
-      false,
-    );
+    expect(
+      isTitleQuoted(blocks, "Maison book girl new single “SOUP” 特設サイト"),
+    ).toBe(false);
   });
 
   it("引用が無ければ false", () => {
-    expect(isTitleQuoted([line([plain("題と同じ文")])], "題と同じ文")).toBe(false);
+    expect(isTitleQuoted([line([plain("題と同じ文")])], "題と同じ文")).toBe(
+      false,
+    );
     expect(isTitleQuoted([], "題")).toBe(false);
   });
 
   it("空白の違いは無視する", () => {
     // 引用側だけ全角空白や改行が入っていることがある。空白で落としたくない。
-    const blocks = [line([quote([plain("井上　-鍛えられてるからね（笑）。")])])];
-    expect(isTitleQuoted(blocks, "井上 -鍛えられてるからね（笑）。")).toBe(true);
+    const blocks = [
+      line([quote([plain("井上　-鍛えられてるからね（笑）。")])]),
+    ];
+    expect(isTitleQuoted(blocks, "井上 -鍛えられてるからね（笑）。")).toBe(
+      true,
+    );
   });
 
   it("題が空なら false", () => {

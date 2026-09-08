@@ -119,7 +119,12 @@ export const ScrapboxNode: React.FC<{
       return (
         <span className={classes.join(" ")}>
           {node.nodes.map((n, i) => (
-            <ScrapboxNode key={i} node={n} indent={indent} emphasizeQuote={emphasizeQuote} />
+            <ScrapboxNode
+              key={i}
+              node={n}
+              indent={indent}
+              emphasizeQuote={emphasizeQuote}
+            />
           ))}
         </span>
       );
@@ -148,9 +153,19 @@ export const ScrapboxNode: React.FC<{
 
     case "quote":
       return (
-        <blockquote className={quoteClassName(node, { emphasize: emphasizeQuote, indent })}>
+        <blockquote
+          className={quoteClassName(node, {
+            emphasize: emphasizeQuote,
+            indent,
+          })}
+        >
           {node.nodes.map((n, i) => (
-            <ScrapboxNode key={i} node={n} indent={indent} emphasizeQuote={emphasizeQuote} />
+            <ScrapboxNode
+              key={i}
+              node={n}
+              indent={indent}
+              emphasizeQuote={emphasizeQuote}
+            />
           ))}
         </blockquote>
       );
@@ -159,7 +174,12 @@ export const ScrapboxNode: React.FC<{
       return (
         <strong>
           {node.nodes.map((n, i) => (
-            <ScrapboxNode key={i} node={n} indent={indent} emphasizeQuote={emphasizeQuote} />
+            <ScrapboxNode
+              key={i}
+              node={n}
+              indent={indent}
+              emphasizeQuote={emphasizeQuote}
+            />
           ))}
         </strong>
       );
@@ -171,7 +191,12 @@ export const ScrapboxNode: React.FC<{
         <>
           {node.number}.{" "}
           {node.nodes.map((n, i) => (
-            <ScrapboxNode key={i} node={n} indent={indent} emphasizeQuote={emphasizeQuote} />
+            <ScrapboxNode
+              key={i}
+              node={n}
+              indent={indent}
+              emphasizeQuote={emphasizeQuote}
+            />
           ))}
         </>
       );

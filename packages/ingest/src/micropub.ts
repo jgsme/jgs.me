@@ -12,6 +12,7 @@ import { putMedia } from "@jigsaw/media";
 import { pageImage } from "./firstImage";
 import { uniqueTitle } from "./uniqueTitle";
 import { extractLinks } from "./links";
+import { chunk } from "./rows";
 import type { Env } from "./index";
 
 const SITE_URL = "https://w.jgs.me";
@@ -160,7 +161,6 @@ async function handleMicropubCreate(
 
   // env.DB.batch (生 SQL) と db.batch (query builder) は混ぜられないので、
   // clip / article の分岐も含めて drizzle で組み立てる。
-  // db.batch は tuple を取るため、リンク 0 件の場合と分けて呼ぶ。
   const insertKind = clip
     ? db.insert(clips).values({ pageID: page.id, created })
     : db.insert(articles).values({
@@ -180,13 +180,15 @@ async function handleMicropubCreate(
     updated: created,
   });
 
-  await (linkRows.length > 0
-    ? db.batch([
-        insertKind,
-        insertObject,
-        db.insert(pageLinks).values(linkRows),
-      ])
-    : db.batch([insertKind, insertObject]));
+  // D1 は 1 statement あたりのバインド数に上限 (約 100) がある。pageLinks は
+  // 1 行 2 パラメータなので、index.ts の similarity 投入と同じ理由で 16 行
+  // (16 × 2 列 = 32 パラメータ) ずつの文に刻み、同じ batch に複数文として積む。
+  // batch は 1 回の D1 呼び出しかつトランザクションなので、刻んでも
+  // insertKind / insertObject との原子性は保てる。
+  const linkInserts = chunk(linkRows, 16).map((group) =>
+    db.insert(pageLinks).values(group),
+  );
+  await db.batch([insertKind, insertObject, ...linkInserts]);
 
   // 公開したので ActivityPub のフォロワーへ配送する。
   // 失敗しても投入自体は成功させる (配送は後から再実行できる)。
@@ -441,14 +443,11 @@ async function handleMicropubUpdate(
     .delete(pageLinks)
     .where(eq(pageLinks.fromPageID, target.pageID));
 
-  await (linkRows.length > 0
-    ? db.batch([
-        updatePage,
-        updateObject,
-        clearLinks,
-        db.insert(pageLinks).values(linkRows),
-      ])
-    : db.batch([updatePage, updateObject, clearLinks]));
+  // create と同じ理由で 16 行ずつに刻んで同じ batch に複数文として積む。
+  const linkInserts = chunk(linkRows, 16).map((group) =>
+    db.insert(pageLinks).values(group),
+  );
+  await db.batch([updatePage, updateObject, clearLinks, ...linkInserts]);
 
   const renamed = entry.name !== target.title;
 

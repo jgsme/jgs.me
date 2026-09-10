@@ -3,6 +3,7 @@ import { eq, gt } from "drizzle-orm";
 import { pageLinks, pages } from "@jigsaw/db";
 import { fetchBody } from "@jigsaw/db/fetch-body";
 import { extractLinks } from "./links";
+import { chunk } from "./rows";
 import type { Env } from "./index";
 
 // 1 回の呼び出しで走査するページ数。R2 の GET が 1 ページ 1 回なので、
@@ -139,16 +140,15 @@ export async function handleLinkIndex(
       const clear = db
         .delete(pageLinks)
         .where(eq(pageLinks.fromPageID, pageID));
-      if (toTitles.length === 0) {
-        await clear;
-        return;
-      }
-      await db.batch([
-        clear,
+      // micropub.ts の create/update と同じ理由 (D1 の 1 statement あたりの
+      // バインド上限) で 16 行ずつに刻んで同じ batch に複数文として積む。
+      // リンクが多いハブ的なページほど 1 文にまとめると弾かれやすい。
+      const linkInserts = chunk(toTitles, 16).map((group) =>
         db
           .insert(pageLinks)
-          .values(toTitles.map((toTitle) => ({ fromPageID: pageID, toTitle }))),
-      ]);
+          .values(group.map((toTitle) => ({ fromPageID: pageID, toTitle }))),
+      );
+      await db.batch([clear, ...linkInserts]);
     },
   };
 

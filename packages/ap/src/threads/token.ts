@@ -40,6 +40,12 @@ export async function refreshToken(env: Env): Promise<void> {
     expires_in: number;
   };
 
+  if (!Number.isFinite(body.expires_in)) {
+    throw new Error(
+      `refresh response missing expires_in: ${JSON.stringify(body)}`,
+    );
+  }
+
   const now = Date.now();
   const next: StoredToken = {
     accessToken: body.access_token,

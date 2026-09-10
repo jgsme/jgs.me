@@ -49,15 +49,17 @@ describe("getToken", () => {
 
 describe("refreshToken", () => {
   it("成功したら新しいトークンを KV に書く", async () => {
-    vi.stubGlobal("fetch", async () =>
-      new Response(
-        JSON.stringify({
-          access_token: "NEW",
-          token_type: "bearer",
-          expires_in: 5183944,
-        }),
-        { status: 200 },
-      ),
+    vi.stubGlobal(
+      "fetch",
+      async () =>
+        new Response(
+          JSON.stringify({
+            access_token: "NEW",
+            token_type: "bearer",
+            expires_in: 5183944,
+          }),
+          { status: 200 },
+        ),
     );
 
     const store: Store = {};
@@ -83,16 +85,61 @@ describe("refreshToken", () => {
     expect(posted).toHaveLength(1);
     expect(posted[0]).toContain("Threads");
   });
+
+  it("KV にあるトークンを refresh に渡す (seed ではなく KV のものを使う)", async () => {
+    const store: Store = {
+      [TOKEN_KEY]: JSON.stringify({
+        accessToken: "STORED",
+        expiresAt: 0,
+        refreshedAt: 0,
+      }),
+    };
+    const requested: string[] = [];
+    vi.stubGlobal("fetch", async (url: string) => {
+      requested.push(url);
+      return new Response(
+        JSON.stringify({
+          access_token: "NEW",
+          token_type: "bearer",
+          expires_in: 5183944,
+        }),
+        { status: 200 },
+      );
+    });
+
+    await refreshToken(makeEnv(store, "SEED"));
+
+    expect(requested).toHaveLength(1);
+    expect(requested[0]).toContain("access_token=STORED");
+    expect(requested[0]).not.toContain("access_token=SEED");
+  });
 });
 
 describe("withToken", () => {
   it("200 ならそのまま返す", async () => {
+    const calls: string[] = [];
+    vi.stubGlobal("fetch", async (url: string) => {
+      calls.push(url);
+      return new Response("", { status: 204 });
+    });
+
     const env = makeEnv({});
-    const res = await withToken(env, async () => new Response("ok", { status: 200 }));
+    const res = await withToken(
+      env,
+      async () => new Response("ok", { status: 200 }),
+    );
+
     expect(res.status).toBe(200);
+    expect(calls).toHaveLength(0);
   });
 
   it("401 なら KV を消して seed で1度だけやり直す", async () => {
+    const calls: string[] = [];
+    vi.stubGlobal("fetch", async (url: string) => {
+      calls.push(url);
+      return new Response("", { status: 204 });
+    });
+
     const store: Store = {
       [TOKEN_KEY]: JSON.stringify({
         accessToken: "DEAD",
@@ -111,6 +158,7 @@ describe("withToken", () => {
     expect(seen).toEqual(["DEAD", "SEED"]);
     expect(res.status).toBe(200);
     expect(store[TOKEN_KEY]).toBeUndefined();
+    expect(calls).toHaveLength(0);
   });
 
   it("seed でも 401 なら通知する", async () => {
@@ -156,5 +204,6 @@ describe("withToken", () => {
     // 同じ seed で2度叩いても無駄なので1回で諦める。
     expect(seen).toEqual(["SEED"]);
     expect(posted).toHaveLength(1);
+    expect(posted[0]).toContain("手動 OAuth");
   });
 });

@@ -19,6 +19,8 @@ export interface Env {
   R2: R2Bucket;
   // Micropub media endpoint の画像。
   MEDIA: R2Bucket;
+  // 検索インデックス (AutoRAG w-rag) が食う md。原本とは別バケット。
+  MD: R2Bucket;
   MEDIA_BASE_URL: string;
   AP: Fetcher;
   // 記事ページのエッジキャッシュを消す口 (web の POST /internal/purge)。

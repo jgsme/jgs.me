@@ -1,4 +1,5 @@
 import { parse } from "@progfay/scrapbox-parser";
+import { mdKeyOf } from "@jigsaw/db/body-key";
 
 type Blocks = ReturnType<typeof parse>;
 type Line = Extract<Blocks[number], { type: "line" }>;
@@ -65,4 +66,24 @@ export function toMarkdown(text: string): string {
   while (out.length > 0 && out[out.length - 1] === "") out.pop();
 
   return out.join("\n");
+}
+
+export interface MdPut {
+  key: string;
+  body: string;
+  contentType: string;
+}
+
+// 検索用の派生物を w-md に書く内容 (key / body / contentType) を組み立てる。
+// sbBody は原本と同じ「1行目が題の Scrapbox 記法」。create / update が
+// R2 に書くのと同じ文字列を渡す。ここを経由させることで、原本と派生物が
+// 同じ本文から作られていることをユニットテストで固定できる。
+export function buildMdPut(bodyKey: string, sbBody: string): MdPut | null {
+  const key = mdKeyOf(bodyKey);
+  if (!key) return null;
+  return {
+    key,
+    body: toMarkdown(sbBody),
+    contentType: "text/markdown; charset=utf-8",
+  };
 }

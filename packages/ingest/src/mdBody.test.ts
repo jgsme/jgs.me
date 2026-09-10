@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toMarkdown } from "./mdBody";
+import { buildMdPut, toMarkdown } from "./mdBody";
 
 describe("toMarkdown", () => {
   it("1行目の題を h1 にする", () => {
@@ -72,5 +72,22 @@ describe("toMarkdown", () => {
 
   it("本文中の空行は段落の区切りとして残す", () => {
     expect(toMarkdown("題\n段落1\n\n段落2")).toBe("# 題\n\n段落1\n\n段落2");
+  });
+});
+
+// buildCreateR2Put と同じ理由でここを通す。handleMicropubCreate が
+// env.MD.put に直接組み立てた値を渡すよう書き換わっても、この関数単体の
+// テストでは検出できないが、配線をユニットテストで固定はできる。
+describe("buildMdPut", () => {
+  it("キーは .md、中身は md、MIME は text/markdown", () => {
+    expect(buildMdPut("sb-0189abcd", "題\n本文")).toEqual({
+      key: "sb-0189abcd.md",
+      body: "# 題\n\n本文",
+      contentType: "text/markdown; charset=utf-8",
+    });
+  });
+
+  it("bodyKey が空なら null (本文が存在しない)", () => {
+    expect(buildMdPut("", "題\n本文")).toBeNull();
   });
 });

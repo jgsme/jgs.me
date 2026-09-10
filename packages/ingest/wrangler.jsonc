@@ -31,6 +31,15 @@
       "binding": "MEDIA",
       "bucket_name": "w-media",
     },
+    {
+      // 検索インデックス (AutoRAG w-rag) が食う md。原本とは別バケットに置く。
+      // 同居させると原本の退避や作業用オブジェクトが全部インデックスされる
+      // (gyazo-backup/ がそうなって検索結果が二重になった)。AutoRAG の
+      // path filter は dashboard でしか触れず repo から見えないので、
+      // バケットごと分けて設定に依存しない形にしてある。
+      "binding": "MD",
+      "bucket_name": "w-md",
+    },
   ],
   "services": [
     {

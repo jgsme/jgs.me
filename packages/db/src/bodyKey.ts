@@ -25,3 +25,12 @@ export function r2KeyOf(bodyKey: string): string | null {
     ? `${bodyKey}.sb`
     : `${bodyKey}.json`;
 }
+
+// 検索インデックス用の派生物のキー (バケット w-md)。原本と違って由来で
+// 分ける必要が無い。中身は toMarkdown() の出力で、どちらの由来も同じ形。
+// AutoRAG は拡張子と MIME の両方で対応形式を判定するので、拡張子は対応表に
+// ある .md でなければならない (.sb は unsupported_type で弾かれる)。
+export function mdKeyOf(bodyKey: string): string | null {
+  if (!bodyKey) return null;
+  return `${bodyKey}.md`;
+}

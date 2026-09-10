@@ -6,7 +6,8 @@
     "undo": "node src/index.ts",
     "gyazo": "node src/gyazo.ts",
     "test": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "md-backfill": "node src/mdBackfill.ts"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

@@ -45,9 +45,7 @@
   ],
   "vars": {
     "BSKY_HANDLE": "jgs.me",
-    // 初回セットアップで `GET https://graph.threads.net/v1.0/me?fields=id` を
-    // 叩いて得た数値 id を入れる。空のままだと container 作成が失敗する。
-    "THREADS_USER_ID": "",
+    "THREADS_USER_ID": "27187720030905106",
   },
   // Threads の long-lived token は 60 日で失効する。週1で叩き直す。
   "triggers": {

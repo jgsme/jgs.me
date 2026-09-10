@@ -91,6 +91,33 @@ export async function handleLinkIndex(
     return new Response("invalid json", { status: 400 });
   }
 
+  // gyazoMigrate.ts の handleGyazoMigrate と同じ検査。
+  // limit=-1 は SQLite の LIMIT -1 で「無制限」になり、全ページを 1
+  // リクエストで舐めてしまうので弾く。limit=0 は runLinkIndex 側で
+  // rows[-1] を踏まないよう直したが、そもそも 0 件処理する意味が無いので
+  // 下限は 1。
+  if (body.cursor !== undefined) {
+    if (
+      typeof body.cursor !== "number" ||
+      !Number.isInteger(body.cursor) ||
+      body.cursor < 0
+    ) {
+      return new Response("cursor must be an integer >= 0", { status: 400 });
+    }
+  }
+  if (body.limit !== undefined) {
+    if (
+      typeof body.limit !== "number" ||
+      !Number.isInteger(body.limit) ||
+      body.limit < 1 ||
+      body.limit > 100
+    ) {
+      return new Response("limit must be an integer between 1 and 100", {
+        status: 400,
+      });
+    }
+  }
+
   const cursor = typeof body.cursor === "number" ? body.cursor : 0;
   const limit = typeof body.limit === "number" ? body.limit : DEFAULT_LIMIT;
 

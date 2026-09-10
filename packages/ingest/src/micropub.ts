@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/d1";
 import { and, eq, ne } from "drizzle-orm";
-import { articles, clips, objects, pages } from "@jigsaw/db";
+import { articles, clips, objects, pageLinks, pages } from "@jigsaw/db";
 import { newSbBodyKey, r2KeyOf, bodyFormatOf } from "@jigsaw/db/body-key";
 import { jstDate } from "@jigsaw/db/article-date";
 import { isAuthorized } from "./auth";
@@ -11,6 +11,8 @@ import { parseTargetURL } from "./target";
 import { putMedia } from "@jigsaw/media";
 import { pageImage } from "./firstImage";
 import { uniqueTitle } from "./uniqueTitle";
+import { extractLinks } from "./links";
+import { chunk } from "./rows";
 import type { Env } from "./index";
 
 const SITE_URL = "https://w.jgs.me";
@@ -150,28 +152,43 @@ async function handleMicropubCreate(
   // clip は「記事にはしないが残す」枠。article と排他にする。
   const clip = isClip(entry.categories);
 
+  // 被リンク索引。put.body は 1 行目が題の本文そのものなので、R2 に書いたのと
+  // 同じテキストから引く。本文と索引を同じ batch で入れて、ずれを作らない。
+  const linkRows = extractLinks(put.body).map((toTitle) => ({
+    fromPageID: page.id,
+    toTitle,
+  }));
+
   // env.DB.batch (生 SQL) と db.batch (query builder) は混ぜられないので、
-  // clip / article の分岐も含めて 3 件とも drizzle で組み立てる。
-  await db.batch([
-    clip
-      ? db.insert(clips).values({ pageID: page.id, created })
-      : db.insert(articles).values({
-          pageID: page.id,
-          created,
-          // 周年日記 (/on-this-day/MMDD) はこの日付で記事を引く。micropub 由来は
-          // created が投稿時刻そのものなので、本文を読まずに JST の暦日で決まる。
-          date: jstDate(created),
-        }),
-    db.insert(objects).values({
-      id: objectURI(page.id),
-      pageID: page.id,
-      sourceProtocol: "web",
-      mf2: JSON.stringify(payload),
-      deleted: false,
-      created,
-      updated: created,
-    }),
-  ]);
+  // clip / article の分岐も含めて drizzle で組み立てる。
+  const insertKind = clip
+    ? db.insert(clips).values({ pageID: page.id, created })
+    : db.insert(articles).values({
+        pageID: page.id,
+        created,
+        // 周年日記 (/on-this-day/MMDD) はこの日付で記事を引く。micropub 由来は
+        // created が投稿時刻そのものなので、本文を読まずに JST の暦日で決まる。
+        date: jstDate(created),
+      });
+  const insertObject = db.insert(objects).values({
+    id: objectURI(page.id),
+    pageID: page.id,
+    sourceProtocol: "web",
+    mf2: JSON.stringify(payload),
+    deleted: false,
+    created,
+    updated: created,
+  });
+
+  // D1 は 1 statement あたりのバインド数に上限 (約 100) がある。pageLinks は
+  // 1 行 2 パラメータなので、index.ts の similarity 投入と同じ理由で 16 行
+  // (16 × 2 列 = 32 パラメータ) ずつの文に刻み、同じ batch に複数文として積む。
+  // batch は 1 回の D1 呼び出しかつトランザクションなので、刻んでも
+  // insertKind / insertObject との原子性は保てる。
+  const linkInserts = chunk(linkRows, 16).map((group) =>
+    db.insert(pageLinks).values(group),
+  );
+  await db.batch([insertKind, insertObject, ...linkInserts]);
 
   // 公開したので ActivityPub のフォロワーへ配送する。
   // 失敗しても投入自体は成功させる (配送は後から再実行できる)。
@@ -403,20 +420,34 @@ async function handleMicropubUpdate(
     httpMetadata: { contentType: "text/plain; charset=utf-8" },
   });
 
+  // 被リンク索引は差分を取らず全消し + 入れ直しにする。1 ページのリンク数は
+  // 差分計算に見合う量ではない。
+  const linkRows = extractLinks(body).map((toTitle) => ({
+    fromPageID: target.pageID,
+    toTitle,
+  }));
+
   const now = new Date().toISOString();
   // updated を明示で渡しているので $onUpdate は発火しない (明示値が勝つ)。
   // create 同様、生 SQL ではなく drizzle の db.batch で組み立てる。
-  await db.batch([
-    db
-      .update(pages)
-      // 本文が差し替わればサムネの元も変わる。create と同じ規則で引き直す。
-      .set({ title: entry.name, image: pageImage(entry), updated: now })
-      .where(eq(pages.id, target.pageID)),
-    db
-      .update(objects)
-      .set({ mf2: JSON.stringify(nextPayload), updated: now })
-      .where(eq(objects.id, objectURI(target.pageID))),
-  ]);
+  const updatePage = db
+    .update(pages)
+    // 本文が差し替わればサムネの元も変わる。create と同じ規則で引き直す。
+    .set({ title: entry.name, image: pageImage(entry), updated: now })
+    .where(eq(pages.id, target.pageID));
+  const updateObject = db
+    .update(objects)
+    .set({ mf2: JSON.stringify(nextPayload), updated: now })
+    .where(eq(objects.id, objectURI(target.pageID)));
+  const clearLinks = db
+    .delete(pageLinks)
+    .where(eq(pageLinks.fromPageID, target.pageID));
+
+  // create と同じ理由で 16 行ずつに刻んで同じ batch に複数文として積む。
+  const linkInserts = chunk(linkRows, 16).map((group) =>
+    db.insert(pageLinks).values(group),
+  );
+  await db.batch([updatePage, updateObject, clearLinks, ...linkInserts]);
 
   const renamed = entry.name !== target.title;
 

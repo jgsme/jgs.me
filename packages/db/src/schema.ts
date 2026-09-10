@@ -4,6 +4,7 @@ import {
   integer,
   real,
   primaryKey,
+  index,
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 import { relations, sql } from "drizzle-orm";
@@ -84,6 +85,29 @@ export const clipRelations = relations(clips, ({ one }) => ({
     references: [pages.id],
   }),
 }));
+
+// 本文中の内部リンク ([foo] / #foo) の索引。逆引きして「この題に言及している
+// ページ」を出すために持つ。
+//
+// toPageID ではなく toTitle を持つのは、リンク先のページが存在しないことが
+// あるため (まだ書いていない題へのリンク)。それを出すのがこの表の目的なので、
+// ID に解決できることを前提にできない。page.title は UNIQUE なので、読むときに
+// 題で引けば一意に定まる。
+export const pageLinks = sqliteTable(
+  "page_link",
+  {
+    fromPageID: integer("fromPageID")
+      .notNull()
+      .references(() => pages.id),
+    toTitle: text("toTitle").notNull(),
+  },
+  // 逆引き (toTitle で引く) が本番の読み方なので索引を貼る。主キーは
+  // 「同じページから同じ題へのリンクは 1 行」を保証する。
+  (t) => [
+    primaryKey({ columns: [t.fromPageID, t.toTitle] }),
+    index("page_link_to_title").on(t.toTitle),
+  ],
+);
 
 // 類似度の計算世代。書き込みは INSERT のみで、表示の切り替えは current の UPDATE 1 行で行う。
 // 途中まで入った run は current を立てなければ表示に出ないので、ロールバックが要らない。

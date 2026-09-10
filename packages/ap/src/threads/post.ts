@@ -3,6 +3,7 @@ import { articles, clips, pages } from "@jigsaw/db";
 import { getDB, type Env } from "../db";
 import { SITE_URL, shareURL } from "../config";
 import { resolveContent } from "../content";
+import { notifyDiscord } from "../notify";
 import { buildContainerParams } from "./record";
 import { requestContainer } from "./client";
 import { withToken } from "./token";
@@ -13,6 +14,16 @@ export async function createContainer(
   pageID: number,
   env: Env,
 ): Promise<string | null> {
+  // wrangler.jsonc の THREADS_USER_ID は手動 OAuth の後に人が埋めるまで
+  // 空文字。空のままだと URL が `/v1.0//threads` になって必ず失敗するので、
+  // HTTP を叩く前に落として理由を通知する。retry しても直らない。
+  if (!env.THREADS_USER_ID) {
+    const msg = `Threads の THREADS_USER_ID が未設定なので container を作れない (pageID=${pageID})`;
+    console.error(`[threads] ${msg}`);
+    await notifyDiscord(env.DISCORD_REACTION_WEBHOOK, `${msg}。`);
+    return null;
+  }
+
   const db = getDB(env.DB);
 
   const rows = await db
@@ -37,6 +48,15 @@ export async function createContainer(
 
   const html = await resolveContent(page.bodyKey, env.R2, SITE_URL, page.title);
   const params = buildContainerParams({ html, url: shareURL(page.id) });
+
+  // resolveContent は R2 に本文が無いと "" を返す。TEXT 投稿は text 必須なので
+  // 空のまま投げても弾かれるだけ。これも retry では直らない。
+  if (params.text === "") {
+    const msg = `Threads に投げる本文が空になった (pageID=${pageID})`;
+    console.error(`[threads] ${msg}`);
+    await notifyDiscord(env.DISCORD_REACTION_WEBHOOK, `${msg}。`);
+    return null;
+  }
 
   const res = await withToken(env, (token) =>
     requestContainer(token, env.THREADS_USER_ID, params),

@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "../db";
-import { TOKEN_KEY, getToken, refreshToken, withToken } from "./token";
+import {
+  NOTIFY_KEY_PREFIX,
+  TOKEN_KEY,
+  getToken,
+  refreshToken,
+  withToken,
+} from "./token";
 
 type Store = Record<string, string>;
 
@@ -86,6 +92,23 @@ describe("refreshToken", () => {
     expect(posted[0]).toContain("Threads");
   });
 
+  it("access_token が欠けたレスポンスは KV に書かず throw する", async () => {
+    vi.stubGlobal(
+      "fetch",
+      async () =>
+        new Response(
+          JSON.stringify({ token_type: "bearer", expires_in: 100 }),
+          {
+            status: 200,
+          },
+        ),
+    );
+
+    const store: Store = {};
+    await expect(refreshToken(makeEnv(store))).rejects.toThrow();
+    expect(store[TOKEN_KEY]).toBeUndefined();
+  });
+
   it("KV にあるトークンを refresh に渡す (seed ではなく KV のものを使う)", async () => {
     const store: Store = {
       [TOKEN_KEY]: JSON.stringify({
@@ -133,7 +156,7 @@ describe("withToken", () => {
     expect(calls).toHaveLength(0);
   });
 
-  it("401 なら KV を消して seed で1度だけやり直す", async () => {
+  it("401 で seed が通ったときだけ KV を消す", async () => {
     const calls: string[] = [];
     vi.stubGlobal("fetch", async (url: string) => {
       calls.push(url);
@@ -161,7 +184,7 @@ describe("withToken", () => {
     expect(calls).toHaveLength(0);
   });
 
-  it("seed でも 401 なら通知する", async () => {
+  it("seed でも 401 なら通知する。KV は消さない", async () => {
     const posted: string[] = [];
     vi.stubGlobal("fetch", async (url: string, init: RequestInit = {}) => {
       posted.push(init.body as string);
@@ -185,6 +208,127 @@ describe("withToken", () => {
     expect(res.status).toBe(401);
     expect(posted).toHaveLength(1);
     expect(posted[0]).toContain("手動 OAuth");
+    // seed も死んでいる以上 KV のトークンが死んでいる確証は無い。
+    // 一過性の 401 で唯一生きている資格情報を捨てない。
+    expect(store[TOKEN_KEY]).toBeDefined();
+  });
+
+  it("400 + error.code 190 も失効として扱う", async () => {
+    const posted: string[] = [];
+    vi.stubGlobal("fetch", async (url: string, init: RequestInit = {}) => {
+      posted.push(init.body as string);
+      return new Response("", { status: 204 });
+    });
+
+    const store: Store = {
+      [TOKEN_KEY]: JSON.stringify({
+        accessToken: "DEAD",
+        expiresAt: 0,
+        refreshedAt: 0,
+      }),
+    };
+    const env = makeEnv(store, "SEED");
+
+    const oauthError = () =>
+      new Response(
+        JSON.stringify({
+          error: { message: "Session has expired", code: 190 },
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      );
+
+    const seen: string[] = [];
+    const res = await withToken(env, async (token) => {
+      seen.push(token);
+      return token === "SEED"
+        ? new Response("ok", { status: 200 })
+        : oauthError();
+    });
+
+    expect(seen).toEqual(["DEAD", "SEED"]);
+    expect(res.status).toBe(200);
+    expect(store[TOKEN_KEY]).toBeUndefined();
+    expect(posted).toHaveLength(0);
+  });
+
+  it("400 + error.code 190 を読んでも本文は呼び出し元に残る", async () => {
+    const store: Store = {
+      [TOKEN_KEY]: JSON.stringify({
+        accessToken: "DEAD",
+        expiresAt: 0,
+        refreshedAt: 0,
+      }),
+    };
+    vi.stubGlobal("fetch", async () => new Response("", { status: 204 }));
+
+    const res = await withToken(
+      makeEnv(store, "ALSO_DEAD"),
+      async () =>
+        new Response(JSON.stringify({ error: { code: 190 } }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }),
+    );
+
+    expect(res.status).toBe(400);
+    await expect(res.text()).resolves.toContain("190");
+  });
+
+  it("190 以外の 400 と JSON でない 400 は失効扱いしない", async () => {
+    const posted: string[] = [];
+    vi.stubGlobal("fetch", async (url: string, init: RequestInit = {}) => {
+      posted.push(init.body as string);
+      return new Response("", { status: 204 });
+    });
+
+    const store: Store = {
+      [TOKEN_KEY]: JSON.stringify({
+        accessToken: "LIVE",
+        expiresAt: 0,
+        refreshedAt: 0,
+      }),
+    };
+    const env = makeEnv(store, "SEED");
+
+    const seen: string[] = [];
+    const other = await withToken(env, async (token) => {
+      seen.push(token);
+      return new Response(JSON.stringify({ error: { code: 100 } }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    });
+    const html = await withToken(env, async (token) => {
+      seen.push(token);
+      return new Response("<html>gateway</html>", { status: 400 });
+    });
+
+    // どちらも seed でのやり直しをしない。
+    expect(seen).toEqual(["LIVE", "LIVE"]);
+    expect(other.status).toBe(400);
+    expect(html.status).toBe(400);
+    expect(posted).toHaveLength(0);
+    expect(store[TOKEN_KEY]).toBeDefined();
+  });
+
+  it("同じ理由の通知は 24 時間に1度に抑える", async () => {
+    const posted: string[] = [];
+    vi.stubGlobal("fetch", async (url: string, init: RequestInit = {}) => {
+      posted.push(init.body as string);
+      return new Response("", { status: 204 });
+    });
+
+    const store: Store = {};
+    const env = makeEnv(store, "SEED");
+    const call = () =>
+      withToken(env, async () => new Response("", { status: 401 }));
+
+    await call();
+    await call();
+    await call();
+
+    expect(posted).toHaveLength(1);
+    expect(store[`${NOTIFY_KEY_PREFIX}no-seed`]).toBeDefined();
   });
 
   it("KV が空で seed が 401 ならやり直さずに通知する", async () => {

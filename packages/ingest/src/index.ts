@@ -10,6 +10,7 @@ import {
   handleMicropubSource,
 } from "./micropub";
 import { handleGyazoMigrate } from "./gyazoMigrate";
+import { handleLinkIndex } from "./linkIndex";
 
 export interface Env {
   DB: D1Database;
@@ -67,6 +68,11 @@ export default {
       url.pathname === "/internal/gyazo-migrate"
     ) {
       return handleGyazoMigrate(request, env);
+    }
+
+    // 被リンク索引の backfill。cursor を返しながら全ページを舐める。
+    if (request.method === "POST" && url.pathname === "/internal/link-index") {
+      return handleLinkIndex(request, env);
     }
 
     // 類似度計算の対象。article として公開しているページだけを返す。

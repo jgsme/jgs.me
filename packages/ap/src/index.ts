@@ -4,6 +4,8 @@ import type {
   DeliveryMessage,
   Env,
   SendMessage,
+  ThreadsCreateMessage,
+  ThreadsPublishMessage,
   WebmentionMessage,
 } from "./db";
 import { webfinger } from "./routes/webfinger";
@@ -17,6 +19,9 @@ import { runDelivery } from "./queues/delivery";
 import { runWebmention } from "./queues/webmention";
 import { runWmSend } from "./queues/wmSend";
 import { runBsky } from "./queues/bsky";
+import { runThreadsCreate } from "./queues/threadsCreate";
+import { runThreadsPublish } from "./queues/threadsPublish";
+import { refreshToken } from "./threads/token";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -44,11 +49,27 @@ export default {
         return runWmSend(batch as MessageBatch<SendMessage>, env);
       case "ap-bsky":
         return runBsky(batch as MessageBatch<BskyMessage>, env);
+      case "ap-threads-create":
+        return runThreadsCreate(
+          batch as MessageBatch<ThreadsCreateMessage>,
+          env,
+        );
+      case "ap-threads-publish":
+        return runThreadsPublish(
+          batch as MessageBatch<ThreadsPublishMessage>,
+          env,
+        );
       default:
         // 知らない Queue から来たメッセージは retry せず落とす。
         // 設定ミスで無限に再試行させない。
         console.error(`[queue] unknown queue=${batch.queue}`);
         for (const msg of batch.messages) msg.ack();
     }
+  },
+
+  // Threads の long-lived token は 60 日で失効し、失効すると手動 OAuth から
+  // やり直しになる。週1で叩き直して期限を戻す。
+  async scheduled(_event: ScheduledController, env: Env): Promise<void> {
+    await refreshToken(env);
   },
 };

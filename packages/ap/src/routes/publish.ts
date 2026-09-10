@@ -112,6 +112,10 @@ publish.post("/internal/publish", async (c) => {
     if (kind === "create") {
       await c.env.BSKY.send({ pageID });
       console.log(`[publish] bsky queued pageID=${pageID}`);
+      // Threads は Bluesky とも ActivityPub とも独立した経路。
+      // 片方が落ちても他に影響しない。
+      await c.env.THREADS_CREATE.send({ pageID });
+      console.log(`[publish] threads queued pageID=${pageID}`);
     }
   }
 

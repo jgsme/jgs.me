@@ -7,13 +7,20 @@ export type MdBackfillItem = {
 };
 
 export function formatMdBackfillReport(items: MdBackfillItem[]): string {
-  const written = items.filter((i) => i.written).length;
   const errored = items.filter((i) => i.error !== undefined);
-  // 本文が R2 に無い page は実在する。エラーではないので分けて数える。
-  const skipped = items.length - written - errored.length;
+  const written = items.filter((i) => i.written).length;
+  // 本文が R2 に無い page は実在する。エラーではないので分けて数えるが、
+  // どれが欠けているかは知りたいので列挙する。
+  const skipped = items.filter((i) => !i.written && i.error === undefined);
 
   const lines = [`書いた: ${written}`];
-  if (skipped > 0) lines.push(`本文が無くて飛ばした: ${skipped}`);
+  if (skipped.length > 0) {
+    lines.push(
+      "",
+      "本文が無くて飛ばした page:",
+      ...skipped.map((i) => `  ${i.pageId} ${i.title}`),
+    );
+  }
   if (errored.length > 0) {
     lines.push(
       "",

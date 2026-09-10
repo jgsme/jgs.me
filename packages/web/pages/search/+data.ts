@@ -1,6 +1,13 @@
 import type { PageContextServer } from "vike/types";
 import type { Bindings } from "@/server/types";
-import { extractSnippet } from "@/utils/extractSnippet";
+import { getDB } from "@/db/getDB";
+import { pages } from "@jigsaw/db";
+import { inArray } from "drizzle-orm";
+import {
+  bodyKeyFromFilename,
+  dedupeByBodyKey,
+  snippetFromMd,
+} from "@/utils/searchResults";
 
 type Context = PageContextServer & {
   env: Bindings;
@@ -12,33 +19,7 @@ type SearchResult = {
   score: number;
 };
 
-const extractTitle = (content: Array<{ text: string }>): string | null => {
-  const text = content[0]?.text ?? "";
-  try {
-    const parsed = JSON.parse(text);
-    if (parsed.title) return parsed.title;
-  } catch {
-    const match = text.match(/"title"\s*:\s*"((?:[^"\\]|\\.)*)"/);
-    if (match) {
-      return match[1].replace(/\\"/g, '"').replace(/\\\\/g, "\\");
-    }
-  }
-  return null;
-};
-
-const extractSnippetFromContent = (
-  content: Array<{ text: string }>,
-  title: string,
-): string => {
-  const text = content[0]?.text ?? "";
-  try {
-    const parsed = JSON.parse(text);
-    if (parsed.lines && Array.isArray(parsed.lines)) {
-      return extractSnippet(parsed.lines, { title });
-    }
-  } catch {}
-  return "";
-};
+const MAX_NUM_RESULTS = 20;
 
 const data = async (c: Context) => {
   const query = c.urlParsed.search.q;
@@ -55,21 +36,49 @@ const data = async (c: Context) => {
 
   const response = await c.env.AI.autorag("w-rag").search({
     query,
-    max_num_results: 20,
+    max_num_results: MAX_NUM_RESULTS,
   });
 
-  const results: SearchResult[] = response.data
-    .map((item) => {
+  // filename は R2 のキー。w-md のキーは <bodyKey>.md なので、そこから
+  // page を引ける。chunk の中身から題を取ると、題が入っている先頭 chunk に
+  // 当たらなかったページが結果から落ちる。
+  const hits = dedupeByBodyKey(
+    response.data.flatMap((item) => {
+      const bodyKey = bodyKeyFromFilename(item.filename);
+      if (!bodyKey) return [];
       const content = item.content as Array<{ text: string }>;
-      const title = extractTitle(content);
-      if (!title) return null;
-      return {
-        title,
-        snippet: extractSnippetFromContent(content, title),
-        score: item.score,
-      };
-    })
-    .filter((item): item is SearchResult => item !== null);
+      return [
+        {
+          bodyKey,
+          score: item.score,
+          snippet: snippetFromMd(content[0]?.text ?? ""),
+        },
+      ];
+    }),
+  );
+
+  if (hits.length === 0) {
+    return { ok: true, payload: { query, results: [] as SearchResult[] } };
+  }
+
+  const rows = await getDB(c.env.DB)
+    .select({ bodyKey: pages.bodyKey, title: pages.title })
+    .from(pages)
+    .where(
+      inArray(
+        pages.bodyKey,
+        hits.map((h) => h.bodyKey),
+      ),
+    );
+  const titleOf = new Map(rows.map((r) => [r.bodyKey, r.title]));
+
+  // 題が引けないのは page が消えたのに md が残っている場合。出しても
+  // リンク先が無いので落とす。
+  const results: SearchResult[] = hits.flatMap((hit) => {
+    const title = titleOf.get(hit.bodyKey);
+    if (title === undefined) return [];
+    return [{ title, snippet: hit.snippet, score: hit.score }];
+  });
 
   return {
     ok: true,

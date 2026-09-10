@@ -11,6 +11,7 @@ import {
 } from "./micropub";
 import { handleGyazoMigrate } from "./gyazoMigrate";
 import { handleLinkIndex } from "./linkIndex";
+import { handleMdBackfill } from "./mdBackfill";
 
 export interface Env {
   DB: D1Database;
@@ -20,6 +21,8 @@ export interface Env {
   R2: R2Bucket;
   // Micropub media endpoint の画像。
   MEDIA: R2Bucket;
+  // 検索インデックス (AutoRAG w-rag) が食う md。原本とは別バケット。
+  MD: R2Bucket;
   MEDIA_BASE_URL: string;
   AP: Fetcher;
   // 記事ページのエッジキャッシュを消す口 (web の POST /internal/purge)。
@@ -73,6 +76,12 @@ export default {
     // 被リンク索引の backfill。cursor を返しながら全ページを舐める。
     if (request.method === "POST" && url.pathname === "/internal/link-index") {
       return handleLinkIndex(request, env);
+    }
+
+    // 検索インデックス用の md を既存ページぶん埋めるバッチ。
+    // 対象は article か clip として登録されているページだけ。
+    if (request.method === "POST" && url.pathname === "/internal/md-backfill") {
+      return handleMdBackfill(request, env);
     }
 
     // 類似度計算の対象。article として公開しているページだけを返す。

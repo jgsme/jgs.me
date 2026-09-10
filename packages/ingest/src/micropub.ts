@@ -7,6 +7,7 @@ import { isAuthorized } from "./auth";
 import { parseEntry, isClip } from "./mf2";
 import { applyUpdate, parseUpdateAction } from "./mf2update";
 import { buildSbBody } from "./body";
+import { buildMdPut } from "./mdBody";
 import { parseTargetURL } from "./target";
 import { putMedia } from "@jigsaw/media";
 import { pageImage } from "./firstImage";
@@ -56,6 +57,15 @@ export function buildCreateR2Put(
     body: buildSbBody(name, content),
     contentType: "text/plain; charset=utf-8",
   };
+}
+
+// 検索用の派生物を w-md に書く。原本の put の直後に呼ぶ。
+async function putMd(env: Env, bodyKey: string, sbBody: string): Promise<void> {
+  const md = buildMdPut(bodyKey, sbBody);
+  if (!md) return;
+  await env.MD.put(md.key, md.body, {
+    httpMetadata: { contentType: md.contentType },
+  });
 }
 
 // POST /micropub は action で分岐する。action が無ければ create (spec 既定)。
@@ -130,6 +140,10 @@ async function handleMicropubCreate(
   await env.R2.put(put.r2Key, put.body, {
     httpMetadata: { contentType: put.contentType },
   });
+
+  // 検索用の派生物。create は必ず article か clip になる (下の batch を見よ)
+  // ので、対象かどうかの分岐は要らない。原本と同じ本文から作る。
+  await putMd(env, put.bodyKey, put.body);
 
   // page.id を採番してから article / clip / object に使うため、
   // page の INSERT だけ先に実行する。
@@ -419,6 +433,9 @@ async function handleMicropubUpdate(
   await env.R2.put(r2Key, body, {
     httpMetadata: { contentType: "text/plain; charset=utf-8" },
   });
+
+  // 派生物も同じキーに上書きする。題も本文も差し替わるので作り直す。
+  await putMd(env, target.bodyKey, body);
 
   // 被リンク索引は差分を取らず全消し + 入れ直しにする。1 ページのリンク数は
   // 差分計算に見合う量ではない。

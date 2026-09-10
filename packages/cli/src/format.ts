@@ -129,3 +129,20 @@ export function formatResult(
 
   return lines.join("\n");
 }
+
+/**
+ * 検索インデックス用の md (w-md の <bodyKey>.md) のうち、消すべきキーを返す。
+ * w-md には article / clip として登録されているページのぶんしか書いていない
+ * ので、excluded_page だけのページや未登録のページは対象にしない。
+ */
+export function mdKeysOf(rows: Row[]): string[] {
+  return rows.flatMap((row) => {
+    const registered = registeredTables(row).some(
+      (table) => table === "article" || table === "clip",
+    );
+    if (!registered) return [];
+    const bodyKey = String(row.bodyKey ?? "");
+    if (bodyKey === "") return [];
+    return [`${bodyKey}.md`];
+  });
+}

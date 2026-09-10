@@ -10,6 +10,7 @@ import {
   handleMicropubSource,
 } from "./micropub";
 import { handleGyazoMigrate } from "./gyazoMigrate";
+import { handleLinkIndex } from "./linkIndex";
 import { handleMdBackfill } from "./mdBackfill";
 
 export interface Env {
@@ -70,6 +71,11 @@ export default {
       url.pathname === "/internal/gyazo-migrate"
     ) {
       return handleGyazoMigrate(request, env);
+    }
+
+    // 被リンク索引の backfill。cursor を返しながら全ページを舐める。
+    if (request.method === "POST" && url.pathname === "/internal/link-index") {
+      return handleLinkIndex(request, env);
     }
 
     // 検索インデックス用の md を既存ページぶん埋めるバッチ。

@@ -24,6 +24,16 @@ export type BskyMessage = {
   pageID: number;
 };
 
+export type ThreadsCreateMessage = {
+  pageID: number;
+};
+
+export type ThreadsPublishMessage = {
+  pageID: number;
+  // container 作成時に Threads が返した id。
+  creationID: string;
+};
+
 export type Env = {
   DB: D1Database;
   KV: KVNamespace;
@@ -40,4 +50,9 @@ export type Env = {
   DISCORD_REACTION_WEBHOOK: string;
   BSKY_HANDLE: string;
   BSKY_APP_PASSWORD: string;
+  THREADS_CREATE: Queue<ThreadsCreateMessage>;
+  THREADS_PUBLISH: Queue<ThreadsPublishMessage>;
+  THREADS_USER_ID: string;
+  // 初回の手動 OAuth で取った long-lived token。KV が空のときの種。
+  THREADS_SEED_TOKEN: string;
 };

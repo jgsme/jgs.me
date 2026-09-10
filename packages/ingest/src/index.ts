@@ -10,6 +10,7 @@ import {
   handleMicropubSource,
 } from "./micropub";
 import { handleGyazoMigrate } from "./gyazoMigrate";
+import { handleMdBackfill } from "./mdBackfill";
 
 export interface Env {
   DB: D1Database;
@@ -69,6 +70,12 @@ export default {
       url.pathname === "/internal/gyazo-migrate"
     ) {
       return handleGyazoMigrate(request, env);
+    }
+
+    // 検索インデックス用の md を既存ページぶん埋めるバッチ。
+    // 対象は article か clip として登録されているページだけ。
+    if (request.method === "POST" && url.pathname === "/internal/md-backfill") {
+      return handleMdBackfill(request, env);
     }
 
     // 類似度計算の対象。article として公開しているページだけを返す。

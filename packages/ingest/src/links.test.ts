@@ -44,6 +44,14 @@ describe("extractLinks", () => {
     expect(extractLinks("題")).toEqual([]);
   });
 
+  it("[foo.icon] を拾う (表示側がリンクとして描くため)", () => {
+    expect(extractLinks("題\n[foo.icon]")).toEqual(["foo"]);
+  });
+
+  it("[/proj/x.icon] は拾わない (pathType が root で表示側もリンクにしない)", () => {
+    expect(extractLinks("題\n[/proj/x.icon]")).toEqual([]);
+  });
+
   it("空文字では空", () => {
     expect(extractLinks("")).toEqual([]);
   });

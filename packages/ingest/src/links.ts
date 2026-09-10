@@ -16,6 +16,13 @@ function collect(nodes: readonly Node[], out: Set<string>): void {
       out.add(node.href);
       continue;
     }
+    // icon ([foo.icon]) も表示側 (ScrapboxNode.tsx の case "icon") が
+    // pathType === "relative" のときだけ /pages/<path> へのリンクとして描く。
+    // link と違って href ではなく path を持つ。
+    if (node.type === "icon" && node.pathType === "relative") {
+      out.add(node.path);
+      continue;
+    }
     // decoration / strong / quote は子ノードを持つ。装飾の中のリンクも
     // 本文ではリンクとして出るので、降りて探す。
     if ("nodes" in node) collect(node.nodes, out);

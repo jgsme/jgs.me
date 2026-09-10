@@ -26,7 +26,9 @@ export function buildSelectSql(ids: number[]): string {
     (table) =>
       `  (SELECT COUNT(*) FROM ${table} WHERE pageID = p.id) AS ${PRESENCE_COLUMN[table]}`,
   ).join(",\n");
-  return `SELECT p.id, p.title,\n${counts}\nFROM page p WHERE p.id IN (${list})`;
+  // bodyKey は検索インデックス用の md (w-md の <bodyKey>.md) を消すのに要る。
+  // DB のカラム名は歴史的経緯で sbID のまま。
+  return `SELECT p.id, p.title, p.sbID AS bodyKey,\n${counts}\nFROM page p WHERE p.id IN (${list})`;
 }
 
 export function buildDeleteSql(table: TargetTable, ids: number[]): string {

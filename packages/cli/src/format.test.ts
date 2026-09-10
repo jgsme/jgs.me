@@ -3,6 +3,7 @@ import {
   formatPartialResult,
   formatResult,
   hasRegistrations,
+  mdKeysOf,
   parseChanges,
   parseRows,
 } from "./format.ts";
@@ -256,5 +257,39 @@ describe("formatPartialResult", () => {
     expect(formatPartialResult([6216, 6216], [row(6216, "例のページ")])).toBe(
       "6216 「例のページ」: もともと未登録",
     );
+  });
+});
+
+describe("mdKeysOf", () => {
+  const row = (over: Record<string, unknown>) => ({
+    id: 1,
+    title: "題",
+    bodyKey: "sb-1",
+    in_article: 0,
+    in_clip: 0,
+    in_excluded: 0,
+    ...over,
+  });
+
+  it("article に居るページの md キーを返す", () => {
+    expect(mdKeysOf([row({ in_article: 1 })])).toEqual(["sb-1.md"]);
+  });
+
+  it("clip に居るページの md キーを返す", () => {
+    expect(mdKeysOf([row({ in_clip: 1 })])).toEqual(["sb-1.md"]);
+  });
+
+  // w-md には article / clip のものしか書いていない。excluded_page だけの
+  // ページに delete を撃っても消すものが無い。
+  it("excluded_page だけのページは対象外", () => {
+    expect(mdKeysOf([row({ in_excluded: 1 })])).toEqual([]);
+  });
+
+  it("未登録のページは対象外", () => {
+    expect(mdKeysOf([row({})])).toEqual([]);
+  });
+
+  it("bodyKey が空なら対象外 (本文が存在しない)", () => {
+    expect(mdKeysOf([row({ in_article: 1, bodyKey: "" })])).toEqual([]);
   });
 });

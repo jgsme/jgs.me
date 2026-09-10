@@ -91,3 +91,19 @@ describe("buildMdPut", () => {
     expect(buildMdPut("", "題\n本文")).toBeNull();
   });
 });
+
+// clip の本文は 1 行目の題のあとにもう一度題が入っていることがある。
+// 消した extractSnippet にも同じ除去があった (trimmed === title を落とす)。
+describe("toMarkdown の題の重複", () => {
+  it("本文に題と同じ行があれば落とす", () => {
+    expect(toMarkdown("題\n題\n本文")).toBe("# 題\n\n本文");
+  });
+
+  it("前後の空白だけ違う行も題とみなす", () => {
+    expect(toMarkdown("題\n  題  \n本文")).toBe("# 題\n\n本文");
+  });
+
+  it("題を含むだけの行は落とさない", () => {
+    expect(toMarkdown("題\n題の話\n本文")).toBe("# 題\n\n題の話\n本文");
+  });
+});

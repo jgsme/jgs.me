@@ -37,9 +37,11 @@ function headingText(line: Line): string | null {
 // 入力は fetchBody() の出力 (Scrapbox 記法、1行目が題)。
 export function toMarkdown(text: string): string {
   const out: string[] = [];
+  let title = "";
 
   for (const block of parse(text)) {
     if (block.type === "title") {
+      title = block.text.trim();
       out.push(`# ${block.text}`, "");
       continue;
     }
@@ -52,6 +54,10 @@ export function toMarkdown(text: string): string {
     }
 
     const body = block.nodes.map(nodeText).join("");
+
+    // clip の本文は 1 行目の題のあとにもう一度題が入っていることがある。
+    // 題を 2 回埋め込んでも検索の役に立たない。インデントは無視して見る。
+    if (title !== "" && body.trim() === title) continue;
 
     // Scrapbox のインデントは箇条書き相当。深さぶんネストさせる。
     if (block.indent > 0) {

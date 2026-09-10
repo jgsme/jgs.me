@@ -58,6 +58,9 @@ describe("requestPublish", () => {
     const body = new URLSearchParams(calls[0]!.init.body as string);
     expect(body.get("creation_id")).toBe("CREATION");
     expect(body.get("access_token")).toBe("TOKEN");
+
+    const headers = calls[0]!.init.headers as Record<string, string>;
+    expect(headers["User-Agent"]).toContain("jgs-me/");
   });
 });
 
@@ -72,6 +75,9 @@ describe("requestPermalink", () => {
     );
     expect(url.searchParams.get("fields")).toBe("permalink");
     expect(url.searchParams.get("access_token")).toBe("TOKEN");
+
+    const headers = calls[0]!.init.headers as Record<string, string>;
+    expect(headers["User-Agent"]).toContain("jgs-me/");
   });
 });
 
@@ -87,5 +93,8 @@ describe("requestRefresh", () => {
     expect(url.pathname).not.toContain("v1.0");
     expect(url.searchParams.get("grant_type")).toBe("th_refresh_token");
     expect(url.searchParams.get("access_token")).toBe("TOKEN");
+
+    const headers = calls[0]!.init.headers as Record<string, string>;
+    expect(headers["User-Agent"]).toContain("jgs-me/");
   });
 });

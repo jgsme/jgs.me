@@ -14,6 +14,14 @@ describe("thumbURL", () => {
     );
   });
 
+  // 横長の画像を width だけで縮めると高さが足りず、object-cover の正方形タイルで
+  // 拡大されてぼやける。正方形に切り出して返してもらう。
+  it("R2 の URL は square で正方形に切り出す", () => {
+    expect(thumbURL("https://r2.jgs.me/abc123.png", 240, { square: true })).toBe(
+      "https://r2.jgs.me/cdn-cgi/image/width=240,height=240,fit=cover,format=auto,onerror=redirect/abc123.png",
+    );
+  });
+
   // 移行しない page が残るので Gyazo の分岐は生かしたまま。
   it("Gyazo の /raw は /thumb/<size> に差し替える", () => {
     expect(thumbURL("https://gyazo.com/abc123/raw")).toBe(

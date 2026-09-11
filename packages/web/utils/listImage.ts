@@ -13,13 +13,14 @@ function build(
   image: string,
   widths: readonly number[],
   sizes: string,
+  opts: { square?: boolean } = {},
 ): Sources {
-  const src = thumbURL(image, widths[0]!);
+  const src = thumbURL(image, widths[0]!, opts);
   if (!image.startsWith("https://r2.jgs.me/")) return { src };
 
   return {
     src,
-    srcSet: widths.map((w) => `${thumbURL(image, w)} ${w}w`).join(", "),
+    srcSet: widths.map((w) => `${thumbURL(image, w, opts)} ${w}w`).join(", "),
     sizes,
   };
 }
@@ -36,13 +37,16 @@ export function cardImageSources(image: string): Sources {
   );
 }
 
-// 関連記事の正方形タイル。
+// 関連記事と index の clip の正方形タイル。
 // 記事の幅 736px を grid-cols-3 gap-3 で割るので 1 タイル 237px。
-// sm (640px) 未満は grid-cols-2 になる。
+// sm (640px) 未満は grid-cols-2 になり、1 タイル最大 298px まで広がる。2x で 596px。
+// タイルは object-cover なので、width だけで縮めると横長の画像は高さが足りず
+// 拡大されてぼやける。正方形に切り出したものを取る。
 export function tileImageSources(image: string): Sources {
   return build(
     image,
-    [240, 480],
+    [240, 480, 720],
     "(max-width: 640px) calc((100vw - 2rem - 0.75rem) / 2), 237px",
+    { square: true },
   );
 }

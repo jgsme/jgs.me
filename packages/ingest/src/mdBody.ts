@@ -25,6 +25,16 @@ function nodeText(node: Node): string {
   }
 }
 
+// 記事の先頭に置く「from [YYYYMMDD]」の出典行。レンダリング側
+// (packages/web/pages/article/@title/articleBody.ts) も表示から落としている。
+// 日付の羅列でしかないので検索用の本文にも入れない。
+function isFromLine(line: Line): boolean {
+  const [first, second] = line.nodes;
+  if (first?.type !== "plain" || first.text.trim() !== "from") return false;
+  if (second?.type !== "link" || second.pathType !== "relative") return false;
+  return /^\d{8}$/.test(second.href);
+}
+
 // 行全体が [* ...] だけの行は見出しとして書かれている。
 function headingText(line: Line): string | null {
   if (line.nodes.length !== 1) return null;
@@ -37,13 +47,20 @@ function headingText(line: Line): string | null {
 // 入力は fetchBody() の出力 (Scrapbox 記法、1行目が題)。
 export function toMarkdown(text: string): string {
   const out: string[] = [];
+  let title = "";
+  let seenContent = false;
 
   for (const block of parse(text)) {
     if (block.type === "title") {
+      title = block.text.trim();
       out.push(`# ${block.text}`, "");
       continue;
     }
     if (block.type !== "line") continue;
+
+    // from 行は本文の先頭にしか出てこない。途中に同じ形の行があっても
+    // それは本文なので落とさない。
+    if (!seenContent && isFromLine(block)) continue;
 
     const heading = headingText(block);
     if (heading !== null) {
@@ -53,8 +70,16 @@ export function toMarkdown(text: string): string {
 
     const body = block.nodes.map(nodeText).join("");
 
+    // clip の本文は 1 行目の題のあとにもう一度題が入っていることがある。
+    // 題を 2 回埋め込んでも検索の役に立たない。インデントは無視して見る。
+    if (title !== "" && body.trim() === title) continue;
+
+    if (body.trim() !== "") seenContent = true;
+
     // Scrapbox のインデントは箇条書き相当。深さぶんネストさせる。
+    // 中身が空のインデント行はマーカーだけが残るので落とす。
     if (block.indent > 0) {
+      if (body.trim() === "") continue;
       out.push(`${"  ".repeat(block.indent - 1)}- ${body}`);
       continue;
     }

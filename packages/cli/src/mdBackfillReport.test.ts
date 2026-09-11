@@ -18,11 +18,17 @@ describe("formatMdBackfillReport", () => {
     );
   });
 
-  // 本文が R2 に無い page は実在する。エラーではないので分けて数える。
-  it("本文が無くて飛ばしたぶんを分けて数える", () => {
+  // 本文が R2 に無い page は実在する。エラーではないので分けて数えるが、
+  // どれが欠けているかは知りたいので列挙する。
+  it("本文が無くて飛ばしたページを列挙する", () => {
     expect(
-      formatMdBackfillReport([item(), item({ pageId: 2, written: false })]),
-    ).toBe(["書いた: 1", "本文が無くて飛ばした: 1"].join("\n"));
+      formatMdBackfillReport([
+        item(),
+        item({ pageId: 2, title: "題2", written: false }),
+      ]),
+    ).toBe(
+      ["書いた: 1", "", "本文が無くて飛ばした page:", "  2 題2"].join("\n"),
+    );
   });
 
   it("失敗したページを列挙する", () => {

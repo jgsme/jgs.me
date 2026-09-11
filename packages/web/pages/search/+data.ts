@@ -34,7 +34,7 @@ const data = async (c: Context) => {
     };
   }
 
-  const response = await c.env.AI.autorag("w-rag").search({
+  const response = await c.env.AI.autorag("w-rag-md").search({
     query,
     max_num_results: MAX_NUM_RESULTS,
   });

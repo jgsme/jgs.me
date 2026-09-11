@@ -91,3 +91,44 @@ describe("buildMdPut", () => {
     expect(buildMdPut("", "題\n本文")).toBeNull();
   });
 });
+
+// clip の本文は 1 行目の題のあとにもう一度題が入っていることがある。
+// 消した extractSnippet にも同じ除去があった (trimmed === title を落とす)。
+describe("toMarkdown の題の重複", () => {
+  it("本文に題と同じ行があれば落とす", () => {
+    expect(toMarkdown("題\n題\n本文")).toBe("# 題\n\n本文");
+  });
+
+  it("前後の空白だけ違う行も題とみなす", () => {
+    expect(toMarkdown("題\n  題  \n本文")).toBe("# 題\n\n本文");
+  });
+
+  it("題を含むだけの行は落とさない", () => {
+    expect(toMarkdown("題\n題の話\n本文")).toBe("# 題\n\n題の話\n本文");
+  });
+});
+
+// レンダリング側 (articleBody.ts) が表示から落としているものは、検索用の
+// 本文にも要らない。
+describe("toMarkdown の定型行の除去", () => {
+  it("先頭の from [日付] 行を落とす", () => {
+    expect(toMarkdown("題\nfrom [20260211] #0211\n本文")).toBe("# 題\n\n本文");
+  });
+
+  it("先頭でない from 行は落とさない", () => {
+    expect(toMarkdown("題\n本文\nfrom [20260211]")).toBe(
+      "# 題\n\n本文\nfrom 20260211",
+    );
+  });
+
+  it("from に見えても日付でなければ落とさない", () => {
+    expect(toMarkdown("題\nfrom [どこか]")).toBe("# 題\n\nfrom どこか");
+  });
+
+  // Scrapbox の空のインデント行。マーカーだけが残ってもノイズにしかならない。
+  it("中身が空のインデント行を落とす", () => {
+    expect(toMarkdown("題\n 一段目\n \n 二段目")).toBe(
+      "# 題\n\n- 一段目\n- 二段目",
+    );
+  });
+});

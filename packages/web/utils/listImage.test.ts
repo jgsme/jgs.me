@@ -39,14 +39,20 @@ describe("cardImageSources", () => {
 });
 
 describe("tileImageSources", () => {
+  const sq = (w: number) =>
+    `${CDN}/width=${w},height=${w},fit=cover,format=auto,onerror=redirect/deadbeef.png`;
+
   // aspect-square の 3 列グリッド。1 タイルは記事幅 736px を 3 分割した 237px。
-  it("R2 の画像は 240w を src にする", () => {
-    expect(tileImageSources(R2).src).toBe(at(240));
+  // object-cover なので width だけ縮めると横長の画像は高さが足りない。正方形で取る。
+  it("R2 の画像は正方形の 240w を src にする", () => {
+    expect(tileImageSources(R2).src).toBe(sq(240));
   });
 
-  it("R2 の画像は 240w / 480w を並べる", () => {
+  // sm 未満の 2 列は 1 タイル最大 298px (639px 幅) まで広がる。2x で 596px 要るので
+  // 720w まで並べる。
+  it("R2 の画像は正方形の 240w / 480w / 720w を並べる", () => {
     expect(tileImageSources(R2).srcSet).toBe(
-      `${at(240)} 240w, ${at(480)} 480w`,
+      `${sq(240)} 240w, ${sq(480)} 480w, ${sq(720)} 720w`,
     );
   });
 

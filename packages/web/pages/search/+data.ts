@@ -34,9 +34,6 @@ const data = async (c: Context) => {
     };
   }
 
-  // source バケットは instance を作ったあとから変えられない (AI Search に
-  // 設定編集の API が無い) ので、w-data を向いた w-rag は使わず、w-md を
-  // 向けて作り直した w-rag-md を引く。
   const response = await c.env.AI.autorag("w-rag-md").search({
     query,
     max_num_results: MAX_NUM_RESULTS,

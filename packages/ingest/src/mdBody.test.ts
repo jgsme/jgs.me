@@ -107,3 +107,28 @@ describe("toMarkdown の題の重複", () => {
     expect(toMarkdown("題\n題の話\n本文")).toBe("# 題\n\n題の話\n本文");
   });
 });
+
+// レンダリング側 (articleBody.ts) が表示から落としているものは、検索用の
+// 本文にも要らない。
+describe("toMarkdown の定型行の除去", () => {
+  it("先頭の from [日付] 行を落とす", () => {
+    expect(toMarkdown("題\nfrom [20260211] #0211\n本文")).toBe("# 題\n\n本文");
+  });
+
+  it("先頭でない from 行は落とさない", () => {
+    expect(toMarkdown("題\n本文\nfrom [20260211]")).toBe(
+      "# 題\n\n本文\nfrom 20260211",
+    );
+  });
+
+  it("from に見えても日付でなければ落とさない", () => {
+    expect(toMarkdown("題\nfrom [どこか]")).toBe("# 題\n\nfrom どこか");
+  });
+
+  // Scrapbox の空のインデント行。マーカーだけが残ってもノイズにしかならない。
+  it("中身が空のインデント行を落とす", () => {
+    expect(toMarkdown("題\n 一段目\n \n 二段目")).toBe(
+      "# 題\n\n- 一段目\n- 二段目",
+    );
+  });
+});

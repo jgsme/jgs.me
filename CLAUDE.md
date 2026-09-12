@@ -17,9 +17,10 @@ pnpm deploy       # Build and deploy to Cloudflare Pages
 pnpm gen          # Generate Drizzle migrations (drizzle-kit generate)
 
 # CLI Tools
-pnpm undo <url|id> [<url|id>...]  # 登録を取り消す（article/clip/excluded_page から削除）
+pnpm undo <url|id> [<url|id>...]  # 登録を取り消す（article/clip/excluded_page と w-md から削除）
 pnpm kind <url|id> <kind>        # clip.kind を書き換える (link/quote/photo/video)
 pnpm kind --csv <path>           # CSV から一括で書き換える
+pnpm md-backfill                 # 検索インデックス用の md (w-md) を既存ページぶん埋める
 
 # Lint
 pnpm lint:tokens  # design token から外れた書き方を検出する

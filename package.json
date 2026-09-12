@@ -14,7 +14,8 @@
     "lint:tokens": "bash scripts/lint-tokens.sh",
     "undo": "pnpm --filter cli undo",
     "gyazo": "pnpm --filter cli gyazo",
-    "kind": "pnpm --filter cli kind"
+    "kind": "pnpm --filter cli kind",
+    "md-backfill": "pnpm --filter cli md-backfill"
   },
   "devDependencies": {
     "prettier": "^3.9.6",

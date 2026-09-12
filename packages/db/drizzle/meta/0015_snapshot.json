@@ -1,8 +1,8 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "bae3e1e6-521c-4d02-b7fd-92626055ec36",
-  "prevId": "c2e3448a-47eb-4bf3-aba5-f9712791cd59",
+  "id": "65974b46-7425-41a0-a92a-0a66130c26c4",
+  "prevId": "bae3e1e6-521c-4d02-b7fd-92626055ec36",
   "tables": {
     "article": {
       "name": "article",
@@ -81,6 +81,14 @@
           "notNull": true,
           "autoincrement": false,
           "default": "(CURRENT_TIMESTAMP)"
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'link'"
         }
       },
       "indexes": {},

@@ -5,6 +5,7 @@ import { ScrapboxBlock } from "./components/ScrapboxBlock";
 import { CopyButton } from "./components/CopyButton";
 import { shareUrlPath } from "./components/shareUrl";
 import { RelatedPages } from "./components/RelatedPages";
+import { PageTileGrid } from "./components/PageTileGrid";
 import { clientOnly } from "vike-react/clientOnly";
 import { WarpButton } from "../../components/WarpButton";
 
@@ -24,6 +25,7 @@ const Page = () => {
       <main className="max-w-content mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-4">{d.title}</h1>
         <p className="text-fg-muted">Page not found</p>
+        <PageTileGrid heading="関連ページ" pages={d.backlinks} />
       </main>
     );
   }

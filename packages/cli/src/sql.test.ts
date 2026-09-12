@@ -11,7 +11,7 @@ describe("buildSelectSql", () => {
   it("在籍状況を相関サブクエリ 3 本で取る 1 文を返す", () => {
     expect(buildSelectSql([6216])).toBe(
       [
-        "SELECT p.id, p.title,",
+        "SELECT p.id, p.title, p.sbID AS bodyKey,",
         "  (SELECT COUNT(*) FROM article WHERE pageID = p.id) AS in_article,",
         "  (SELECT COUNT(*) FROM clip WHERE pageID = p.id) AS in_clip,",
         "  (SELECT COUNT(*) FROM excluded_page WHERE pageID = p.id) AS in_excluded",
@@ -23,7 +23,7 @@ describe("buildSelectSql", () => {
   it("複数 ID をカンマ区切りで埋め込む", () => {
     expect(buildSelectSql([6216, 6217])).toBe(
       [
-        "SELECT p.id, p.title,",
+        "SELECT p.id, p.title, p.sbID AS bodyKey,",
         "  (SELECT COUNT(*) FROM article WHERE pageID = p.id) AS in_article,",
         "  (SELECT COUNT(*) FROM clip WHERE pageID = p.id) AS in_clip,",
         "  (SELECT COUNT(*) FROM excluded_page WHERE pageID = p.id) AS in_excluded",

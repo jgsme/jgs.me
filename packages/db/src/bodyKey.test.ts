@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { SB_PREFIX, bodyFormatOf, newSbBodyKey, r2KeyOf } from "./bodyKey";
+import {
+  SB_PREFIX,
+  bodyFormatOf,
+  mdKeyOf,
+  newSbBodyKey,
+  r2KeyOf,
+} from "./bodyKey";
 
 describe("newSbBodyKey", () => {
   it("sb- で始まる", () => {
@@ -44,5 +50,16 @@ describe("r2KeyOf", () => {
 
   it("prefix は sb-", () => {
     expect(SB_PREFIX).toBe("sb-");
+  });
+});
+
+describe("mdKeyOf", () => {
+  it("Scrapbox 由来も Micropub 由来も .md", () => {
+    expect(mdKeyOf("5f8a1b2c")).toBe("5f8a1b2c.md");
+    expect(mdKeyOf("sb-0189abcd")).toBe("sb-0189abcd.md");
+  });
+
+  it("空文字なら null (本文が存在しない)", () => {
+    expect(mdKeyOf("")).toBeNull();
   });
 });

@@ -4,6 +4,7 @@ import {
   formatPartialResult,
   formatResult,
   hasRegistrations,
+  mdKeysOf,
   parseChanges,
   parseRows,
 } from "./format.ts";
@@ -17,6 +18,7 @@ import {
 
 const WEB_DIR = fileURLToPath(new URL("../../web", import.meta.url));
 const DATABASE_NAME = "w";
+const MD_BUCKET = "w-md";
 
 function usage(): never {
   console.error(
@@ -69,6 +71,32 @@ function runSql(sql: string): unknown {
   } catch {
     throw new Error(
       `wrangler の出力を JSON として読めなかった:\n${proc.stdout}`,
+    );
+  }
+}
+
+/** w-md から 1 オブジェクト消す。存在しないキーでも wrangler は成功を返す */
+function deleteMd(key: string): void {
+  const proc = spawnSync(
+    "pnpm",
+    [
+      "exec",
+      "wrangler",
+      "r2",
+      "object",
+      "delete",
+      `${MD_BUCKET}/${key}`,
+      "--remote",
+    ],
+    { cwd: WEB_DIR, encoding: "utf8", stdio: ["inherit", "pipe", "inherit"] },
+  );
+
+  if (proc.error) {
+    throw new Error(`wrangler の起動に失敗した: ${proc.error.message}`);
+  }
+  if (proc.status !== 0) {
+    throw new Error(
+      `wrangler が失敗した (exit ${proc.status}):\n${proc.stdout ?? ""}`,
     );
   }
 }
@@ -136,6 +164,19 @@ function main(): void {
         console.log(formatPartialResult(ids, rows));
         process.exitCode = 1;
         return;
+      }
+    }
+  }
+
+  // 検索インデックス用の md も落とす。ここまで来ていれば D1 側は消えて
+  // いるので、失敗しても undo 自体は成立している。次の全量バックフィルまで
+  // 検索に残るだけなので、警告にとどめて exit code は変えない。
+  if (needsDelete) {
+    for (const key of mdKeysOf(rows)) {
+      try {
+        deleteMd(key);
+      } catch (e) {
+        console.error(`検索用の md を消せなかった (${key}): ${message(e)}`);
       }
     }
   }

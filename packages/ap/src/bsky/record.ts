@@ -2,7 +2,8 @@ import { toISO } from "../as2";
 import { summarize } from "../as2";
 import type { BlobRef } from "./blob";
 import { linkFacets } from "./facets";
-import { MAX_GRAPHEMES, htmlToText, truncateGraphemes } from "./text";
+import { MAX_GRAPHEMES, truncateGraphemes } from "./text";
+import { htmlToText } from "../text";
 
 export type PostInput = {
   title: string;

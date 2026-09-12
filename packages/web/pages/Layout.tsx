@@ -23,8 +23,11 @@ export const Layout = ({ children }: React.PropsWithChildren) => {
           <div className="grow">
             <SearchForm />
           </div>
+          {/* 幅の狭い端末では落とす。128px 固定のこれを並べると検索窓が
+              潰れて「検索」ボタンのラベルまで折り返す。周年日記へは
+              トップの導線が無くても /on-this-day から辿れる。 */}
           {isTop && (
-            <div>
+            <div className="hidden sm:block">
               <TodayLink />
             </div>
           )}

@@ -2,7 +2,6 @@ import React from "react";
 import { useData } from "vike-react/useData";
 import { cardImageSources } from "@/utils/listImage";
 import type data from "./+data";
-import { SearchForm } from "../components/SearchForm";
 import { TodayLink } from "../components/TodayLink";
 import { ClipsSection } from "./ClipsSection";
 
@@ -11,13 +10,9 @@ const Page = () => {
 
   return (
     <main className="max-w-content mx-auto px-4 pb-48">
-      <div className="flex gap-4 my-2">
-        <div className="grow">
-          <SearchForm />
-        </div>
-        <div>
-          <TodayLink />
-        </div>
+      {/* 周年日記への導線はトップだけに置く。高さは検索窓に合わせている。 */}
+      <div className="flex justify-end my-2 h-12">
+        <TodayLink />
       </div>
       <ul>
         {d.payload.articles.map((article, i) => (

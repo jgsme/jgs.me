@@ -1,8 +1,15 @@
 import React from "react";
 import "./index.css";
+import { usePageContext } from "vike-react/usePageContext";
 import { SearchForm } from "./components/SearchForm";
+import { TodayLink } from "./components/TodayLink";
 
 export const Layout = ({ children }: React.PropsWithChildren) => {
+  const { urlPathname } = usePageContext();
+  // 周年日記への導線はトップだけに出す。検索窓と 1 行に並べるので、
+  // 出し分けは検索窓を持つこちら側でやる。
+  const isTop = urlPathname === "/";
+
   return (
     <>
       <div className="w-full bg-brand h-header py-2">
@@ -12,7 +19,16 @@ export const Layout = ({ children }: React.PropsWithChildren) => {
       </div>
       {/* 各ページの main と同じ幅と余白。ページをまたいで検索窓の位置が動かない。 */}
       <div className="max-w-content mx-auto px-4">
-        <SearchForm />
+        <div className="flex gap-4 my-2">
+          <div className="grow">
+            <SearchForm />
+          </div>
+          {isTop && (
+            <div>
+              <TodayLink />
+            </div>
+          )}
+        </div>
       </div>
       {children}
     </>

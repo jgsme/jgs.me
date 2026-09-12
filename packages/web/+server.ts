@@ -10,6 +10,7 @@ import { random } from "./server/routes/random";
 import { wellknown } from "./server/routes/wellknown";
 import { objects } from "./server/routes/objects";
 import { reactions } from "./server/routes/reactions";
+import { backlinks } from "./server/routes/backlinks";
 import { internal } from "./server/routes/internal";
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -31,6 +32,7 @@ app.route("/", random);
 app.route("/", wellknown);
 app.route("/", objects);
 app.route("/", reactions);
+app.route("/", backlinks);
 app.route("/", internal);
 
 vike(app);

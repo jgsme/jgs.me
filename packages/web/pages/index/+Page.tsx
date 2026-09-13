@@ -2,8 +2,6 @@ import React from "react";
 import { useData } from "vike-react/useData";
 import { cardImageSources } from "@/utils/listImage";
 import type data from "./+data";
-import { SearchForm } from "../components/SearchForm";
-import { TodayLink } from "../components/TodayLink";
 import { ClipsSection } from "./ClipsSection";
 
 const Page = () => {
@@ -11,14 +9,6 @@ const Page = () => {
 
   return (
     <main className="max-w-content mx-auto px-4 pb-48">
-      <div className="flex gap-4 my-2">
-        <div className="grow">
-          <SearchForm />
-        </div>
-        <div>
-          <TodayLink />
-        </div>
-      </div>
       <ul>
         {d.payload.articles.map((article, i) => (
           <React.Fragment key={article.id}>

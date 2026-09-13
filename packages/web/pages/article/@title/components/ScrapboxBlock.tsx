@@ -1,6 +1,7 @@
 import React from "react";
 import type { Block as BlockType } from "@progfay/scrapbox-parser";
 import { parseCardBlock } from "./card";
+import { isHorizontalRule } from "./horizontalRule";
 import { ScrapboxNode } from "./ScrapboxNode";
 
 export const ScrapboxBlock: React.FC<{ block: BlockType }> = ({ block }) => {
@@ -9,6 +10,9 @@ export const ScrapboxBlock: React.FC<{ block: BlockType }> = ({ block }) => {
       return null;
 
     case "line": {
+      if (isHorizontalRule(block)) {
+        return <hr className="article-rule my-8" />;
+      }
       if (block.nodes.length === 0) {
         return <div className="h-4" />;
       }

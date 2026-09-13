@@ -1,5 +1,8 @@
 export type RssFeedItem = {
   title: string;
+  // item の permalink パス (/a/:id, /c/:id)。title から組むと改題で link が
+  // 変わり、reader 側で同じ item が二度出る。utils/permalink.ts 参照。
+  linkPath: string;
   // SQLite の CURRENT_TIMESTAMP 由来の "YYYY-MM-DD HH:MM:SS" (UTC)。
   created: string;
   description: string | null;
@@ -45,7 +48,7 @@ export function buildRssXml(opts: {
 
   const rssItems = items
     .map((item) => {
-      const link = `${siteUrl}/pages/${encodeURIComponent(item.title)}`;
+      const link = `${siteUrl}${item.linkPath}`;
       const created = parseCreated(item.created);
       const pubDate = (created ?? lastBuildDate).toUTCString();
       const description = item.description

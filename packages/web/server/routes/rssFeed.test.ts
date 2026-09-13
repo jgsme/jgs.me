@@ -6,6 +6,7 @@ const LAST_BUILD = new Date("2026-08-24T02:00:00Z");
 
 const item = (over: Partial<RssFeedItem> = {}): RssFeedItem => ({
   title: "タイトル",
+  linkPath: "/a/1",
   created: "2026-08-24 01:21:57",
   description: "本文の冒頭",
   ...over,
@@ -62,12 +63,12 @@ describe("buildRssXml", () => {
     expect(xml).toContain("<pubDate>Mon, 24 Aug 2026 01:21:57 GMT</pubDate>");
   });
 
-  it("link と guid をタイトルから組み立てる", () => {
-    const xml = build([item({ title: "祝 学マス" })]);
-    const link =
-      "https://w.jgs.me/pages/%E7%A5%9D%20%E5%AD%A6%E3%83%9E%E3%82%B9";
-    expect(xml).toContain(`<link>${link}</link>`);
-    expect(xml).toContain(`<guid>${link}</guid>`);
+  // link/guid は /pages/<title> ではなく permalink。題を変えても URL が
+  // 変わらないので、reader 側で同じ item が二度出ない。
+  it("link と guid を linkPath から組み立てる", () => {
+    const xml = build([item({ title: "祝 学マス", linkPath: "/a/12" })]);
+    expect(xml).toContain("<link>https://w.jgs.me/a/12</link>");
+    expect(xml).toContain("<guid>https://w.jgs.me/a/12</guid>");
   });
 
   it("item が空でも channel を返す", () => {
@@ -104,15 +105,13 @@ describe("buildRssXml の feed 指定", () => {
 
   it("item の link は title 指定に影響されない", () => {
     const xml = buildRssXml({
-      items: [item({ title: "clip の題" })],
+      items: [item({ title: "clip の題", linkPath: "/c/34" })],
       siteUrl: SITE_URL,
       lastBuildDate: LAST_BUILD,
       title: "Clips",
       selfPath: "/clips.xml",
     });
 
-    expect(xml).toContain(
-      `<link>https://w.jgs.me/pages/${encodeURIComponent("clip の題")}</link>`,
-    );
+    expect(xml).toContain("<link>https://w.jgs.me/c/34</link>");
   });
 });

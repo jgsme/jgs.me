@@ -11,7 +11,7 @@ export const ScrapboxBlock: React.FC<{ block: BlockType }> = ({ block }) => {
 
     case "line": {
       if (isHorizontalRule(block)) {
-        return <hr className="my-8 border-0 border-t border-border" />;
+        return <hr className="article-rule my-8" />;
       }
       if (block.nodes.length === 0) {
         return <div className="h-4" />;

@@ -139,6 +139,31 @@ export const SearchForm: React.FC = () => {
         >
           検索
         </button>
+        {/* form の中なので button にすると submit になる。a にしておけば
+            中クリックで別タブにも開ける。 */}
+        <a
+          href="/random"
+          aria-label="ランダムな記事"
+          title="ランダムな記事"
+          className="inline-flex items-center px-3 py-2 rounded border border-solid border-border-strong hover:bg-surface-strong"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M3 7h4l10 10h4" />
+            <path d="M3 17h4L17 7h4" />
+            <path d="m18 4 3 3-3 3" />
+            <path d="m18 14 3 3-3 3" />
+          </svg>
+        </a>
 
         {/* 位置の基準は relative を持つこの div。form 直下に置くと body 基準の
             absolute になり、画面外に飛ぶ。 */}

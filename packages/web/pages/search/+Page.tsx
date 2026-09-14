@@ -1,14 +1,12 @@
 import React from "react";
 import { useData } from "vike-react/useData";
 import type data from "./+data";
-import { SearchForm } from "../components/SearchForm";
 
 const Page = () => {
   const d = useData<Awaited<ReturnType<typeof data>>>();
 
   return (
     <main className="max-w-content mx-auto px-4 pb-48">
-      <SearchForm />
       {d.payload.query && (
         <p className="mb-4 text-fg-muted">
           「{d.payload.query}」の検索結果: {d.payload.results.length}件

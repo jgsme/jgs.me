@@ -1,15 +1,9 @@
 import type { PageContextServer } from "vike/types";
 import type { Bindings } from "@/server/types";
 import { getDB } from "@/db/getDB";
-import {
-  articles,
-  clips,
-  excludedPages,
-  pageLinks,
-  pageSimilarities,
-  pages,
-} from "@jigsaw/db";
-import { and, desc, eq, gte, notExists, sql } from "drizzle-orm";
+import { articles, clips, pageSimilarities, pages } from "@jigsaw/db";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { BACKLINK_INITIAL, fetchBacklinks } from "@/server/backlinks";
 import { useConfig } from "vike-react/useConfig";
 import { fetchBody } from "@jigsaw/db/fetch-body";
 import { resolveArticleDate } from "@jigsaw/db/article-date";
@@ -21,8 +15,6 @@ import { buildArticleBody } from "./articleBody";
 // ノイズ切りの調整つまみ。0.60 で全 article の 7% が候補 0 件になる。
 const SIMILARITY_MIN = 0.6;
 const RELATED_COUNT = 5;
-// 被リンクは「似てるページ」と違って網羅寄りの情報なので多めに出す。
-const BACKLINK_COUNT = 12;
 
 type Context = PageContextServer & {
   env: Bindings;
@@ -84,24 +76,14 @@ const data = async (c: Context) => {
     // しないため、被リンクを出す。
     // similarity は使えない (page_similarity の行は article を持つページに
     // しか作られない。ここに来る題はそもそも page 行が無い)。
-    const backlinks = await db
-      .select({ title: pages.title, image: pages.image })
-      .from(pageLinks)
-      .innerJoin(pages, eq(pages.id, pageLinks.fromPageID))
-      .where(
-        and(
-          eq(pageLinks.toTitle, title),
-          // excluded_page は「見せない」意図の枠なので、カードにも出さない。
-          notExists(
-            db
-              .select({ one: sql`1` })
-              .from(excludedPages)
-              .where(eq(excludedPages.pageID, pages.id)),
-          ),
-        ),
-      )
-      .orderBy(desc(pages.updated))
-      .limit(BACKLINK_COUNT);
+    // クエリは API (/api/backlinks) と共有する。「もっと見る」で続きを
+    // 引くとき、SSR と同じ絞り込み・同じ並びでなければページが繰れない。
+    const { backlinks, hasMore } = await fetchBacklinks(
+      db,
+      title,
+      0,
+      BACKLINK_INITIAL,
+    );
 
     config({
       title: `${title} - I am Electrical machine`,
@@ -116,6 +98,7 @@ const data = async (c: Context) => {
       description: null,
       related: [],
       backlinks,
+      hasMore,
     };
   }
 

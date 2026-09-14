@@ -10,7 +10,9 @@ import { random } from "./server/routes/random";
 import { wellknown } from "./server/routes/wellknown";
 import { objects } from "./server/routes/objects";
 import { reactions } from "./server/routes/reactions";
+import { backlinks } from "./server/routes/backlinks";
 import { internal } from "./server/routes/internal";
+import { suggest } from "./server/routes/suggest";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -23,6 +25,9 @@ app.use("/c/*", createCacheMiddleware(604800));
 // このブランチで初めて張られるので、/ と同じ TTL でキャッシュする。
 app.use("/clips*", createCacheMiddleware(86400));
 app.use("/on-this-day/*", createCacheMiddleware(86400));
+// 検索サジェストは打鍵ごとに飛ぶ。同じ語は他人の打鍵とも重なるので、
+// 短く焼くだけで D1 を引く回数がまとめて減る。
+app.use("/api/search/suggest", createCacheMiddleware(300));
 
 app.route("/", redirects);
 app.route("/", rss);
@@ -31,7 +36,9 @@ app.route("/", random);
 app.route("/", wellknown);
 app.route("/", objects);
 app.route("/", reactions);
+app.route("/", backlinks);
 app.route("/", internal);
+app.route("/", suggest);
 
 vike(app);
 

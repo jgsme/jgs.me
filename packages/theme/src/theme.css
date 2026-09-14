@@ -87,6 +87,12 @@
      これは幅の意味付けのための別名であって、そういう使い方はしない。 */
   --container-content: 48rem;
 
+  /* 本文の水平線の幅。本文カラム (--container-content) を左右に突き抜けさせるので、
+     コンテンツ幅ではなく viewport 基準で持つ。ここに置くのは、幅の決定を
+     このファイルに集約するため — 参照側 (packages/web/pages/index.css の
+     .article-rule) に 90vw と直接書くと、決定が grep から消える。 */
+  --container-rule: 90vw;
+
   /* --- 封じるパレット --- */
   /* gray / zinc / stone は neutral と役割が重複する。混在が今回の散らかりの
      原因だったので、クラス自体を生成させない。書いても効かないので気づける。

@@ -4,10 +4,13 @@ import { tileImageSources } from "@/utils/listImage";
 // 記事ページの下に出すページカードの並び。「似てるかもしれんページ」
 // (similarity) と「関連ページ」(被リンク) の両方が同じ見た目なので、
 // 見出しだけ差し替えて使い回す。
+// children はグリッドの下、section の中に置く。「もっと見る」のボタンが
+// 見出しごと外に出ないようにするため。
 export const PageTileGrid: React.FC<{
   heading: string;
   pages: { title: string; image: string | null }[];
-}> = ({ heading, pages }) => {
+  children?: React.ReactNode;
+}> = ({ heading, pages, children }) => {
   if (pages.length === 0) return null;
 
   return (
@@ -43,6 +46,7 @@ export const PageTileGrid: React.FC<{
           </li>
         ))}
       </ul>
+      {children}
     </section>
   );
 };

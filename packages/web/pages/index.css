@@ -8,3 +8,60 @@
     background: var(--color-bg);
   }
 }
+
+/* 記事本文の水平線 (`---` だけの行)。Tailwind クラスで書けないものが 3 つあるので
+   ここに置く:
+   - 三角形の寸法 (26 / 22.52px) が spacing 語彙の外。語彙は rem 基準なので、
+     このサイズの図形を語彙内で表現できない。
+   - 三角形は border trick で描くので擬似要素が要る。文字の ▼ を使わないのは、
+     フォント依存で形と縦位置が環境ごとに変わるため。
+   - overflow: visible が要る。hr の UA スタイルが overflow: hidden で、
+     外さないと擬似要素が高さ 1px の箱にクリップされ、三角が横線に潰れる。 */
+@layer components {
+  .article-rule {
+    /* 本文カラムが中央寄せ (mx-auto) なので、left:50% + translateX(-50%) で
+       viewport 中央に載る。max-width を外さないと 48rem で止まる。 */
+    position: relative;
+    left: 50%;
+    width: var(--container-rule);
+    max-width: none;
+    transform: translateX(-50%);
+    height: 1px;
+    border: 0;
+    overflow: visible;
+    /* 突き抜けた端を切り落としたように見せないためのフェード。 */
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--color-border-strong) 30%,
+      var(--color-border-strong) 70%,
+      transparent
+    );
+  }
+
+  /* 三角の後ろで線を抜く窓。三角より左右 1.5rem ぶん広い。 */
+  .article-rule::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: calc(26px + 1.5rem);
+    height: 3px;
+    background: var(--color-bg);
+  }
+
+  /* 正三角形 (高さ = 幅 × √3/2 = 26 × 0.866)。 */
+  .article-rule::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 0;
+    height: 0;
+    border-left: 13px solid transparent;
+    border-right: 13px solid transparent;
+    border-top: 22.52px solid var(--color-brand);
+  }
+}

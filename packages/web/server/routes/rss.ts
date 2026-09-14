@@ -6,6 +6,7 @@ import { SITE_URL } from "@/constants/site";
 import { fetchBody } from "@jigsaw/db/fetch-body";
 import { buildArticleBody } from "@/pages/article/@title/articleBody";
 import type { Bindings } from "../types";
+import { articlePath, clipPath } from "@/utils/permalink";
 import { buildRssXml, type RssFeedItem } from "./rssFeed";
 
 const rss = new Hono<{ Bindings: Bindings }>();
@@ -14,15 +15,18 @@ const FEED_LIMIT = 20;
 
 // 2 本の feed が同じやり方で item を組む。description の作り方を変えたときに
 // 片方だけ直る事故を防ぐため、取得と整形はここに寄せる。
+// id は article / clip のもので、permalink (linkPath) の材料。
 async function toFeedItems(
   r2: Bindings["R2"],
-  rows: { title: string; bodyKey: string; created: string }[],
+  rows: { id: number; title: string; bodyKey: string; created: string }[],
+  linkPath: (id: number) => string,
 ): Promise<RssFeedItem[]> {
   return Promise.all(
     rows.map(async (row) => {
       const body = await fetchBody(r2, row.bodyKey, row.title);
       return {
         title: row.title,
+        linkPath: linkPath(row.id),
         created: row.created,
         description: body === null ? null : buildArticleBody(body).description,
       };
@@ -39,6 +43,7 @@ rss.get("/rss.xml", async (c) => {
   // innerJoin なのは、page を引けない article で空の item を出さないため。
   const rows = await db
     .select({
+      id: articles.id,
       title: pages.title,
       bodyKey: pages.bodyKey,
       created: pages.created,
@@ -48,7 +53,7 @@ rss.get("/rss.xml", async (c) => {
     .orderBy(desc(pages.created))
     .limit(FEED_LIMIT);
 
-  const items = await toFeedItems(c.env.R2, rows);
+  const items = await toFeedItems(c.env.R2, rows, articlePath);
 
   const xml = buildRssXml({
     items,
@@ -68,6 +73,7 @@ rss.get("/clips.xml", async (c) => {
 
   const rows = await db
     .select({
+      id: clips.id,
       title: pages.title,
       bodyKey: pages.bodyKey,
       created: pages.created,
@@ -77,7 +83,7 @@ rss.get("/clips.xml", async (c) => {
     .orderBy(desc(pages.created))
     .limit(FEED_LIMIT);
 
-  const items = await toFeedItems(c.env.R2, rows);
+  const items = await toFeedItems(c.env.R2, rows, clipPath);
 
   const xml = buildRssXml({
     items,

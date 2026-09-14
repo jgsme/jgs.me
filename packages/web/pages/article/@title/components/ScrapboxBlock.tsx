@@ -18,9 +18,17 @@ export const ScrapboxBlock: React.FC<{ block: BlockType }> = ({ block }) => {
       }
       const hasBlockElement = block.nodes.some((n) => n.type === "quote");
       const Tag = hasBlockElement ? "div" : "p";
+      // 引用は1行ごとに別の blockquote になる。連続する行どうしの間だけ
+      // blockquote の上下 padding と親の space-y の margin を消し、1つの引用に見せる。
+      // space-y は v4 で「次に兄弟がある要素の margin-bottom」なので、消すのも手前の行の側。
       return (
         <Tag
-          className="leading-relaxed"
+          data-quote={hasBlockElement || undefined}
+          className={
+            hasBlockElement
+              ? "leading-relaxed [&:has(+[data-quote])]:mb-0 [&:has(+[data-quote])>blockquote]:pb-0 [[data-quote]+&>blockquote]:pt-0"
+              : "leading-relaxed"
+          }
           style={{ paddingLeft: `${block.indent * 1.5}rem` }}
         >
           {block.nodes.map((node, i) => (

@@ -30,6 +30,7 @@ const data = async (c: Context) => {
       pageId: pages.id,
       articleId: articles.id,
       clipId: clips.id,
+      clipKind: clips.kind,
       bodyKey: pages.bodyKey,
       created: pages.created,
       date: articles.date,
@@ -44,6 +45,8 @@ const data = async (c: Context) => {
   const bodyKey = pageInfo[0]?.bodyKey ?? "";
   const articleId = pageInfo[0]?.articleId ?? null;
   const clipId = pageInfo[0]?.clipId ?? null;
+  // 引用を大きく出すかは kind だけで決める (+Page.tsx)。clip でなければ null。
+  const clipKind = pageInfo[0]?.clipKind ?? null;
   const created = pageInfo[0]?.created ?? "";
   const storedDate = pageInfo[0]?.date ?? null;
 
@@ -94,6 +97,7 @@ const data = async (c: Context) => {
       pageId,
       articleId,
       clipId,
+      clipKind,
       blocks: [],
       description: null,
       related: [],
@@ -125,6 +129,7 @@ const data = async (c: Context) => {
     pageId,
     articleId,
     clipId,
+    clipKind,
     blocks: filteredBlocks,
     fromDate,
     description,

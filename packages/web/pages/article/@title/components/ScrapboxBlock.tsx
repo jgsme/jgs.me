@@ -4,7 +4,11 @@ import { parseCardBlock } from "./card";
 import { isHorizontalRule } from "./horizontalRule";
 import { ScrapboxNode } from "./ScrapboxNode";
 
-export const ScrapboxBlock: React.FC<{ block: BlockType }> = ({ block }) => {
+export const ScrapboxBlock: React.FC<{
+  block: BlockType;
+  /* 引用を大きく出すページか。引用の見た目を切り替えるためだけに使う。 */
+  emphasizeQuote?: boolean;
+}> = ({ block, emphasizeQuote = false }) => {
   switch (block.type) {
     case "title":
       return null;
@@ -32,7 +36,14 @@ export const ScrapboxBlock: React.FC<{ block: BlockType }> = ({ block }) => {
           style={{ paddingLeft: `${block.indent * 1.5}rem` }}
         >
           {block.nodes.map((node, i) => (
-            <ScrapboxNode key={i} node={node} />
+            // indent は引用にだけ効く。インデントされた行の引用は、画面中央を
+            // 基準にはみ出させるとインデントぶんの位置を失うので、はみ出させない。
+            <ScrapboxNode
+              key={i}
+              node={node}
+              indent={block.indent}
+              emphasizeQuote={emphasizeQuote}
+            />
           ))}
         </Tag>
       );
@@ -98,7 +109,11 @@ export const ScrapboxBlock: React.FC<{ block: BlockType }> = ({ block }) => {
                 {row.map((cell, j) => (
                   <td key={j} className="border border-border px-2 py-1">
                     {cell.map((node, k) => (
-                      <ScrapboxNode key={k} node={node} />
+                      <ScrapboxNode
+                        key={k}
+                        node={node}
+                        emphasizeQuote={emphasizeQuote}
+                      />
                     ))}
                   </td>
                 ))}

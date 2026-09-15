@@ -1,6 +1,7 @@
 import React from "react";
 import type { Node as NodeType } from "@progfay/scrapbox-parser";
 import { bodyImageSources } from "@/utils/bodyImage";
+import { quoteClassName } from "./quote";
 
 function getYouTubeVideoId(url: string): string | null {
   try {
@@ -28,7 +29,15 @@ function getYouTubeVideoId(url: string): string | null {
   return null;
 }
 
-export const ScrapboxNode: React.FC<{ node: NodeType }> = ({ node }) => {
+export const ScrapboxNode: React.FC<{
+  node: NodeType;
+  /* 行のインデント段数。引用のはみ出しを止めるためだけに使う。ScrapboxBlock が
+     行から渡し、子の node へはそのまま伝える。 */
+  indent?: number;
+  /* 引用を大きく出すページか。引用の見た目を切り替えるためだけに使う。
+     indent と同じく子の node へそのまま伝える。 */
+  emphasizeQuote?: boolean;
+}> = ({ node, indent = 0, emphasizeQuote = false }) => {
   switch (node.type) {
     case "plain":
       return <>{node.text}</>;
@@ -110,7 +119,12 @@ export const ScrapboxNode: React.FC<{ node: NodeType }> = ({ node }) => {
       return (
         <span className={classes.join(" ")}>
           {node.nodes.map((n, i) => (
-            <ScrapboxNode key={i} node={n} />
+            <ScrapboxNode
+              key={i}
+              node={n}
+              indent={indent}
+              emphasizeQuote={emphasizeQuote}
+            />
           ))}
         </span>
       );
@@ -139,9 +153,19 @@ export const ScrapboxNode: React.FC<{ node: NodeType }> = ({ node }) => {
 
     case "quote":
       return (
-        <blockquote className="bg-black/1 border-l-4 border-border-subtle pl-1 py-1">
+        <blockquote
+          className={quoteClassName(node, {
+            emphasize: emphasizeQuote,
+            indent,
+          })}
+        >
           {node.nodes.map((n, i) => (
-            <ScrapboxNode key={i} node={n} />
+            <ScrapboxNode
+              key={i}
+              node={n}
+              indent={indent}
+              emphasizeQuote={emphasizeQuote}
+            />
           ))}
         </blockquote>
       );
@@ -150,7 +174,12 @@ export const ScrapboxNode: React.FC<{ node: NodeType }> = ({ node }) => {
       return (
         <strong>
           {node.nodes.map((n, i) => (
-            <ScrapboxNode key={i} node={n} />
+            <ScrapboxNode
+              key={i}
+              node={n}
+              indent={indent}
+              emphasizeQuote={emphasizeQuote}
+            />
           ))}
         </strong>
       );
@@ -162,7 +191,12 @@ export const ScrapboxNode: React.FC<{ node: NodeType }> = ({ node }) => {
         <>
           {node.number}.{" "}
           {node.nodes.map((n, i) => (
-            <ScrapboxNode key={i} node={n} />
+            <ScrapboxNode
+              key={i}
+              node={n}
+              indent={indent}
+              emphasizeQuote={emphasizeQuote}
+            />
           ))}
         </>
       );

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { Node } from "@progfay/scrapbox-parser";
-import { quoteClassName, quoteText, quoteTier } from "./quote";
+import type { Block, Node } from "@progfay/scrapbox-parser";
+import { groupQuoteRuns, quoteClassName, quoteText, quoteTier } from "./quote";
 
 const plain = (text: string): Node => ({ type: "plain", raw: text, text });
 
@@ -94,6 +94,15 @@ describe("quoteTier", () => {
   it("401 文字以上は xlong", () => {
     expect(quoteTier(quote([plain("あ".repeat(401))]))).toBe("xlong");
     expect(quoteTier(quote([plain("あ".repeat(1139))]))).toBe("xlong");
+  });
+
+  it("複数の引用を渡すと合計の長さで決める", () => {
+    // 連続する引用行は 1 つの引用として出す。行ごとに測ると同じ引用の中で大きさが割れる。
+    const lines = [
+      quote([plain("あ".repeat(30))]),
+      quote([plain("あ".repeat(30))]),
+    ];
+    expect(quoteTier(lines)).toBe("medium");
   });
 
   it("空の引用は short に倒す", () => {
@@ -295,6 +304,19 @@ describe("quoteClassName", () => {
     }
   });
 
+  it("複数の引用を渡すと合計の長さで見た目を決める", () => {
+    const lines = [
+      quote([plain("あ".repeat(30))]),
+      quote([plain("あ".repeat(30))]),
+    ];
+    expect(quoteClassName(lines, { emphasize: true, indent: 0 })).toBe(
+      quoteClassName(quote([plain("あ".repeat(60))]), {
+        emphasize: true,
+        indent: 0,
+      }),
+    );
+  });
+
   it("short は画面幅で見た目を変えない", () => {
     const c = quoteClassName(short, { emphasize: true, indent: 0 });
     expect(c).not.toContain("md:");
@@ -344,5 +366,66 @@ describe("quoteClassName", () => {
     expect(c).toContain("italic");
     expect(c).toContain("quote-marks");
     expect(c).not.toContain("border-l-4");
+  });
+});
+
+const line = (nodes: Node[], indent = 0): Block => ({
+  type: "line",
+  indent,
+  nodes,
+});
+const q = (text: string) => line([quote([plain(text)])]);
+
+describe("groupQuoteRuns", () => {
+  it("連続する引用行を 1 つの塊にまとめる", () => {
+    const blocks = [
+      line([plain("前")]),
+      q("一"),
+      q("二"),
+      q("三"),
+      line([plain("後")]),
+    ];
+    const items = groupQuoteRuns(blocks);
+    expect(items.map((i) => i.type)).toEqual(["block", "quoteRun", "block"]);
+    const run = items[1];
+    expect(run.type === "quoteRun" && run.lines).toEqual([
+      q("一"),
+      q("二"),
+      q("三"),
+    ]);
+  });
+
+  it("1 行だけの引用も塊として扱う", () => {
+    const items = groupQuoteRuns([q("一")]);
+    expect(items).toEqual([{ type: "quoteRun", indent: 0, lines: [q("一")] }]);
+  });
+
+  it("引用でない行を挟むと別の塊になる", () => {
+    const items = groupQuoteRuns([q("一"), line([plain("地の文")]), q("二")]);
+    expect(items.map((i) => i.type)).toEqual(["quoteRun", "block", "quoteRun"]);
+  });
+
+  it("空行を挟むと別の塊になる", () => {
+    const items = groupQuoteRuns([q("一"), line([]), q("二")]);
+    expect(items.map((i) => i.type)).toEqual(["quoteRun", "block", "quoteRun"]);
+  });
+
+  it("インデントが変わると別の塊になる", () => {
+    // はみ出しの有無はインデントで変わるので、同じ塊にすると位置が決められない。
+    const items = groupQuoteRuns([q("一"), line([quote([plain("二")])], 1)]);
+    expect(items).toEqual([
+      { type: "quoteRun", indent: 0, lines: [q("一")] },
+      { type: "quoteRun", indent: 1, lines: [line([quote([plain("二")])], 1)] },
+    ]);
+  });
+
+  it("line 以外の block はそのまま通す", () => {
+    const code: Block = {
+      type: "codeBlock",
+      indent: 0,
+      fileName: "a",
+      content: "x",
+    };
+    expect(groupQuoteRuns([code])).toEqual([{ type: "block", block: code }]);
   });
 });

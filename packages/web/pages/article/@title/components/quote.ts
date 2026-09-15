@@ -1,4 +1,4 @@
-import type { Node } from "@progfay/scrapbox-parser";
+import type { Block, Node } from "@progfay/scrapbox-parser";
 
 /** 引用の見た目の段階。文字数の帯で、画面幅ごとの見た目は quoteClassName が決める。 */
 export type QuoteTier = "short" | "medium" | "long" | "xlong";
@@ -49,6 +49,13 @@ function collect(node: Node): string {
   return "";
 }
 
+/* 引用の文字数。複数渡すと合計する。連続する引用行は 1 つの引用として出すので、
+   行ごとに測ると同じ引用の中で大きさが割れる。 */
+function lengthOf(quotes: Node | Node[]): number {
+  const list = Array.isArray(quotes) ? quotes : [quotes];
+  return list.reduce((n, q) => n + Array.from(quoteText(q)).length, 0);
+}
+
 /**
  * 引用の長さから見た目の段階を決める。
  *
@@ -56,8 +63,8 @@ function collect(node: Node): string {
  * (絵文字や一部の漢字) を 2 文字と数えてしまうため。境界のすぐ手前の引用が
  * 1 段落ちる。
  */
-export function quoteTier(node: Node): QuoteTier {
-  const length = Array.from(quoteText(node)).length;
+export function quoteTier(quotes: Node | Node[]): QuoteTier {
+  const length = lengthOf(quotes);
   if (length <= SHORT_MAX) return "short";
   if (length <= MEDIUM_MAX) return "medium";
   if (length <= LONG_MAX) return "long";
@@ -115,12 +122,15 @@ export type QuoteContext = {
   indent: number;
 };
 
-/** blockquote に付ける class を決める。 */
-export function quoteClassName(node: Node, ctx: QuoteContext): string {
+/** blockquote に付ける class を決める。連続する引用行は quotes にまとめて渡す。 */
+export function quoteClassName(
+  quotes: Node | Node[],
+  ctx: QuoteContext,
+): string {
   if (!ctx.emphasize) {
     return `${QUOTE_BASE} ${ARTICLE_STYLE}`;
   }
-  const tier = quoteTier(node);
+  const tier = quoteTier(quotes);
   // clip の引用は大きいので、space-y-1 の間隔だと前後の行とくっついて見える。
   // 文字色は段階によらず fg-quote。黒のままだと 48px の太字が強すぎる。
   if (tier === "xlong") {
@@ -132,4 +142,43 @@ export function quoteClassName(node: Node, ctx: QuoteContext): string {
   if (ctx.indent !== 0) return `my-4 ${DISPLAY_STYLE[tier]} ${QUOTE_COLOR}`;
   const bleed = tier === "long" ? "md:quote-bleed" : "quote-bleed";
   return `my-4 ${DISPLAY_STYLE[tier]} ${QUOTE_COLOR} ${bleed}`;
+}
+
+type LineBlock = Extract<Block, { type: "line" }>;
+
+/** 引用の行か。行頭の > で作られた quote node を含む line。 */
+export function isQuoteLine(block: Block): block is LineBlock {
+  return (
+    block.type === "line" && block.nodes.some((node) => node.type === "quote")
+  );
+}
+
+export type QuoteRunItem =
+  | { type: "block"; block: Block }
+  | { type: "quoteRun"; indent: number; lines: LineBlock[] };
+
+/**
+ * 連続する引用行を 1 つの塊にまとめる。
+ *
+ * Scrapbox の引用は 1 行ごとに別の quote node なので、そのまま出すと行ごとに
+ * 大きさが決まり、同じ引用の中で 48px と本文幅が混ざる。塊にして合計の長さで決める。
+ *
+ * インデントが変わったら別の塊にする。はみ出しの有無はインデントで変わるので、
+ * 同じ塊に入れると位置が決められない。空行や地の文を挟んだ場合も別の塊。
+ */
+export function groupQuoteRuns(blocks: Block[]): QuoteRunItem[] {
+  const items: QuoteRunItem[] = [];
+  for (const block of blocks) {
+    if (!isQuoteLine(block)) {
+      items.push({ type: "block", block });
+      continue;
+    }
+    const last = items[items.length - 1];
+    if (last?.type === "quoteRun" && last.indent === block.indent) {
+      last.lines.push(block);
+      continue;
+    }
+    items.push({ type: "quoteRun", indent: block.indent, lines: [block] });
+  }
+  return items;
 }

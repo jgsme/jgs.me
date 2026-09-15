@@ -133,3 +133,23 @@
     border-top: 22.52px solid var(--color-brand);
   }
 }
+
+/* video clip の本文。最初のブロックにある動画だけ本文カラムからはみ出させる。
+   中央に寄せるやり方は .article-rule と同じで、max(100%, ...) により本文カラムより
+   狭くはならない (狭い画面では 90vw が本文カラムを下回るので本文と同じ幅になる)。
+
+   最初のブロックだけを見るのは、出典の行が本文の先頭に来ているため。2 本目以降の
+   動画は本文の一部なので本文幅のまま出す。
+
+   @layer components ではなく @utility で書く。iframe 側が w-full (utilities) を
+   持っており、utilities は components より後に来るのでレイヤーで負ける。 */
+@utility clip-video-body {
+  & > :first-child iframe {
+    display: block;
+    position: relative;
+    left: 50%;
+    width: max(100%, var(--container-video));
+    max-width: none;
+    transform: translateX(-50%);
+  }
+}

@@ -6,7 +6,6 @@ export type ArchiveClip = {
   // page.created。clip.created は登録し直した時刻を含むので使わない
   // (2016 年の clip で clip.created が 2026-08-15 になっている)。
   created: string;
-  image: string | null;
   kind: string;
   // fetchBody の出力。1行目が題。
   text: string;
@@ -32,12 +31,15 @@ export function archiveClipProperties(
 ): Record<string, unknown[]> {
   const newline = clip.text.indexOf("\n");
   const content = newline === -1 ? "" : clip.text.slice(newline + 1);
-  const props: Record<string, unknown[]> = {
+  // photo は入れない。page.image は Scrapbox が本文から自動で拾った先頭画像
+  // (投稿者が明示したサムネではない)。photo に入れると pageImage が photo を
+  // 優先するようになり、diary で本文から画像を消しても旧サムネが固定されて
+  // 残ってしまう。サムネは Scrapbox のときと同じく pageImage が本文から
+  // 都度拾い直す。
+  return {
     name: [clip.title],
     content: [content],
     category: ["clip", clip.kind],
     published: [sqliteTimestampToISO(clip.created)],
   };
-  if (clip.image) props["photo"] = [clip.image];
-  return props;
 }

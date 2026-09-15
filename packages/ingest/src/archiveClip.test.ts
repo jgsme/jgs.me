@@ -11,7 +11,6 @@ const TITLE = "rancher/k3s: Lightweight Kubernetes. 5 less than k8s.";
 const clip = (over: Partial<ArchiveClip> = {}): ArchiveClip => ({
   title: TITLE,
   created: "2019-02-26 03:04:05",
-  image: null,
   kind: "link",
   text: [
     TITLE,
@@ -66,15 +65,11 @@ describe("archiveClipProperties", () => {
     });
   });
 
-  it("image があれば photo に入れる", () => {
-    const props = archiveClipProperties(
-      clip({ image: "https://r2.jgs.me/abc.png" }),
-    );
-    expect(props["photo"]).toEqual(["https://r2.jgs.me/abc.png"]);
-  });
-
-  // mf2 は全ての値が配列。null を混ぜると parseEntry の firstString が読めない。
-  it("image が null なら photo のキーごと落とす", () => {
+  // page.image は Scrapbox が本文から自動で拾った先頭画像であり、投稿者が
+  // 明示したサムネではない。photo に入れると pageImage (firstImage.ts) が
+  // 本文より photo を優先してしまい、diary で本文から画像を消しても旧サムネが
+  // 固定されて残る。サムネは Scrapbox のときと同じく本文から都度拾い直す。
+  it("photo は入れない", () => {
     expect("photo" in archiveClipProperties(clip())).toBe(false);
   });
 

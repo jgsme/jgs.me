@@ -79,8 +79,11 @@ async function putMd(env: Env, bodyKey: string, sbBody: string): Promise<void> {
   });
 }
 
-// 変換で bodyKey が変わると、旧キーの md が検索インデックスに残って同じページが
-// 2 本出る。失敗しても update 自体は成功させる (本文も D1 も切り替わっている)。
+// 変換で bodyKey が変わると、旧キーの md が w-md (AutoRAG の検索インデックス) に
+// 残り続ける。page.bodyKey は新キーに切り替わっているので、旧キーのヒットは
+// 検索結果の組み立て時 (web の search/+data.ts) に page が引けず落とされるが、
+// 参照されないオブジェクトとして残り続けるのは無駄なので消す。
+// 失敗しても update 自体は成功させる (本文も D1 も切り替わっている)。
 async function deleteMd(env: Env, bodyKey: string): Promise<void> {
   const key = mdKeyOf(bodyKey);
   if (!key) return;
@@ -98,19 +101,26 @@ async function loadArchiveClip(
   target: { pageID: number; title: string; bodyKey: string },
 ): Promise<ArchiveClip | null> {
   if (bodyFormatOf(target.bodyKey) !== "scrapbox-archive") return null;
+  // clip 行と article 行を両方持つ page は article 扱いにする (ap の
+  // publish.ts が両方あるとき article を優先するのに合わせる)。
+  // leftJoin + articles.id が null かどうかで判定する。
   const [row] = await drizzle(env.DB)
-    .select({ created: pages.created, image: pages.image, kind: clips.kind })
+    .select({
+      created: pages.created,
+      kind: clips.kind,
+      articleID: articles.id,
+    })
     .from(pages)
     .innerJoin(clips, eq(clips.pageID, pages.id))
+    .leftJoin(articles, eq(articles.pageID, pages.id))
     .where(eq(pages.id, target.pageID))
     .limit(1);
-  if (!row) return null;
+  if (!row || row.articleID !== null) return null;
   const text = await fetchBody(env.R2, target.bodyKey, target.title);
   if (text === null) return null;
   return {
     title: target.title,
     created: row.created,
-    image: row.image,
     kind: row.kind,
     text,
   };
@@ -404,17 +414,28 @@ async function handleMicropubUpdate(
       return Response.json({ error: "server_error" }, { status: 500 });
     }
   } else {
-    archive = await loadArchiveClip(env, target);
-    if (!archive) {
-      return Response.json(
-        {
-          error: "invalid_request",
-          error_description: `page has no micropub source: ${action.url}`,
-        },
-        { status: 400 },
+    // fetchBody (壊れた JSON / lines 欠落) や sqliteTimestampToISO (読めない
+    // page.created) はここで throw しうる。個別の分岐を持たず、まとめて
+    // server_error にする (呼び出し元に JSON のエラー body を返すため。
+    // 何もしないと index.ts に catch が無く素の 500 になる)。
+    try {
+      archive = await loadArchiveClip(env, target);
+      if (!archive) {
+        return Response.json(
+          {
+            error: "invalid_request",
+            error_description: `page has no micropub source: ${action.url}`,
+          },
+          { status: 400 },
+        );
+      }
+      base = { type: ["h-entry"], properties: archiveClipProperties(archive) };
+    } catch (e) {
+      console.error(
+        `[archiveClip] load failed pageID=${target.pageID} ${String(e)}`,
       );
+      return Response.json({ error: "server_error" }, { status: 500 });
     }
-    base = { type: ["h-entry"], properties: archiveClipProperties(archive) };
   }
 
   const props =
@@ -487,15 +508,18 @@ async function handleMicropubUpdate(
     return Response.json({ error: "server_error" }, { status: 500 });
   }
 
-  // 本文は同じキーに上書きする。読み側は R2 を直読みするので即座に入れ替わる。
-  // 新しいキーを振ると、参照されない古いオブジェクトが残るだけで得が無い。
+  // 通常の update は同じキーに上書きする。読み側は R2 を直読みするので即座に
+  // 入れ替わる。アーカイブの変換では上で振った新しい sb- キーに書く (旧
+  // .json は消さず戻すときの原本として残す。旧 md は batch 成功後に
+  // deleteMd で消す)。
   // 1行目の題はマージ後の name で書き直す (改題に追随する)。
   const body = buildSbBody(entry.name, entry.content);
   await env.R2.put(r2Key, body, {
     httpMetadata: { contentType: "text/plain; charset=utf-8" },
   });
 
-  // 派生物も同じキーに上書きする。題も本文も差し替わるので作り直す。
+  // 派生物も (通常は同じキー、変換時は新しいキーに) 書く。題も本文も
+  // 差し替わるので作り直す。
   await putMd(env, bodyKey, body);
 
   // 被リンク索引は差分を取らず全消し + 入れ直しにする。1 ページのリンク数は
@@ -661,17 +685,26 @@ export async function handleMicropubSource(
   } else {
     // Scrapbox アーカイブの clip は mf2 を持たない。R2 の .json から組んで返す
     // (diary の取り込み画面が下書きを作るのに使う)。
-    const archive = await loadArchiveClip(env, target);
-    if (!archive) {
-      return Response.json(
-        {
-          error: "invalid_request",
-          error_description: `page has no micropub source: ${url}`,
-        },
-        { status: 400 },
+    // fetchBody / sqliteTimestampToISO の throw をまとめて server_error にする
+    // (handleMicropubUpdate と同じ理由。index.ts に catch が無く素の 500 になる)。
+    try {
+      const archive = await loadArchiveClip(env, target);
+      if (!archive) {
+        return Response.json(
+          {
+            error: "invalid_request",
+            error_description: `page has no micropub source: ${url}`,
+          },
+          { status: 400 },
+        );
+      }
+      props = archiveClipProperties(archive);
+    } catch (e) {
+      console.error(
+        `[archiveClip] load failed pageID=${target.pageID} ${String(e)}`,
       );
+      return Response.json({ error: "server_error" }, { status: 500 });
     }
-    props = archiveClipProperties(archive);
   }
 
   // properties[] の指定があればその分だけ返す。無ければ全部返す。

@@ -101,9 +101,10 @@ export const ScrapboxNode: React.FC<{
       // 移行前の本文は Gyazo 側で縮小された版を受け取っていた。R2 に移すと
       // その縮小が外れて原寸が飛ぶため、こちらで幅を与え直す。
       //
-      // 写真の clip では画像を画面中央基準で広げる。インデントされた行では
-      // 広げない (中央に寄せるとインデントぶんの位置を失う。引用と同じ理由)。
-      if (photo && indent === 0) {
+      // 写真の clip では画像を画面中央基準で広げる。引用と違ってインデントは見ない。
+      // 写真が主役のページでは、インデントは書いた時の癖でしか付いておらず、
+      // それで画像の出方が変わるほうが読み手には不可解になる。
+      if (photo) {
         const image = photoImageSources(node.src);
         return (
           <span className="block photo-bleed my-2">

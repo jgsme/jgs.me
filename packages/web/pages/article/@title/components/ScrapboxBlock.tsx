@@ -38,7 +38,7 @@ export const ScrapboxBlock: React.FC<{
           style={{ paddingLeft: `${block.indent * 1.5}rem` }}
         >
           {block.nodes.map((node, i) => (
-            // indent は引用と写真のはみ出しにだけ効く。インデントされた行は、画面
+            // indent は引用のはみ出しにだけ効く。インデントされた行の引用は、画面
             // 中央を基準にはみ出させるとインデントぶんの位置を失うので、はみ出させない。
             <ScrapboxNode
               key={i}

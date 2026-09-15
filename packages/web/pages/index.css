@@ -29,9 +29,7 @@
    幅は max で本文幅 (100% = 行の幅) を下限にする。90vw は画面幅 818px を切ると
    本文幅より狭くなり、広げるはずが縮む。
    中の img は max-w-full のまま置くので、元画像より大きくは伸びない。
-   高さは画面の 90% で止める。幅を広げると縦長のスクショは縦にも伸び、1 画面に
-   収まらなくなる。svh なのはモバイルのアドレスバーが出ている時の高さに合わせるため。
-   img の width / height が auto なので、max-height で止まると幅も比率を保って縮む。 */
+   高さは止めない。縦長の画像はスクロールさせて見せる。 */
 @utility photo-bleed {
   width: max(var(--container-photo), 100%);
   position: relative;
@@ -41,10 +39,6 @@
      --photo-indent で受け取って引く (ScrapboxNode)。 */
   left: calc(50% - var(--photo-indent, 0px) / 2);
   translate: -50% 0;
-
-  & > img {
-    max-height: 90svh;
-  }
 }
 
 /* 大きく出す引用に付けるダブルクォート。DOM のテキストにしないので、

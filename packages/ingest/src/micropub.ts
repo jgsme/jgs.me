@@ -1,7 +1,18 @@
 import { drizzle } from "drizzle-orm/d1";
 import { and, eq, ne } from "drizzle-orm";
 import { articles, clips, objects, pageLinks, pages } from "@jigsaw/db";
-import { newSbBodyKey, r2KeyOf, bodyFormatOf } from "@jigsaw/db/body-key";
+import {
+  newSbBodyKey,
+  r2KeyOf,
+  bodyFormatOf,
+  mdKeyOf,
+} from "@jigsaw/db/body-key";
+import { fetchBody } from "@jigsaw/db/fetch-body";
+import {
+  archiveClipProperties,
+  sqliteTimestampToISO,
+  type ArchiveClip,
+} from "./archiveClip";
 import { jstDate } from "@jigsaw/db/article-date";
 import { isAuthorized } from "./auth";
 import { parseEntry, isClip, clipKind } from "./mf2";
@@ -66,6 +77,43 @@ async function putMd(env: Env, bodyKey: string, sbBody: string): Promise<void> {
   await env.MD.put(md.key, md.body, {
     httpMetadata: { contentType: md.contentType },
   });
+}
+
+// 変換で bodyKey が変わると、旧キーの md が検索インデックスに残って同じページが
+// 2 本出る。失敗しても update 自体は成功させる (本文も D1 も切り替わっている)。
+async function deleteMd(env: Env, bodyKey: string): Promise<void> {
+  const key = mdKeyOf(bodyKey);
+  if (!key) return;
+  try {
+    await env.MD.delete(key);
+  } catch (e) {
+    console.error(`[md] delete failed key=${key} ${String(e)}`);
+  }
+}
+
+// Scrapbox アーカイブ由来の clip だけを拾う。article は diary への取り込みの
+// 対象外なので null (source / update は従来どおり 400 になる)。
+async function loadArchiveClip(
+  env: Env,
+  target: { pageID: number; title: string; bodyKey: string },
+): Promise<ArchiveClip | null> {
+  if (bodyFormatOf(target.bodyKey) !== "scrapbox-archive") return null;
+  const [row] = await drizzle(env.DB)
+    .select({ created: pages.created, image: pages.image, kind: clips.kind })
+    .from(pages)
+    .innerJoin(clips, eq(clips.pageID, pages.id))
+    .where(eq(pages.id, target.pageID))
+    .limit(1);
+  if (!row) return null;
+  const text = await fetchBody(env.R2, target.bodyKey, target.title);
+  if (text === null) return null;
+  return {
+    title: target.title,
+    created: row.created,
+    image: row.image,
+    kind: row.kind,
+    text,
+  };
 }
 
 // POST /micropub は action で分岐する。action が無ければ create (spec 既定)。
@@ -345,21 +393,28 @@ async function handleMicropubUpdate(
     )
     .limit(1);
 
-  if (!stored?.mf2) {
-    return Response.json(
-      {
-        error: "invalid_request",
-        error_description: `page has no micropub source: ${action.url}`,
-      },
-      { status: 400 },
-    );
-  }
-
+  // Scrapbox アーカイブの clip は mf2 を持たない。.json から土台を組み、
+  // この update で Micropub 形式 (.sb + object 行) に変換する。
+  let archive: ArchiveClip | null = null;
   let base: { type?: unknown; properties?: unknown };
-  try {
-    base = JSON.parse(stored.mf2);
-  } catch {
-    return Response.json({ error: "server_error" }, { status: 500 });
+  if (stored?.mf2) {
+    try {
+      base = JSON.parse(stored.mf2);
+    } catch {
+      return Response.json({ error: "server_error" }, { status: 500 });
+    }
+  } else {
+    archive = await loadArchiveClip(env, target);
+    if (!archive) {
+      return Response.json(
+        {
+          error: "invalid_request",
+          error_description: `page has no micropub source: ${action.url}`,
+        },
+        { status: 400 },
+      );
+    }
+    base = { type: ["h-entry"], properties: archiveClipProperties(archive) };
   }
 
   const props =
@@ -392,7 +447,7 @@ async function handleMicropubUpdate(
 
   // Micropub で作られていないページ (Scrapbox アーカイブ) を書き換えない。
   // .json のキーに Scrapbox 記法の生テキストを書き込むと本文が壊れる。
-  if (bodyFormatOf(target.bodyKey) !== "micropub-sb") {
+  if (!archive && bodyFormatOf(target.bodyKey) !== "micropub-sb") {
     return Response.json(
       {
         error: "invalid_request",
@@ -425,7 +480,9 @@ async function handleMicropubUpdate(
     );
   }
 
-  const r2Key = r2KeyOf(target.bodyKey);
+  // 変換するときは新しい sb- キーに書く。旧 .json は戻すときの原本として残す。
+  const bodyKey = archive ? newSbBodyKey() : target.bodyKey;
+  const r2Key = r2KeyOf(bodyKey);
   if (!r2Key) {
     return Response.json({ error: "server_error" }, { status: 500 });
   }
@@ -439,7 +496,7 @@ async function handleMicropubUpdate(
   });
 
   // 派生物も同じキーに上書きする。題も本文も差し替わるので作り直す。
-  await putMd(env, target.bodyKey, body);
+  await putMd(env, bodyKey, body);
 
   // 被リンク索引は差分を取らず全消し + 入れ直しにする。1 ページのリンク数は
   // 差分計算に見合う量ではない。
@@ -464,12 +521,29 @@ async function handleMicropubUpdate(
   const updatePage = db
     .update(pages)
     // 本文が差し替わればサムネの元も変わる。create と同じ規則で引き直す。
-    .set({ title: entry.name, image: pageImage(entry), updated: now })
+    // 変換時は bodyKey が新しい sb- キーになる。変換しない update では同じ値。
+    .set({ title: entry.name, image: pageImage(entry), updated: now, bodyKey })
     .where(eq(pages.id, target.pageID));
-  const updateObject = db
-    .update(objects)
-    .set({ mf2: JSON.stringify(nextPayload), updated: now })
-    .where(eq(objects.id, objectURI(target.pageID)));
+  // アーカイブのページには object 行が無いので、変換時は INSERT する。
+  // UPDATE のままだと 0 行更新で mf2 が保存されず、次の update も 400 になる。
+  const writeObject = archive
+    ? [
+        db.insert(objects).values({
+          id: objectURI(target.pageID),
+          pageID: target.pageID,
+          sourceProtocol: "web",
+          mf2: JSON.stringify(nextPayload),
+          deleted: false,
+          created: sqliteTimestampToISO(archive.created),
+          updated: now,
+        }),
+      ]
+    : [
+        db
+          .update(objects)
+          .set({ mf2: JSON.stringify(nextPayload), updated: now })
+          .where(eq(objects.id, objectURI(target.pageID))),
+      ];
   const clearLinks = db
     .delete(pageLinks)
     .where(eq(pageLinks.fromPageID, target.pageID));
@@ -490,11 +564,13 @@ async function handleMicropubUpdate(
   );
   await db.batch([
     updatePage,
-    updateObject,
+    ...writeObject,
     clearLinks,
     ...updateClipKind,
     ...linkInserts,
   ]);
+
+  if (archive) await deleteMd(env, target.bodyKey);
 
   const renamed = entry.name !== target.title;
 
@@ -570,27 +646,33 @@ export async function handleMicropubSource(
     )
     .limit(1);
 
-  if (!stored?.mf2) {
-    return Response.json(
-      {
-        error: "invalid_request",
-        error_description: `page has no micropub source: ${url}`,
-      },
-      { status: 400 },
-    );
+  let props: Record<string, unknown>;
+  if (stored?.mf2) {
+    let base: { properties?: unknown };
+    try {
+      base = JSON.parse(stored.mf2);
+    } catch {
+      return Response.json({ error: "server_error" }, { status: 500 });
+    }
+    props =
+      base.properties && typeof base.properties === "object"
+        ? (base.properties as Record<string, unknown>)
+        : {};
+  } else {
+    // Scrapbox アーカイブの clip は mf2 を持たない。R2 の .json から組んで返す
+    // (diary の取り込み画面が下書きを作るのに使う)。
+    const archive = await loadArchiveClip(env, target);
+    if (!archive) {
+      return Response.json(
+        {
+          error: "invalid_request",
+          error_description: `page has no micropub source: ${url}`,
+        },
+        { status: 400 },
+      );
+    }
+    props = archiveClipProperties(archive);
   }
-
-  let base: { properties?: unknown };
-  try {
-    base = JSON.parse(stored.mf2);
-  } catch {
-    return Response.json({ error: "server_error" }, { status: 500 });
-  }
-
-  const props =
-    base.properties && typeof base.properties === "object"
-      ? (base.properties as Record<string, unknown>)
-      : {};
 
   // properties[] の指定があればその分だけ返す。無ければ全部返す。
   const wanted = params

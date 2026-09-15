@@ -30,6 +30,26 @@ describe("bodyImageSources", () => {
     );
   });
 
+  // 引用の clip では画像を 384px (max-w-96) に絞って出す。sizes が本文幅のままだと、
+  // 見た目は小さいのにブラウザは 736px 前提で 1 段上の候補を落とす。
+  it("幅を渡すと sizes はその幅を表す", () => {
+    expect(bodyImageSources(R2, { width: 384 }).sizes).toBe(
+      "(max-width: 416px) calc(100vw - 2rem), 384px",
+    );
+  });
+
+  it("幅を渡しても候補と src は変えない", () => {
+    const narrow = bodyImageSources(R2, { width: 384 });
+    const wide = bodyImageSources(R2);
+    expect(narrow.src).toBe(wide.src);
+    expect(narrow.srcSet).toBe(wide.srcSet);
+  });
+
+  it("幅を渡しても Gyazo や外部の画像は素通しする", () => {
+    const other = "https://example.com/a.png";
+    expect(bodyImageSources(other, { width: 384 })).toEqual({ src: other });
+  });
+
   // 変換が効くのは R2 の画像だけ。候補を並べても同じ URL が 3 本並ぶだけになる。
   it("Gyazo の画像は src をそのまま返し srcSet も sizes も付けない", () => {
     const gyazo = "https://gyazo.com/abc123/thumb/1000";

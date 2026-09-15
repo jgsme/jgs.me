@@ -2,6 +2,8 @@ import React from "react";
 import { useData } from "vike-react/useData";
 import type data from "./+data";
 import { ScrapboxBlock } from "./components/ScrapboxBlock";
+import { QuoteRun } from "./components/QuoteRun";
+import { groupQuoteRuns } from "./components/quote";
 import { CopyButton } from "./components/CopyButton";
 import { shareUrlPath } from "./components/shareUrl";
 import { RelatedPages } from "./components/RelatedPages";
@@ -40,26 +42,47 @@ const Page = () => {
   const publishedDisplay = d.fromDate ? d.fromDate.replaceAll("-", "/") : null;
   const canonical = `https://w.jgs.me/pages/${encodeURIComponent(d.title)}`;
 
+  // 引用が本体の clip か。diary で人が選んだ kind をそのまま見る。
+  //
+  // 以前は本文をパースして「引用が 1 つだけある」「引用が題で始まる」で判定して
+  // いたが、画像と引用の両方があるページ 183 件を目で見たところ 141 件 (77%) が
+  // 機械判定と食い違った。引用元のスクショを貼っただけの link が軒並み引用扱いに
+  // なる。判定をやめ、diary 側で選ばれた値に従う。
+  //
+  // 引用を大きく出すのと、題を本文の下に回すのは同じ条件。題を下げるのは、題が
+  // 引用そのままのとき同じ文が h1 と引用で二度大きく出るため。kind が quote の
+  // 151 件のうち題が引用と重なるのは 83 件だが、重ならない 68 件でも「引用が
+  // 主役で題は添え物」という並びは変わらない。
+  const quoteClip = d.clipKind === "quote";
+  const header = (
+    <div className={quoteClip ? "mt-8" : "mb-8"}>
+      <h1
+        className={`p-name font-bold ${quoteClip ? "text-base" : "text-2xl"}`}
+      >
+        {d.title}
+      </h1>
+      <div className="flex gap-2">
+        {d.fromDate && (
+          <p className="text-fg-subtle text-sm mt-1">
+            <time className="dt-published" dateTime={d.fromDate!}>
+              {publishedDisplay}
+            </time>
+          </p>
+        )}
+        <CopyButton
+          path={shareUrlPath({ articleId: d.articleId, clipId: d.clipId })}
+        />
+      </div>
+    </div>
+  );
+
   return (
     <main className="max-w-content mx-auto px-4 py-8">
       {/* h-entry はタイトル・日付・本文を全部含む。反応と関連記事はこの外。
-          中に入れると mf2 パーサが反応側の要素を記事のプロパティとして読む。 */}
+          中に入れると mf2 パーサが反応側の要素を記事のプロパティとして読む。
+          header の位置は変わるが、h-entry の中に居れば mf2 の読み取りは変わらない。 */}
       <article className="h-entry">
-        <div className="mb-8">
-          <h1 className="p-name text-2xl font-bold">{d.title}</h1>
-          <div className="flex gap-2">
-            {d.fromDate && (
-              <p className="text-fg-subtle text-sm mt-1">
-                <time className="dt-published" dateTime={d.fromDate!}>
-                  {publishedDisplay}
-                </time>
-              </p>
-            )}
-            <CopyButton
-              path={shareUrlPath({ articleId: d.articleId, clipId: d.clipId })}
-            />
-          </div>
-        </div>
+        {!quoteClip && header}
 
         {/* hidden な要素も mf2 パーサは読む。表示を変えずに機械可読性だけ足せる。 */}
         <a className="u-url" href={canonical} hidden>
@@ -73,10 +96,21 @@ const Page = () => {
 
         {/* 本文全体を e-content で包む。 */}
         <div className="e-content space-y-1">
-          {d.blocks.map((block, i) => (
-            <ScrapboxBlock key={i} block={block} />
-          ))}
+          {quoteClip
+            ? // 引用が主役のページでは、連続する引用行を 1 つの引用として出す。
+              groupQuoteRuns(d.blocks).map((item, i) =>
+                item.type === "quoteRun" ? (
+                  <QuoteRun key={i} lines={item.lines} indent={item.indent} />
+                ) : (
+                  <ScrapboxBlock key={i} block={item.block} emphasizeQuote />
+                ),
+              )
+            : d.blocks.map((block, i) => (
+                <ScrapboxBlock key={i} block={block} />
+              ))}
         </div>
+
+        {quoteClip && header}
       </article>
 
       <ReactionsIsland pageId={d.pageId} />

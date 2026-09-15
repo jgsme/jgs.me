@@ -25,6 +25,17 @@
   --color-fg-muted: var(--color-neutral-600);
   --color-fg-subtle: var(--color-neutral-400);
 
+  /* clip で大きく出す引用の文字色。48px の太字だと黒 (--color-fg) は強すぎるので、
+     一段だけ引く。muted (600) まで薄くすると引用符 (subtle = 400) との濃さの差が
+     縮み、引用符と本文が同じ存在感になる。キャプチャで 800 / 700 / 600 を比べて 700。 */
+  --color-fg-quote: var(--color-neutral-700);
+
+  /* clip で大きく出す引用 (short / medium) の書体。Web フォントは使わず OS の明朝を
+     拾う。mac / iOS はヒラギノ明朝、Windows は游明朝。Android は明朝が標準で
+     入っていないので serif の総称に落ち、実際には sans で出る。
+     引用符 (index.css の quote-marks) は Georgia で別に指定している。 */
+  --font-quote: "Hiragino Mincho ProN", "Yu Mincho", YuMincho, serif;
+
   --color-link: var(--color-blue-600);
 
   /* --- 面と境界 --- */
@@ -86,6 +97,13 @@
      値は --spacing-192 とも同値 (48rem) なので max-w-192 も同じ幅を指すが、
      これは幅の意味付けのための別名であって、そういう使い方はしない。 */
   --container-content: 48rem;
+
+  /* 引用をコンテンツ幅の外にはみ出させるときの幅 (packages/web の quote-bleed)。
+     --container-content より広い値であることに意味があるので、数値ではなく
+     名前で持つ。ここを --container-content 以下にすると、はみ出しの計算は
+     生きたまま見た目だけが本文幅に戻り、utility が効いていないように見える。
+     値は --container-content の 1.5 倍。1440px の画面で左右に 144px ずつ残る。 */
+  --container-quote: 72rem;
 
   /* 本文の水平線の幅。本文カラム (--container-content) を左右に突き抜けさせるので、
      コンテンツ幅ではなく viewport 基準で持つ。ここに置くのは、幅の決定を

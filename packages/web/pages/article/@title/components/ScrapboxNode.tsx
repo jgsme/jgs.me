@@ -1,6 +1,10 @@
 import React from "react";
 import type { Node as NodeType } from "@progfay/scrapbox-parser";
-import { bodyImageSources, QUOTE_CLIP_IMAGE_WIDTH } from "@/utils/bodyImage";
+import {
+  bodyImageSources,
+  photoImageSources,
+  QUOTE_CLIP_IMAGE_WIDTH,
+} from "@/utils/bodyImage";
 import { quoteClassName } from "./quote";
 
 function getYouTubeVideoId(url: string): string | null {
@@ -37,7 +41,9 @@ export const ScrapboxNode: React.FC<{
   /* 引用が主役のページ (kind が quote の clip) か。引用を大きく出し、本文画像を
      小さく出す。indent と同じく子の node へそのまま伝える。 */
   emphasizeQuote?: boolean;
-}> = ({ node, indent = 0, emphasizeQuote = false }) => {
+  /* 写真が主役のページ (kind が photo の clip) か。本文画像を本文幅の外まで広げる。 */
+  photo?: boolean;
+}> = ({ node, indent = 0, emphasizeQuote = false, photo = false }) => {
   switch (node.type) {
     case "plain":
       return <>{node.text}</>;
@@ -94,6 +100,37 @@ export const ScrapboxNode: React.FC<{
       // scrapbox-parser は Gyazo の URL を /thumb/1000 に正規化するので、
       // 移行前の本文は Gyazo 側で縮小された版を受け取っていた。R2 に移すと
       // その縮小が外れて原寸が飛ぶため、こちらで幅を与え直す。
+      //
+      // 写真の clip では画像を画面中央基準で広げる。引用と違ってインデントは見ない。
+      // 写真が主役のページでは、インデントは書いた時の癖でしか付いておらず、
+      // それで画像の出方が変わるほうが読み手には不可解になる。
+      if (photo) {
+        const image = photoImageSources(node.src);
+        return (
+          <span
+            className="block photo-bleed my-2"
+            // 行のインデント (ScrapboxBlock の padding-left) のぶん、はみ出しの
+            // 中心が右へずれる。打ち消す量を index.css に渡す。
+            style={
+              indent > 0
+                ? ({
+                    "--photo-indent": `${indent * 1.5}rem`,
+                  } as React.CSSProperties)
+                : undefined
+            }
+          >
+            <img
+              src={image.src}
+              srcSet={image.srcSet}
+              sizes={image.sizes}
+              alt=""
+              className="block max-w-full h-auto rounded mx-auto"
+              loading="lazy"
+              decoding="async"
+            />
+          </span>
+        );
+      }
       if (!emphasizeQuote) {
         const image = bodyImageSources(node.src);
         return (

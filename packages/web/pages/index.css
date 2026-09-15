@@ -24,6 +24,23 @@
   translate: -50% 0;
 }
 
+/* 写真の clip の本文画像を本文のコンテンツ幅の外に広げる。中央に置くやり方は
+   quote-bleed と同じ。
+   幅は max で本文幅 (100% = 行の幅) を下限にする。90vw は画面幅 818px を切ると
+   本文幅より狭くなり、広げるはずが縮む。
+   中の img は max-w-full のまま置くので、元画像より大きくは伸びない。
+   高さは止めない。縦長の画像はスクロールさせて見せる。 */
+@utility photo-bleed {
+  width: max(var(--container-photo), 100%);
+  position: relative;
+  /* left の % は親 (行) の content box を基準にするので、インデントされた行では
+     中心が padding の半分だけ右へずれる。そのままだとモバイルでインデント 2 段の
+     画像が画面の右にはみ出して横スクロールが出る。ずれる量は行しか知らないので、
+     --photo-indent で受け取って引く (ScrapboxNode)。 */
+  left: calc(50% - var(--photo-indent, 0px) / 2);
+  translate: -50% 0;
+}
+
 /* 大きく出す引用に付けるダブルクォート。DOM のテキストにしないので、
    引用を選択してコピーしても引用符が混ざらない。
 

@@ -34,15 +34,44 @@ export function bodyImageSources(
   image: string,
   { width = BODY_WIDTH }: { width?: number } = {},
 ): BodyImage {
+  return imageSources(
+    image,
+    WIDTHS,
+    // px-4 のぶんを引かないと、ブラウザが必要幅を過大に見積もって
+    // 1 段上の候補を引いてしまう。画面幅から 2rem 引いた値が width に届くまでは
+    // 画面幅に比例し、届いたら width で止まる。本文幅 736px なら境目は 768px。
+    `(max-width: ${width + 32}px) calc(100vw - 2rem), ${width}px`,
+  );
+}
+
+// 写真の clip で本文の外まで広げる画像の候補。1920px の画面の 90vw は 1x でも
+// 1728px 要り、1536 では足りない。2560 は 1x の 2560px 画面 (90vw = 2304px) まで賄う。
+// 元画像がこれより小さくても Image Transformations は拡大せず原寸で返すので、
+// 小さい画像で無駄に重くはならない。
+const PHOTO_WIDTHS = [...WIDTHS, 2560] as const;
+
+// 写真の clip の画像。表示幅は index.css の photo-bleed と揃える:
+// max(--container-photo (90vw), 本文幅)。本文幅は 768px までは画面幅 - 2rem、
+// その先は 736px。90vw が 736px を越えるのは画面幅 818px から。
+export function photoImageSources(image: string): BodyImage {
+  return imageSources(
+    image,
+    PHOTO_WIDTHS,
+    `(max-width: ${BODY_WIDTH + 32}px) calc(100vw - 2rem), (max-width: 818px) ${BODY_WIDTH}px, 90vw`,
+  );
+}
+
+function imageSources(
+  image: string,
+  widths: readonly number[],
+  sizes: string,
+): BodyImage {
   const src = thumbURL(image, DEFAULT_WIDTH);
   if (src === image) return { src };
 
   return {
     src,
-    srcSet: WIDTHS.map((w) => `${thumbURL(image, w)} ${w}w`).join(", "),
-    // px-4 のぶんを引かないと、ブラウザが必要幅を過大に見積もって
-    // 1 段上の候補を引いてしまう。画面幅から 2rem 引いた値が width に届くまでは
-    // 画面幅に比例し、届いたら width で止まる。本文幅 736px なら境目は 768px。
-    sizes: `(max-width: ${width + 32}px) calc(100vw - 2rem), ${width}px`,
+    srcSet: widths.map((w) => `${thumbURL(image, w)} ${w}w`).join(", "),
+    sizes,
   };
 }

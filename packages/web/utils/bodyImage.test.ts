@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bodyImageSources } from "./bodyImage";
+import { bodyImageSources, photoImageSources } from "./bodyImage";
 
 const R2 = "https://r2.jgs.me/deadbeef.png";
 const CDN = "https://r2.jgs.me/cdn-cgi/image";
@@ -65,5 +65,36 @@ describe("bodyImageSources", () => {
   it("r2.jgs.me を名前に含むだけの別ホストは素通しする", () => {
     const evil = "https://r2.jgs.me.evil.example/a.png";
     expect(bodyImageSources(evil)).toEqual({ src: evil });
+  });
+});
+
+describe("photoImageSources", () => {
+  it("src は本文の画像と同じ 840w にする", () => {
+    expect(photoImageSources(R2).src).toBe(bodyImageSources(R2).src);
+  });
+
+  // 90vw は 1920px の 1x で 1728px 要り、1536 では足りない。
+  it("本文の候補に 2560w を足す", () => {
+    expect(photoImageSources(R2).srcSet).toBe(
+      [
+        `${CDN}/width=420,format=auto,onerror=redirect/deadbeef.png 420w`,
+        `${CDN}/width=840,format=auto,onerror=redirect/deadbeef.png 840w`,
+        `${CDN}/width=1536,format=auto,onerror=redirect/deadbeef.png 1536w`,
+        `${CDN}/width=2560,format=auto,onerror=redirect/deadbeef.png 2560w`,
+      ].join(", "),
+    );
+  });
+
+  // 表示幅は max(90vw, 本文幅)。768px までは本文幅が画面に比例し、
+  // 818px (90vw が 736px を越える境目) までは本文幅 736px、その先は 90vw。
+  it("sizes は本文幅と 90vw の広いほうを表す", () => {
+    expect(photoImageSources(R2).sizes).toBe(
+      "(max-width: 768px) calc(100vw - 2rem), (max-width: 818px) 736px, 90vw",
+    );
+  });
+
+  it("Gyazo や外部の画像は素通しする", () => {
+    const other = "https://example.com/a.png";
+    expect(photoImageSources(other)).toEqual({ src: other });
   });
 });

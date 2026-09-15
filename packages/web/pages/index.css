@@ -35,7 +35,11 @@
 @utility photo-bleed {
   width: max(var(--container-photo), 100%);
   position: relative;
-  left: 50%;
+  /* left の % は親 (行) の content box を基準にするので、インデントされた行では
+     中心が padding の半分だけ右へずれる。そのままだとモバイルでインデント 2 段の
+     画像が画面の右にはみ出して横スクロールが出る。ずれる量は行しか知らないので、
+     --photo-indent で受け取って引く (ScrapboxNode)。 */
+  left: calc(50% - var(--photo-indent, 0px) / 2);
   translate: -50% 0;
 
   & > img {

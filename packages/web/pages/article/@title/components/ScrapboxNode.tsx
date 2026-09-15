@@ -107,7 +107,18 @@ export const ScrapboxNode: React.FC<{
       if (photo) {
         const image = photoImageSources(node.src);
         return (
-          <span className="block photo-bleed my-2">
+          <span
+            className="block photo-bleed my-2"
+            // 行のインデント (ScrapboxBlock の padding-left) のぶん、はみ出しの
+            // 中心が右へずれる。打ち消す量を index.css に渡す。
+            style={
+              indent > 0
+                ? ({
+                    "--photo-indent": `${indent * 1.5}rem`,
+                  } as React.CSSProperties)
+                : undefined
+            }
+          >
             <img
               src={image.src}
               srcSet={image.srcSet}

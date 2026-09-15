@@ -1,6 +1,6 @@
 import React from "react";
 import type { Node as NodeType } from "@progfay/scrapbox-parser";
-import { bodyImageSources } from "@/utils/bodyImage";
+import { bodyImageSources, QUOTE_CLIP_IMAGE_WIDTH } from "@/utils/bodyImage";
 import { quoteClassName } from "./quote";
 
 function getYouTubeVideoId(url: string): string | null {
@@ -34,8 +34,8 @@ export const ScrapboxNode: React.FC<{
   /* 行のインデント段数。引用のはみ出しを止めるためだけに使う。ScrapboxBlock が
      行から渡し、子の node へはそのまま伝える。 */
   indent?: number;
-  /* 引用を大きく出すページか。引用の見た目を切り替えるためだけに使う。
-     indent と同じく子の node へそのまま伝える。 */
+  /* 引用が主役のページ (kind が quote の clip) か。引用を大きく出し、本文画像を
+     小さく出す。indent と同じく子の node へそのまま伝える。 */
   emphasizeQuote?: boolean;
 }> = ({ node, indent = 0, emphasizeQuote = false }) => {
   switch (node.type) {
@@ -94,17 +94,40 @@ export const ScrapboxNode: React.FC<{
       // scrapbox-parser は Gyazo の URL を /thumb/1000 に正規化するので、
       // 移行前の本文は Gyazo 側で縮小された版を受け取っていた。R2 に移すと
       // その縮小が外れて原寸が飛ぶため、こちらで幅を与え直す。
-      const image = bodyImageSources(node.src);
+      if (!emphasizeQuote) {
+        const image = bodyImageSources(node.src);
+        return (
+          <img
+            src={image.src}
+            srcSet={image.srcSet}
+            sizes={image.sizes}
+            alt=""
+            className="max-w-full h-auto rounded my-2"
+            loading="lazy"
+            decoding="async"
+          />
+        );
+      }
+      // 引用の clip では引用が主役なので、画像は 24rem に絞って中央に置く。
+      // 幅の上限は img ではなく包む span に持たせる。img に max-w-96 を直に付けると、
+      // 本文幅が 24rem を切るスマホで max-w-full との両立ができずはみ出す。
+      // block の span は親の幅に収まったうえで 24rem で止まるので、中の img は
+      // max-w-full のままでよい。
+      const image = bodyImageSources(node.src, {
+        width: QUOTE_CLIP_IMAGE_WIDTH,
+      });
       return (
-        <img
-          src={image.src}
-          srcSet={image.srcSet}
-          sizes={image.sizes}
-          alt=""
-          className="max-w-full h-auto rounded my-2"
-          loading="lazy"
-          decoding="async"
-        />
+        <span className="block max-w-96 mx-auto my-2">
+          <img
+            src={image.src}
+            srcSet={image.srcSet}
+            sizes={image.sizes}
+            alt=""
+            className="max-w-full h-auto rounded mx-auto"
+            loading="lazy"
+            decoding="async"
+          />
+        </span>
       );
     }
 

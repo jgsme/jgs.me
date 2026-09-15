@@ -19,11 +19,21 @@ type BodyImage = {
   sizes?: string;
 };
 
+// 引用の clip で本文画像を絞る幅。ScrapboxNode の max-w-96 (24rem) と同じ値。
+// 片方だけ変えると、見た目と sizes がずれて 1 段上の候補を落とす。
+export const QUOTE_CLIP_IMAGE_WIDTH = 384;
+
 // 記事本文の画像を出すための src / srcSet / sizes を組む。
 // 変換が効くのは R2 に取り込んだ画像だけ。Gyazo や外部の URL は thumbURL が
 // 素通しするので、候補を並べても同じ URL が 3 本並ぶだけになる。
 // そういう URL では srcSet も sizes も付けない。
-export function bodyImageSources(image: string): BodyImage {
+//
+// width は画像の表示上限 (px)。候補は変えない — 384px でも 2x の画面は 768px を
+// 引くので、420 / 840 の刻みがそのまま使える。
+export function bodyImageSources(
+  image: string,
+  { width = BODY_WIDTH }: { width?: number } = {},
+): BodyImage {
   const src = thumbURL(image, DEFAULT_WIDTH);
   if (src === image) return { src };
 
@@ -31,7 +41,8 @@ export function bodyImageSources(image: string): BodyImage {
     src,
     srcSet: WIDTHS.map((w) => `${thumbURL(image, w)} ${w}w`).join(", "),
     // px-4 のぶんを引かないと、ブラウザが必要幅を過大に見積もって
-    // 1 段上の候補を引いてしまう。
-    sizes: `(max-width: 768px) calc(100vw - 2rem), ${BODY_WIDTH}px`,
+    // 1 段上の候補を引いてしまう。画面幅から 2rem 引いた値が width に届くまでは
+    // 画面幅に比例し、届いたら width で止まる。本文幅 736px なら境目は 768px。
+    sizes: `(max-width: ${width + 32}px) calc(100vw - 2rem), ${width}px`,
   };
 }

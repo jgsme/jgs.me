@@ -1,0 +1,1 @@
+ALTER TABLE `clip` ADD `kind` text DEFAULT 'link' NOT NULL;

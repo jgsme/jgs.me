@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isClip, parseEntry } from "./mf2";
+import { CLIP_KINDS, clipKind, isClip, parseEntry } from "./mf2";
 
 const VALID = {
   type: ["h-entry"],
@@ -154,5 +154,38 @@ describe("isClip", () => {
   // 原因が分かりにくくなる。完全一致だけを見る。
   it("大文字混じりは false (完全一致のみ)", () => {
     expect(isClip(["Clip"])).toBe(false);
+  });
+});
+
+describe("clipKind", () => {
+  it("category に kind があればそれを返す", () => {
+    expect(clipKind(["clip", "quote"])).toBe("quote");
+    expect(clipKind(["clip", "photo"])).toBe("photo");
+    expect(clipKind(["clip", "video"])).toBe("video");
+    expect(clipKind(["clip", "link"])).toBe("link");
+  });
+
+  it("kind が無ければ link", () => {
+    // kind を送らない古いクライアントからの投入。既定は link に倒す。
+    expect(clipKind(["clip"])).toBe("link");
+    expect(clipKind([])).toBe("link");
+  });
+
+  it("知らない値は無視して link", () => {
+    expect(clipKind(["clip", "日記", "bookmark"])).toBe("link");
+  });
+
+  it("並び順に関係なく拾う", () => {
+    expect(clipKind(["quote", "clip"])).toBe("quote");
+  });
+
+  it("複数の kind があれば CLIP_KINDS の定義順で最初の 1 つ", () => {
+    // 起きない想定だが、順序を決めておかないと category の並び順で結果が変わる。
+    expect(clipKind(["clip", "video", "quote"])).toBe("quote");
+    expect(clipKind(["clip", "photo", "video"])).toBe("photo");
+  });
+
+  it("CLIP_KINDS は link / quote / photo / video の 4 つ", () => {
+    expect(CLIP_KINDS).toEqual(["link", "quote", "photo", "video"]);
   });
 });

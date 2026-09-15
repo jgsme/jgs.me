@@ -16,8 +16,14 @@ pnpm deploy       # Build and deploy to Cloudflare Pages
 # Database
 pnpm gen          # Generate Drizzle migrations (drizzle-kit generate)
 
+# D1 に migration を当てる (packages/ingest から打つ。詳細は「### Database」)
+cd packages/ingest && npx wrangler d1 migrations list w --remote   # 未適用を見る
+cd packages/ingest && npx wrangler d1 migrations apply w --remote  # 当てる
+
 # CLI Tools
 pnpm undo <url|id> [<url|id>...]  # 登録を取り消す（article/clip/excluded_page と w-md から削除）
+pnpm kind <url|id> <kind>        # clip.kind を書き換える (link/quote/photo/video)
+pnpm kind --csv <path>           # CSV から一括で書き換える
 pnpm md-backfill                 # 検索インデックス用の md (w-md) を既存ページぶん埋める
 
 # Lint
@@ -56,6 +62,28 @@ Vike + React + Hono で構成された Cloudflare Workers アプリケーショ�
 - スキーマ: `packages/db/src/schema.ts`（`@jigsaw/db` でインポート）
 - D1バインディング: `DB` (wrangler.jsonc で定義)
 - マイグレーション: `packages/db/drizzle/` ディレクトリ
+
+#### migration の当て方
+
+**merge しても本番には当たらない。手で打つ。** CI (`.github/workflows/ci.yml`) は
+format と lint しか見ないし、Workers Builds は worker を deploy するだけで D1 は触らない。
+
+```bash
+cd packages/ingest
+npx wrangler d1 migrations apply w --remote
+```
+
+- `packages/ingest` から打つ。`migrations_dir: "../db/drizzle"` がここの wrangler.jsonc
+  にあるため。`packages/web` から打っても未適用が見つからない
+- `--remote` を付けないとローカルの sqlite に当たる。しかも `--local` の D1 は
+  package ごとに別ファイルなので、ingest で当てたものは web からは見えない
+- **stdin をパイプにしない。** `yes | wrangler ...` とすると
+  `The given account is not valid or is not authorized to access this service [code: 7403]`
+  で落ちる。非対話でもそのまま打てば「fallback value: yes」で進む
+- 当てる前に `migrations list w --remote` で未適用を確認する
+
+順番は schema を変える PR を merge → migration を当てる → データを入れる。カラム追加
+(`ADD COLUMN ... DEFAULT`) は既存コードが読まないので、deploy より先に当ててよい。
 
 ### Pages (Vike)
 
@@ -98,7 +126,7 @@ Vike + React + Hono で構成された Cloudflare Workers アプリケーショ�
 - `page` - Scrapbox ページ (id, title, created, updated, image, sbID)
 - `article` - 登録済み記事 (id, pageID, created, date)
 - `excluded_page` - 除外ページ (id, pageID, created)
-- `clip` - クリップ (id, pageID, created)
+- `clip` - クリップ (id, pageID, created, kind)
 
 ### Environment Variables
 

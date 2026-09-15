@@ -4,7 +4,7 @@ import { articles, clips, objects, pageLinks, pages } from "@jigsaw/db";
 import { newSbBodyKey, r2KeyOf, bodyFormatOf } from "@jigsaw/db/body-key";
 import { jstDate } from "@jigsaw/db/article-date";
 import { isAuthorized } from "./auth";
-import { parseEntry, isClip } from "./mf2";
+import { parseEntry, isClip, clipKind } from "./mf2";
 import { applyUpdate, parseUpdateAction } from "./mf2update";
 import { buildSbBody } from "./body";
 import { buildMdPut } from "./mdBody";
@@ -176,7 +176,11 @@ async function handleMicropubCreate(
   // env.DB.batch (生 SQL) と db.batch (query builder) は混ぜられないので、
   // clip / article の分岐も含めて drizzle で組み立てる。
   const insertKind = clip
-    ? db.insert(clips).values({ pageID: page.id, created })
+    ? db.insert(clips).values({
+        pageID: page.id,
+        created,
+        kind: clipKind(entry.categories),
+      })
     : db.insert(articles).values({
         pageID: page.id,
         created,
@@ -445,6 +449,16 @@ async function handleMicropubUpdate(
   }));
 
   const now = new Date().toISOString();
+
+  // clip の kind は diary が正なので、update でも運ばれてきた値に合わせる。
+  // 所属 (clip か article か) は create 時のまま触らない。update で移せる
+  // ようにすると /a/:id や /c/:id の permalink が指す先が変わる。
+  const [clipRow] = await db
+    .select({ id: clips.id })
+    .from(clips)
+    .where(eq(clips.pageID, target.pageID))
+    .limit(1);
+
   // updated を明示で渡しているので $onUpdate は発火しない (明示値が勝つ)。
   // create 同様、生 SQL ではなく drizzle の db.batch で組み立てる。
   const updatePage = db
@@ -460,11 +474,27 @@ async function handleMicropubUpdate(
     .delete(pageLinks)
     .where(eq(pageLinks.fromPageID, target.pageID));
 
+  // clip でなければ空配列。db.batch は先頭が埋まっていればいいので spread で足りる。
+  const updateClipKind = clipRow
+    ? [
+        db
+          .update(clips)
+          .set({ kind: clipKind(entry.categories) })
+          .where(eq(clips.id, clipRow.id)),
+      ]
+    : [];
+
   // create と同じ理由で 16 行ずつに刻んで同じ batch に複数文として積む。
   const linkInserts = chunk(linkRows, 16).map((group) =>
     db.insert(pageLinks).values(group),
   );
-  await db.batch([updatePage, updateObject, clearLinks, ...linkInserts]);
+  await db.batch([
+    updatePage,
+    updateObject,
+    clearLinks,
+    ...updateClipKind,
+    ...linkInserts,
+  ]);
 
   const renamed = entry.name !== target.title;
 

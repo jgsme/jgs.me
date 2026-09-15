@@ -105,6 +105,12 @@
      値は --container-content の 1.5 倍。1440px の画面で左右に 144px ずつ残る。 */
   --container-quote: 72rem;
 
+  /* 写真の clip で本文画像をコンテンツ幅の外に広げるときの幅 (packages/web の
+     photo-bleed)。--container-rule と値は同じだが、水平線の幅を変えたときに
+     写真まで動かないよう別の名前で持つ。画面幅に比例させたいので rem ではなく vw。
+     変えたら packages/web/utils/bodyImage.ts の photoImageSources の sizes も直すこと。 */
+  --container-photo: 90vw;
+
   /* 本文の水平線の幅。本文カラム (--container-content) を左右に突き抜けさせるので、
      コンテンツ幅ではなく viewport 基準で持つ。ここに置くのは、幅の決定を
      このファイルに集約するため — 参照側 (packages/web/pages/index.css の

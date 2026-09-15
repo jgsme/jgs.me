@@ -54,10 +54,13 @@ const Page = () => {
   // 151 件のうち題が引用と重なるのは 83 件だが、重ならない 68 件でも「引用が
   // 主役で題は添え物」という並びは変わらない。
   const quoteClip = d.clipKind === "quote";
+  // 写真が本体の clip も、写真を本文幅の外まで広げて主役にし、題は下に回す。
+  const photoClip = d.clipKind === "photo";
+  const titleBelow = quoteClip || photoClip;
   const header = (
-    <div className={quoteClip ? "mt-8" : "mb-8"}>
+    <div className={titleBelow ? "mt-8" : "mb-8"}>
       <h1
-        className={`p-name font-bold ${quoteClip ? "text-base" : "text-2xl"}`}
+        className={`p-name font-bold ${titleBelow ? "text-base" : "text-2xl"}`}
       >
         {d.title}
       </h1>
@@ -82,7 +85,7 @@ const Page = () => {
           中に入れると mf2 パーサが反応側の要素を記事のプロパティとして読む。
           header の位置は変わるが、h-entry の中に居れば mf2 の読み取りは変わらない。 */}
       <article className="h-entry">
-        {!quoteClip && header}
+        {!titleBelow && header}
 
         {/* hidden な要素も mf2 パーサは読む。表示を変えずに機械可読性だけ足せる。 */}
         <a className="u-url" href={canonical} hidden>
@@ -106,11 +109,11 @@ const Page = () => {
                 ),
               )
             : d.blocks.map((block, i) => (
-                <ScrapboxBlock key={i} block={block} />
+                <ScrapboxBlock key={i} block={block} photo={photoClip} />
               ))}
         </div>
 
-        {quoteClip && header}
+        {titleBelow && header}
       </article>
 
       <ReactionsIsland pageId={d.pageId} />

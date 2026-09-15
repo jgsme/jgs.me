@@ -8,7 +8,9 @@ export const ScrapboxBlock: React.FC<{
   block: BlockType;
   /* 引用を大きく出すページか。引用の見た目を切り替えるためだけに使う。 */
   emphasizeQuote?: boolean;
-}> = ({ block, emphasizeQuote = false }) => {
+  /* 写真を大きく出すページか。本文画像の見た目を切り替えるためだけに使う。 */
+  photo?: boolean;
+}> = ({ block, emphasizeQuote = false, photo = false }) => {
   switch (block.type) {
     case "title":
       return null;
@@ -36,13 +38,14 @@ export const ScrapboxBlock: React.FC<{
           style={{ paddingLeft: `${block.indent * 1.5}rem` }}
         >
           {block.nodes.map((node, i) => (
-            // indent は引用にだけ効く。インデントされた行の引用は、画面中央を
-            // 基準にはみ出させるとインデントぶんの位置を失うので、はみ出させない。
+            // indent は引用と写真のはみ出しにだけ効く。インデントされた行は、画面
+            // 中央を基準にはみ出させるとインデントぶんの位置を失うので、はみ出させない。
             <ScrapboxNode
               key={i}
               node={node}
               indent={block.indent}
               emphasizeQuote={emphasizeQuote}
+              photo={photo}
             />
           ))}
         </Tag>

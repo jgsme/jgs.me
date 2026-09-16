@@ -45,7 +45,8 @@ const data = async (c: Context) => {
   const bodyKey = pageInfo[0]?.bodyKey ?? "";
   const articleId = pageInfo[0]?.articleId ?? null;
   const clipId = pageInfo[0]?.clipId ?? null;
-  // 引用を大きく出すかは kind だけで決める (+Page.tsx)。clip でなければ null。
+  // 引用を大きく出すか、動画を大きく出すかは kind だけで決める (+Page.tsx)。
+  // clip でなければ null。
   const clipKind = pageInfo[0]?.clipKind ?? null;
   const created = pageInfo[0]?.created ?? "";
   const storedDate = pageInfo[0]?.date ?? null;

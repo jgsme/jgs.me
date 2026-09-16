@@ -6,32 +6,8 @@ import {
   QUOTE_CLIP_IMAGE_WIDTH,
 } from "@/utils/bodyImage";
 import { quoteClassName } from "./quote";
-
-function getYouTubeVideoId(url: string): string | null {
-  try {
-    const parsed = new URL(url);
-    if (
-      (parsed.hostname === "www.youtube.com" ||
-        parsed.hostname === "youtube.com") &&
-      parsed.pathname === "/watch"
-    ) {
-      return parsed.searchParams.get("v");
-    }
-    if (parsed.hostname === "youtu.be") {
-      return parsed.pathname.slice(1);
-    }
-    if (
-      (parsed.hostname === "www.youtube.com" ||
-        parsed.hostname === "youtube.com") &&
-      parsed.pathname.startsWith("/embed/")
-    ) {
-      return parsed.pathname.slice(7);
-    }
-  } catch {
-    return null;
-  }
-  return null;
-}
+import { getYouTubeVideoId } from "./youtube";
+import { YouTubeEmbed } from "./YouTubeEmbed";
 
 export const ScrapboxNode: React.FC<{
   node: NodeType;
@@ -64,11 +40,9 @@ export const ScrapboxNode: React.FC<{
       if (youtubeId) {
         return (
           <div className="my-4">
-            <iframe
+            <YouTubeEmbed
+              videoId={youtubeId}
               className="w-full aspect-video rounded"
-              src={`https://www.youtube.com/embed/${youtubeId}`}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
             />
           </div>
         );

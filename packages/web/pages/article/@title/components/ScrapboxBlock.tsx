@@ -3,6 +3,7 @@ import type { Block as BlockType } from "@progfay/scrapbox-parser";
 import { parseCardBlock } from "./card";
 import { isHorizontalRule } from "./horizontalRule";
 import { ScrapboxNode } from "./ScrapboxNode";
+import { youTubeIdOfNode } from "./youtube";
 
 export const ScrapboxBlock: React.FC<{
   block: BlockType;
@@ -22,16 +23,20 @@ export const ScrapboxBlock: React.FC<{
       if (block.nodes.length === 0) {
         return <div className="h-4" />;
       }
-      const hasBlockElement = block.nodes.some((n) => n.type === "quote");
+      const hasQuote = block.nodes.some((n) => n.type === "quote");
+      // YouTube のリンクは div で包んだ iframe になる。p の中に div は置けず、
+      // ブラウザが p を勝手に閉じて DOM が SSR の出力とずれる。
+      const hasBlockElement =
+        hasQuote || block.nodes.some((n) => youTubeIdOfNode(n) !== null);
       const Tag = hasBlockElement ? "div" : "p";
       // 引用は1行ごとに別の blockquote になる。連続する行どうしの間だけ
       // blockquote の上下 padding と親の space-y の margin を消し、1つの引用に見せる。
       // space-y は v4 で「次に兄弟がある要素の margin-bottom」なので、消すのも手前の行の側。
       return (
         <Tag
-          data-quote={hasBlockElement || undefined}
+          data-quote={hasQuote || undefined}
           className={
-            hasBlockElement
+            hasQuote
               ? "leading-relaxed [&:has(+[data-quote])]:mb-0 [&:has(+[data-quote])>blockquote]:pb-0 [[data-quote]+&>blockquote]:pt-0"
               : "leading-relaxed"
           }

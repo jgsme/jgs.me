@@ -57,6 +57,13 @@ const Page = () => {
   // 写真が本体の clip も、写真を本文幅の外まで広げて主役にし、題は下に回す。
   const photoClip = d.clipKind === "photo";
   const titleBelow = quoteClip || photoClip;
+
+  // 動画が本体の clip では、本文の最初のブロックにある動画を大きく出す
+  // (clip-video-body の CSS)。どれを大きくするかを JS で探さないのは、出典の行が
+  // 本文の先頭に来る前提が既に成り立っているため。本番の video clip 168 件のうち
+  // 最初のブロックが動画なのは 157 件で、外れていた 7 件は本文を直した。残り 4 件は
+  // diary 由来で、出典行を先頭に置く変更のあと publish し直すと揃う。
+  const videoClip = d.clipKind === "video";
   const header = (
     <div className={titleBelow ? "mt-8" : "mb-8"}>
       <h1
@@ -98,7 +105,9 @@ const Page = () => {
         </span>
 
         {/* 本文全体を e-content で包む。 */}
-        <div className="e-content space-y-1">
+        <div
+          className={`e-content space-y-1 ${videoClip ? "clip-video-body" : ""}`}
+        >
           {quoteClip
             ? // 引用が主役のページでは、連続する引用行を 1 つの引用として出す。
               groupQuoteRuns(d.blocks).map((item, i) =>

@@ -49,6 +49,66 @@ describe("parseUpdateAction", () => {
   it("replace / add がオブジェクトでなければ弾く", () => {
     expect(() => parseUpdateAction({ url: URL_, replace: ["x"] })).toThrow();
   });
+
+  // mp- はクライアント→サーバの命令用に予約されている接頭辞。
+  // https://www.w3.org/TR/micropub/#h-scope
+  it("mp-silent が無ければ silent は false", () => {
+    const a = parseUpdateAction({ url: URL_, replace: { content: ["new"] } });
+    expect(a.silent).toBe(false);
+  });
+
+  it("mp-silent: true で silent になる", () => {
+    const a = parseUpdateAction({
+      url: URL_,
+      replace: { content: ["new"] },
+      "mp-silent": true,
+    });
+    expect(a.silent).toBe(true);
+  });
+
+  // Micropub の JSON 形式は値を配列で包む。命令も同じ形で来うる。
+  it("mp-silent は配列で包まれていても読む", () => {
+    const a = parseUpdateAction({
+      url: URL_,
+      replace: { content: ["new"] },
+      "mp-silent": [true],
+    });
+    expect(a.silent).toBe(true);
+  });
+
+  it('mp-silent は文字列の "true" も取る', () => {
+    for (const v of ["true", ["true"]]) {
+      const a = parseUpdateAction({
+        url: URL_,
+        replace: { content: ["new"] },
+        "mp-silent": v,
+      });
+      expect(a.silent).toBe(true);
+    }
+  });
+
+  it("mp-silent: false は配送する", () => {
+    for (const v of [false, [false], "false", ["false"]]) {
+      const a = parseUpdateAction({
+        url: URL_,
+        replace: { content: ["new"] },
+        "mp-silent": v,
+      });
+      expect(a.silent).toBe(false);
+    }
+  });
+
+  // 読めない値を黙って false にすると、止めたつもりの update が
+  // フォロワー全員に飛ぶ。倒れる側を「何もしない」に寄せる。
+  it("mp-silent が真偽値として読めなければ弾く", () => {
+    expect(() =>
+      parseUpdateAction({
+        url: URL_,
+        replace: { content: ["new"] },
+        "mp-silent": "yes",
+      }),
+    ).toThrow();
+  });
 });
 
 describe("applyUpdate", () => {
@@ -61,6 +121,7 @@ describe("applyUpdate", () => {
   it("replace は値を丸ごと差し替える", () => {
     const next = applyUpdate(props, {
       url: URL_,
+      silent: false,
       replace: { name: ["新しい題"] },
       add: {},
       deleteProps: [],
@@ -73,6 +134,7 @@ describe("applyUpdate", () => {
   it("元の properties を書き換えない", () => {
     applyUpdate(props, {
       url: URL_,
+      silent: false,
       replace: { name: ["新しい題"] },
       add: {},
       deleteProps: [],
@@ -84,6 +146,7 @@ describe("applyUpdate", () => {
   it("add は既存の値の後ろに足す", () => {
     const next = applyUpdate(props, {
       url: URL_,
+      silent: false,
       replace: {},
       add: { category: ["c"] },
       deleteProps: [],
@@ -95,6 +158,7 @@ describe("applyUpdate", () => {
   it("add は存在しないプロパティなら作る", () => {
     const next = applyUpdate(props, {
       url: URL_,
+      silent: false,
       replace: {},
       add: { photo: ["https://r2.jgs.me/x.png"] },
       deleteProps: [],
@@ -106,6 +170,7 @@ describe("applyUpdate", () => {
   it("delete (プロパティ名) は丸ごと消す", () => {
     const next = applyUpdate(props, {
       url: URL_,
+      silent: false,
       replace: {},
       add: {},
       deleteProps: ["category"],
@@ -117,6 +182,7 @@ describe("applyUpdate", () => {
   it("delete (値指定) は該当する値だけ消す", () => {
     const next = applyUpdate(props, {
       url: URL_,
+      silent: false,
       replace: {},
       add: {},
       deleteProps: [],
@@ -129,6 +195,7 @@ describe("applyUpdate", () => {
   it("delete (値指定) はオブジェクトの値も消せる", () => {
     const next = applyUpdate(props, {
       url: URL_,
+      silent: false,
       replace: {},
       add: {},
       deleteProps: [],
@@ -140,6 +207,7 @@ describe("applyUpdate", () => {
   it("値指定の delete で全部消えたらプロパティごと落とす", () => {
     const next = applyUpdate(props, {
       url: URL_,
+      silent: false,
       replace: {},
       add: {},
       deleteProps: [],
@@ -151,6 +219,7 @@ describe("applyUpdate", () => {
   it("空配列の replace はプロパティを落とす", () => {
     const next = applyUpdate(props, {
       url: URL_,
+      silent: false,
       replace: { category: [] },
       add: {},
       deleteProps: [],
@@ -163,6 +232,7 @@ describe("applyUpdate", () => {
   it("delete → replace → add の順で適用する", () => {
     const next = applyUpdate(props, {
       url: URL_,
+      silent: false,
       replace: {},
       add: { category: ["c"] },
       deleteProps: ["category"],

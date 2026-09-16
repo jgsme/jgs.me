@@ -10,6 +10,8 @@ export type UpdateAction = {
   //   { category: ["x"] }     → category から "x" だけ消す
   deleteProps: string[];
   deleteValues: Record<string, unknown[]>;
+  // mp-silent: 付いていたら配送 (ActivityPub / Bluesky / Threads) を飛ばす。
+  silent: boolean;
 };
 
 type Props = Record<string, unknown>;
@@ -29,6 +31,19 @@ function asPropMap(v: unknown, field: string): Record<string, unknown[]> {
   return out;
 }
 
+// mp- はクライアント→サーバの命令用に予約された接頭辞で、投稿のプロパティ
+// ではない。https://www.w3.org/TR/micropub/#h-scope
+// JSON 形式は値を配列で包むので、素の値と ["..."] の両方を取る。
+// 読めない値は false に倒さず投げる。黙って false にすると、止めたつもりの
+// update がフォロワー全員に飛ぶ。
+function readSilent(v: unknown): boolean {
+  if (v === undefined) return false;
+  const value = Array.isArray(v) ? v[0] : v;
+  if (value === true || value === "true") return true;
+  if (value === false || value === "false") return false;
+  throw new Error("mp-silent must be a boolean");
+}
+
 export function parseUpdateAction(payload: unknown): UpdateAction {
   if (!payload || typeof payload !== "object") {
     throw new Error("url is required");
@@ -38,6 +53,7 @@ export function parseUpdateAction(payload: unknown): UpdateAction {
     replace?: unknown;
     add?: unknown;
     delete?: unknown;
+    "mp-silent"?: unknown;
   };
 
   if (typeof p.url !== "string" || p.url === "") {
@@ -67,7 +83,14 @@ export function parseUpdateAction(payload: unknown): UpdateAction {
     throw new Error("replace, add or delete is required");
   }
 
-  return { url: p.url, replace, add, deleteProps, deleteValues };
+  return {
+    url: p.url,
+    replace,
+    add,
+    deleteProps,
+    deleteValues,
+    silent: readSilent(p["mp-silent"]),
+  };
 }
 
 // 値の同一判定。content は { html: "..." } のようなオブジェクトも取るので、

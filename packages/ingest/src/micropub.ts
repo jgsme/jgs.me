@@ -291,7 +291,13 @@ async function resolveTarget(
   env: Env,
   url: string,
 ): Promise<
-  | { ok: true; pageID: number; title: string; bodyKey: string }
+  | {
+      ok: true;
+      pageID: number;
+      title: string;
+      bodyKey: string;
+      updated: string;
+    }
   | { ok: false; status: number; description: string }
 > {
   let target;
@@ -310,6 +316,9 @@ async function resolveTarget(
     id: pages.id,
     title: pages.title,
     bodyKey: pages.bodyKey,
+    // mp-silent の update で据え置く元の値 ($onUpdate を止めるには
+    // 明示で渡すしかない)。
+    updated: pages.updated,
   };
   // 同題が 2 件以上あるかを知りたいので limit は 2。
   const results =
@@ -344,7 +353,13 @@ async function resolveTarget(
   }
 
   const row = results[0]!;
-  return { ok: true, pageID: row.id, title: row.title, bodyKey: row.bodyKey };
+  return {
+    ok: true,
+    pageID: row.id,
+    title: row.title,
+    bodyKey: row.bodyKey,
+    updated: row.updated,
+  };
 }
 
 // 記事ページはエッジに載る (web の +server.ts)。消さないと
@@ -541,12 +556,19 @@ async function handleMicropubUpdate(
     .limit(1);
 
   // updated を明示で渡しているので $onUpdate は発火しない (明示値が勝つ)。
+  // mp-silent の update は「本文の作り直し」であって更新ではないので、元の値を
+  // そのまま入れ直して据え置く (省くと $onUpdate が現在時刻で埋めてしまう)。
   // create 同様、生 SQL ではなく drizzle の db.batch で組み立てる。
   const updatePage = db
     .update(pages)
     // 本文が差し替わればサムネの元も変わる。create と同じ規則で引き直す。
     // 変換時は bodyKey が新しい sb- キーになる。変換しない update では同じ値。
-    .set({ title: entry.name, image: pageImage(entry), updated: now, bodyKey })
+    .set({
+      title: entry.name,
+      image: pageImage(entry),
+      updated: action.silent ? target.updated : now,
+      bodyKey,
+    })
     .where(eq(pages.id, target.pageID));
   // アーカイブのページには object 行が無いので、変換時は INSERT する。
   // UPDATE のままだと 0 行更新で mf2 が保存されず、次の update も 400 になる。
@@ -599,14 +621,21 @@ async function handleMicropubUpdate(
   const renamed = entry.name !== target.title;
 
   // 配送は後から再実行できる。失敗しても更新自体は成功させる。
-  try {
-    await env.AP.fetch("https://ap.internal/internal/publish", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pageID: target.pageID, kind: "update" }),
-    });
-  } catch (e) {
-    console.error(`[publish] failed pageID=${target.pageID} ${String(e)}`);
+  // mp-silent なら飛ばす。既存記事の本文を機械的に作り直す backfill で、
+  // 1 件ごとに Update がフォロワーへ飛ぶのを止めるため。publish は本文中の
+  // 外部リンクへの Webmention 再送も持っているので、それもまとめて止まる
+  // (Bluesky / Threads は publish 側が kind === "create" でしか送らないので、
+  // update ではもともと飛ばない)。
+  if (!action.silent) {
+    try {
+      await env.AP.fetch("https://ap.internal/internal/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pageID: target.pageID, kind: "update" }),
+      });
+    } catch (e) {
+      console.error(`[publish] failed pageID=${target.pageID} ${String(e)}`);
+    }
   }
 
   // 一覧 (/) は題を出すので、改題でなくても載せ替えが要る。

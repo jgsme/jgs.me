@@ -1,4 +1,4 @@
-import { and, desc, eq, exists, or, sql } from "drizzle-orm";
+import { and, desc, eq, exists, ne, or, sql } from "drizzle-orm";
 import { articles, clips, pageLinks, pages } from "@jigsaw/db";
 import type { getDB } from "@/db/getDB";
 
@@ -20,6 +20,10 @@ export const BACKLINK_PAGE = 24;
 // 出てこない下書き相当なので、カードにも出さない。
 // excluded_page は article / clip と重なりが 0 件なので、この条件で自然に落ちる。
 //
+// 自分自身は除く。clip のページに出すとき、本文で自分の題にリンクしていると
+// 自分がカードに出てしまう。呼び出し側で filter すると /api/backlinks の
+// offset とずれて「もっと見る」で取りこぼすので、クエリで落とす。
+//
 // 並びは updated の降順。同値がほぼ無いとはいえ (6234 件中 1 組)、offset で
 // ページを繰る以上は順序が確定していないと取りこぼす。id を第 2 キーに置く。
 export async function fetchBacklinks(
@@ -37,6 +41,7 @@ export async function fetchBacklinks(
     .where(
       and(
         eq(pageLinks.toTitle, title),
+        ne(pages.title, title),
         or(
           exists(
             db

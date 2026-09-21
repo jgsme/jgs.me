@@ -130,6 +130,13 @@ const Page = () => {
       </article>
 
       <ReactionsIsland pageId={d.pageId} />
+      {/* 被リンクは clip のページだけ (+data.ts)。h-entry の外に置く。中に
+          入れると mf2 パーサが記事のプロパティとして読む。 */}
+      <Backlinks
+        title={d.title}
+        initial={d.backlinks}
+        initialHasMore={d.hasMore}
+      />
       <RelatedPages related={d.related} />
       {/^\d{4}$/.test(d.title) && <WarpButton />}
     </main>

@@ -26,7 +26,11 @@ const Page = () => {
     return (
       <main className="max-w-content mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-4">{d.title}</h1>
-        <p className="text-fg-muted">Page not found</p>
+        {/* 被リンクがあれば題と関連ページだけのページとして見せる。
+            「Page not found」を出すのは本当に何も無いときだけ。 */}
+        {d.backlinks.length === 0 && (
+          <p className="text-fg-muted">Page not found</p>
+        )}
         <Backlinks
           title={d.title}
           initial={d.backlinks}

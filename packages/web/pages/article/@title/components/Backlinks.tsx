@@ -3,11 +3,13 @@ import { useState } from "react";
 import type { Backlink } from "@/server/backlinks";
 import { PageTileGrid } from "./PageTileGrid";
 
-// 記事が無い題に出す「関連ページ」。最初の 12 件は SSR 済みで props から来る。
+// 記事が無い題と clip のページに出す「関連ページ」。最初の 12 件は SSR 済みで
+// props から来る。
 //
-// Reactions と違って clientOnly にしない。ここは Not Found ページの中身その
-// ものなので、HTML に載っていないと読む側にもクローラにも届かない。普通の
-// コンポーネントとして SSR し、hydrate でボタンだけが動くようにする。
+// Reactions と違って clientOnly にしない。記事が無い題ではここが Not Found
+// ページの中身そのものなので、HTML に載っていないと読む側にもクローラにも
+// 届かない。普通のコンポーネントとして SSR し、hydrate でボタンだけが
+// 動くようにする。
 // JS が動かなければ最初の 12 件が出たままになる。
 export const Backlinks: React.FC<{
   title: string;

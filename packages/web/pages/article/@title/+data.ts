@@ -77,7 +77,7 @@ const data = async (c: Context) => {
 
   if (body === null) {
     // 記事が無い題でも、そこへリンクしているページはある。行き止まりに
-    // しないため、被リンクを出す。
+    // しないため、被リンクを出す (clip のページにも出す。下の ok 側)。
     // similarity は使えない (page_similarity の行は article を持つページに
     // しか作られない。ここに来る題はそもそも page 行が無い)。
     // クエリは API (/api/backlinks) と共有する。「もっと見る」で続きを
@@ -107,6 +107,14 @@ const data = async (c: Context) => {
     };
   }
 
+  // clip のページには被リンクを出す。clip は similarity の計算対象外で
+  // related が空になり、下に何も出ないため。article のページには出さない。
+  // SSR と「もっと見る」で同じ関数を通す理由は上の body === null 側と同じ。
+  const { backlinks, hasMore } =
+    clipId !== null
+      ? await fetchBacklinks(db, title, 0, BACKLINK_INITIAL)
+      : { backlinks: [], hasMore: false };
+
   const built = buildArticleBody(body);
   const filteredBlocks = built.blocks;
   const description = built.description;
@@ -135,6 +143,8 @@ const data = async (c: Context) => {
     fromDate,
     description,
     related,
+    backlinks,
+    hasMore,
   };
 };
 

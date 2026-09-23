@@ -18,7 +18,7 @@
     "md-backfill": "pnpm --filter cli md-backfill"
   },
   "devDependencies": {
-    "prettier": "^3.9.6",
+    "prettier": "^3.9.9",
     "wrangler": "catalog:"
   }
 }

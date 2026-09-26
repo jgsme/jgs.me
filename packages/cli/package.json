@@ -11,7 +11,7 @@
     "md-backfill": "node src/mdBackfill.ts"
   },
   "devDependencies": {
-    "@types/node": "^24.10.1",
+    "@types/node": "^24.19.0",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

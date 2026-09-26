@@ -32,6 +32,7 @@ const Page = () => {
           <p className="text-fg-muted">Page not found</p>
         )}
         <Backlinks
+          key={d.title}
           title={d.title}
           initial={d.backlinks}
           initialHasMore={d.hasMore}
@@ -133,6 +134,7 @@ const Page = () => {
       {/* 被リンクは clip のページだけ (+data.ts)。h-entry の外に置く。中に
           入れると mf2 パーサが記事のプロパティとして読む。 */}
       <Backlinks
+        key={d.title}
         title={d.title}
         initial={d.backlinks}
         initialHasMore={d.hasMore}

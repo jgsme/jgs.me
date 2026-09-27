@@ -242,8 +242,9 @@ export const gyazoMedia = sqliteTable("gyazo_media", {
 // id は内容の sha256 で、R2 のキー (<id>.<ext>) と一致する。同じ画像を
 // 二度投稿しても 1 行にまとまる。
 //
-// micropub の media endpoint 由来の画像と同じバケットに同居するが、
-// この表に載るのは「出典を持つ、シェアのために置いた画像」だけ。
+// micropub の media endpoint 由来の画像と同じバケットに同居する。i.jgs.me は
+// 行の無い画像も R2 から素朴にページにするので、この表は「出典を持つ画像」と
+// 「ページを消した画像」(deleted_at) を覚えておく場所になっている。
 export const sharedImages = sqliteTable("shared_image", {
   id: text("id").primaryKey(),
   ext: text("ext").notNull(),
@@ -260,4 +261,8 @@ export const sharedImages = sqliteTable("shared_image", {
   created: text("created")
     .notNull()
     .default(sql`(CURRENT_TIMESTAMP)`),
+  // ページを消した日時。R2 の実体は消さない (記事本文から参照されうる) ので、
+  // 行ごと消すと R2 フォールバックでページが復活してしまう。
+  // 同じ画像を拡張から投稿し直すと null に戻る。
+  deletedAt: text("deleted_at"),
 });

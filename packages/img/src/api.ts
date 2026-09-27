@@ -1,12 +1,14 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { sharedImages } from "@jigsaw/db";
 import { putMedia } from "@jigsaw/media";
 import { isAuthorized } from "./auth";
 import { MAX_UPLOAD_BYTES } from "./config";
 import { isUploadError, parseUpload } from "./upload";
 import { storeUpload, type StoreDeps } from "./store";
+import { findObject } from "./media";
+import { unpublish } from "./unpublish";
 import type { Env } from "./env";
 
 // 拡張が叩く API とヘルスチェック。個別ページ (/:id) は Vike が受けるので
@@ -67,20 +69,27 @@ app.post("/api/images", async (c) => {
 
   const db = drizzle(c.env.DB);
   const deps: StoreDeps = {
-    exists: async (id) => {
-      const rows = await db
-        .select({ id: sharedImages.id })
+    state: async (id) => {
+      const [row] = await db
+        .select({ deletedAt: sharedImages.deletedAt })
         .from(sharedImages)
         .where(eq(sharedImages.id, id))
         .limit(1);
-      return rows.length > 0;
+      if (!row) return "none";
+      return row.deletedAt === null ? "live" : "deleted";
     },
     put: (bytes, contentType) => putMedia(c.env.MEDIA, bytes, contentType),
     insert: async (row) => {
-      // exists → insert は check-then-act なので、同じ画像の POST が重なると
+      // state → insert は check-then-act なので、同じ画像の POST が重なると
       // 2 本目が PK 衝突する。行が既にあるなら何もしないのが正しい
       // (出典は最初の投稿のものを残す、という重複時の扱いと同じ)。
       await db.insert(sharedImages).values(row).onConflictDoNothing();
+    },
+    revive: async (row) => {
+      await db
+        .update(sharedImages)
+        .set({ ...row, created: sql`CURRENT_TIMESTAMP`, deletedAt: null })
+        .where(eq(sharedImages.id, row.id));
     },
   };
 
@@ -107,10 +116,29 @@ app.delete("/api/images/:id", async (c) => {
   const id = c.req.param("id");
   if (!/^[0-9a-f]{64}$/.test(id)) return c.notFound();
 
-  // R2 のオブジェクトは消さない。キーが内容の sha256 なので、同じ画像が
-  // micropub 由来や Gyazo 取り込み由来でも w-media に入っている可能性がある。
-  // 消すと記事本文の <img> が壊れる。
-  await drizzle(c.env.DB).delete(sharedImages).where(eq(sharedImages.id, id));
+  const db = drizzle(c.env.DB);
+  await unpublish(id, {
+    markDeleted: async (id) => {
+      const rows = await db
+        .update(sharedImages)
+        .set({ deletedAt: sql`CURRENT_TIMESTAMP` })
+        .where(eq(sharedImages.id, id))
+        .returning({ id: sharedImages.id });
+      return rows.length > 0;
+    },
+    findObject: (id) => findObject(c.env.MEDIA, id),
+    insertTombstone: async (row) => {
+      // markDeleted との間に同じ画像の POST が割り込んで行ができていても、
+      // 消す操作のほうが後なので消した印を付ける。
+      await db
+        .insert(sharedImages)
+        .values({ ...row, deletedAt: sql`CURRENT_TIMESTAMP` })
+        .onConflictDoUpdate({
+          target: sharedImages.id,
+          set: { deletedAt: sql`CURRENT_TIMESTAMP` },
+        });
+    },
+  });
 
   return c.body(null, 204);
 });

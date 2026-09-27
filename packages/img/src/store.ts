@@ -12,10 +12,15 @@ export interface InsertRow {
   bytes: number;
 }
 
+// deleted は、ページを消した印の付いた行がある状態。
+export type RowState = "none" | "live" | "deleted";
+
 export interface StoreDeps {
-  exists(id: string): Promise<boolean>;
+  state(id: string): Promise<RowState>;
   put(bytes: ArrayBuffer, contentType: string): Promise<string | null>;
   insert(row: InsertRow): Promise<void>;
+  // 消した行を今回の投稿で上書きし、消した印を外す。
+  revive(row: InsertRow): Promise<void>;
 }
 
 export interface StoreResult {
@@ -26,6 +31,9 @@ export interface StoreResult {
 // 重複判定は D1 の行の有無だけで見る。R2 に同じキーがあっても
 // (micropub 由来 / Gyazo 取り込み由来) 行が無ければ新規として扱う。
 // put は同じ内容の上書きになるので無害。
+//
+// ページを消した画像の再投稿は復活させる。消す前の出典には戻さず、
+// 新しく投稿したものとして今回の出典で上書きする。
 export async function storeUpload(
   input: ParsedUpload,
   deps: StoreDeps,
@@ -35,11 +43,12 @@ export async function storeUpload(
 
   const [id, ext] = splitKey(key);
 
-  if (await deps.exists(id)) return { id, duplicate: true };
+  const state = await deps.state(id);
+  if (state === "live") return { id, duplicate: true };
 
   if ((await deps.put(input.bytes, input.contentType)) === null) return null;
 
-  await deps.insert({
+  await (state === "deleted" ? deps.revive : deps.insert)({
     id,
     ext,
     sourceURL: input.sourceURL,

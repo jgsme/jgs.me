@@ -240,7 +240,7 @@ async function generateHtml(
           }
 
           #page-1, #page-2, #page-3, #page-4, #page-5 {
-            margin-bottom: 2rem;
+            padding-bottom: 4rem;
           }
 
           .links h3 {

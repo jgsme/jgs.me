@@ -1,0 +1,1 @@
+ALTER TABLE `shared_image` ADD `deleted_at` text;

@@ -452,9 +452,15 @@ async function renderHome(db: ReturnType<typeof drizzle>): Promise<string> {
 }
 
 app.get("/", async (c) => {
-  const cached = await c.env.KV.get(KV_KEY);
-  if (cached) {
-    return c.html(cached);
+  // preview の version も本番と同じ KV を見るので、キャッシュを読むと本番の
+  // 旧 HTML が返って変更を確認できない。preview URL (*.workers.dev) では
+  // キャッシュを飛ばして毎回描画する。
+  const isPreview = new URL(c.req.url).hostname.endsWith(".workers.dev");
+  if (!isPreview) {
+    const cached = await c.env.KV.get(KV_KEY);
+    if (cached) {
+      return c.html(cached);
+    }
   }
 
   const html = await renderHome(drizzle(c.env.DB));

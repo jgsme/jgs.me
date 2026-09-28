@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
 import { desc, eq, gte } from "drizzle-orm";
-import { articles, pages } from "@jigsaw/db";
+import { articles, clips, pages } from "@jigsaw/db";
 import {
   WorkflowEntrypoint,
   WorkflowEvent,
@@ -21,8 +21,6 @@ const app = new Hono<{ Bindings: Bindings }>();
 const icons: Record<string, string> = {
   github:
     "M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12",
-  scrapbox:
-    "M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 3c.194 0 .388.04.535.117l4.93 2.592c.296.156.295.406 0 .562L12.32 8.977c-.177.092-.177.244 0 .337l5.145 2.706c.183.096.342.286.44.498l-4.987 2.623a.533.533 0 0 0-.281.476v.002a.536.536 0 0 0 .281.479l4.836 2.545a.948.948 0 0 1-.29.248l-4.929 2.591c-.296.156-.774.156-1.07 0l-4.93-2.591c-.296-.156-.295-.407 0-.563l5.145-2.705c.176-.092.177-.245 0-.338L6.535 12.58a1 1 0 0 1-.373-.367l4.942-2.57a.516.516 0 0 0 .279-.26.554.554 0 0 0 0-.48.515.515 0 0 0-.28-.258l-4.939-2.57a1 1 0 0 1 .371-.366l4.93-2.592A1.19 1.19 0 0 1 12 3zM6 7.176l3.781 1.967L6 11.109V7.176zm12 6.48v3.926l-3.732-1.963L18 13.656z",
   x: "M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z",
   facebook:
     "M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z",
@@ -56,15 +54,8 @@ const data = {
   name: "Takaya Kobayashi",
   aka: "Jigsaw, jgs, neo6120",
   copy: "A Web Application/Service Creator",
-  mainLinks: [
-    { name: "Codes", href: "https://github.com/e-jigsaw", icon: "github" },
-    {
-      name: "Scrapbox",
-      href: "https://scrapbox.io/jigsaw/",
-      icon: "scrapbox",
-    },
-  ],
   links: [
+    { name: "e-jigsaw", href: "https://github.com/e-jigsaw", icon: "github" },
     { name: "neo6120", href: "https://twitter.com/neo6120", icon: "x" },
     {
       name: "takaya.kobayashi",
@@ -90,13 +81,16 @@ const data = {
   ],
 };
 
-type RecentArticle = {
+type RecentItem = {
   id: number;
   title: string;
   created: string;
 };
 
-async function generateHtml(recentArticles: RecentArticle[]): Promise<string> {
+async function generateHtml(
+  recentArticles: RecentItem[],
+  recentClips: RecentItem[],
+): Promise<string> {
   const html = (
     <html lang="ja">
       <head>
@@ -197,10 +191,6 @@ async function generateHtml(recentArticles: RecentArticle[]): Promise<string> {
             margin-left: -7rem;
           }
 
-          #page-1 {
-            height: calc(100vh - 10rem);
-          }
-
           .profile {
             text-align: center;
             font-family: Cutive Mono, monospace;
@@ -219,14 +209,6 @@ async function generateHtml(recentArticles: RecentArticle[]): Promise<string> {
           .copy {
             text-align: center;
             font-family: serif;
-          }
-
-          .main-links {
-            display: flex;
-            flex-direction: row;
-            justify-content: center;
-            font-size: 2rem;
-            font-family: monospace;
           }
 
           .link {
@@ -249,14 +231,6 @@ async function generateHtml(recentArticles: RecentArticle[]): Promise<string> {
             color: #333;
           }
 
-          .main-links .icon {
-            width: 28px;
-            height: 28px;
-            margin-right: 0.5rem;
-            position: relative;
-            top: 4px;
-          }
-
           .link-grid .icon {
             width: 24px;
             height: 24px;
@@ -265,12 +239,8 @@ async function generateHtml(recentArticles: RecentArticle[]): Promise<string> {
             top: 2px;
           }
 
-          #page-2 {
-            height: calc(100vh - 20rem);
-          }
-
-          #page-3, #page-4, #page-5 {
-            margin-bottom: 20rem;
+          #page-1, #page-2, #page-3, #page-4, #page-5 {
+            padding-bottom: 6rem;
           }
 
           .links h3 {
@@ -309,17 +279,10 @@ async function generateHtml(recentArticles: RecentArticle[]): Promise<string> {
           }
 
           .update-link {
-            width: 50vw;
+            width: 90vw;
+            max-width: 36rem;
             margin: 0 auto;
             margin-bottom: 1rem;
-          }
-
-          @media (max-width: 376px) {
-            .update-link {
-              width: 90vw;
-              margin: 0 auto;
-              margin-bottom: 1rem;
-            }
           }
 
           .update-link div:nth-of-type(1) {
@@ -350,14 +313,6 @@ async function generateHtml(recentArticles: RecentArticle[]): Promise<string> {
           </div>
           <div class="copy">
             <p>{data.copy}</p>
-          </div>
-          <div class="main-links">
-            {data.mainLinks.map((link) => (
-              <a class="link" href={link.href}>
-                <Icon name={link.icon} className="icon" />
-                {link.name}
-              </a>
-            ))}
           </div>
         </div>
 
@@ -399,6 +354,28 @@ async function generateHtml(recentArticles: RecentArticle[]): Promise<string> {
           </div>
         </div>
 
+        <div id="page-4">
+          <div class="links">
+            <h3>
+              <span>Recent Clips</span>
+            </h3>
+            <div class="update-container">
+              {recentClips.length > 0 &&
+                recentClips.map((clip) => (
+                  <a
+                    href={`https://w.jgs.me/c/${clip.id}`}
+                    class="update-link link"
+                  >
+                    <div>{clip.title}</div>
+                    <div>
+                      {new Date(clip.created).toLocaleDateString("en-US")}
+                    </div>
+                  </a>
+                ))}
+            </div>
+          </div>
+        </div>
+
         <div id="page-5">
           <div class="links">
             <h3>
@@ -418,13 +395,15 @@ async function generateHtml(recentArticles: RecentArticle[]): Promise<string> {
   return "<!DOCTYPE html>" + html;
 }
 
+function twoWeeksAgo(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 14);
+  return d.toISOString();
+}
+
 async function fetchRecentArticles(
   db: ReturnType<typeof drizzle>,
-): Promise<RecentArticle[]> {
-  const twoWeeksAgo = new Date();
-  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-  const twoWeeksAgoStr = twoWeeksAgo.toISOString();
-
+): Promise<RecentItem[]> {
   return db
     .select({
       id: articles.id,
@@ -433,29 +412,58 @@ async function fetchRecentArticles(
     })
     .from(articles)
     .innerJoin(pages, eq(articles.pageID, pages.id))
-    .where(gte(pages.created, twoWeeksAgoStr))
+    .where(gte(pages.created, twoWeeksAgo()))
     .orderBy(desc(pages.created))
     .limit(10);
 }
 
+// 並びと日付は clip.created ではなく page.created で取る。アーカイブから
+// 移した clip は clip.created が投入日になっていて実日付とずれるため
+// (web の /clips と同じ)。
+async function fetchRecentClips(
+  db: ReturnType<typeof drizzle>,
+): Promise<RecentItem[]> {
+  return db
+    .select({
+      id: clips.id,
+      title: pages.title,
+      created: pages.created,
+    })
+    .from(clips)
+    .innerJoin(pages, eq(clips.pageID, pages.id))
+    .where(gte(pages.created, twoWeeksAgo()))
+    .orderBy(desc(pages.created))
+    .limit(10);
+}
+
+async function renderHome(db: ReturnType<typeof drizzle>): Promise<string> {
+  const [recentArticles, recentClips] = await Promise.all([
+    fetchRecentArticles(db),
+    fetchRecentClips(db),
+  ]);
+  return generateHtml(recentArticles, recentClips);
+}
+
 app.get("/", async (c) => {
-  const cached = await c.env.KV.get(KV_KEY);
-  if (cached) {
-    return c.html(cached);
+  // preview の version も本番と同じ KV を見るので、キャッシュを読むと本番の
+  // 旧 HTML が返って変更を確認できない。preview URL (*.workers.dev) では
+  // キャッシュを飛ばして毎回描画する。
+  const isPreview = new URL(c.req.url).hostname.endsWith(".workers.dev");
+  if (!isPreview) {
+    const cached = await c.env.KV.get(KV_KEY);
+    if (cached) {
+      return c.html(cached);
+    }
   }
 
-  const db = drizzle(c.env.DB);
-  const recentArticles = await fetchRecentArticles(db);
-  const html = await generateHtml(recentArticles);
+  const html = await renderHome(drizzle(c.env.DB));
   return c.html(html);
 });
 
 export class CacheWorkflow extends WorkflowEntrypoint<Bindings, unknown> {
   async run(_event: WorkflowEvent<unknown>, step: WorkflowStep) {
     await step.do("regenerate-cache", async () => {
-      const db = drizzle(this.env.DB);
-      const recentArticles = await fetchRecentArticles(db);
-      const html = await generateHtml(recentArticles);
+      const html = await renderHome(drizzle(this.env.DB));
       await this.env.KV.put(KV_KEY, html);
       return { regenerated: true };
     });
@@ -467,9 +475,7 @@ export class CacheWorkflow extends WorkflowEntrypoint<Bindings, unknown> {
 export default {
   fetch: app.fetch,
   async scheduled(_event: ScheduledEvent, env: Bindings) {
-    const db = drizzle(env.DB);
-    const recentArticles = await fetchRecentArticles(db);
-    const html = await generateHtml(recentArticles);
+    const html = await renderHome(drizzle(env.DB));
     await env.KV.put(KV_KEY, html);
     console.log("Home page HTML generated and cached to KV");
   },

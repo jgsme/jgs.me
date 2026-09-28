@@ -279,17 +279,10 @@ async function generateHtml(
           }
 
           .update-link {
-            width: 50vw;
+            width: 90vw;
+            max-width: 36rem;
             margin: 0 auto;
             margin-bottom: 1rem;
-          }
-
-          @media (max-width: 376px) {
-            .update-link {
-              width: 90vw;
-              margin: 0 auto;
-              margin-bottom: 1rem;
-            }
           }
 
           .update-link div:nth-of-type(1) {

@@ -57,12 +57,17 @@ const data = {
   aka: "Jigsaw, jgs, neo6120",
   copy: "A Web Application/Service Creator",
   links: [
-    { name: "e-jigsaw", href: "https://github.com/e-jigsaw", icon: "github" },
-    { name: "neo6120", href: "https://twitter.com/neo6120", icon: "x" },
     {
       name: "jgs.me",
       href: "https://bsky.app/profile/jgs.me",
       icon: "bluesky",
+    },
+    { name: "neo6120", href: "https://twitter.com/neo6120", icon: "x" },
+    { name: "e-jigsaw", href: "https://github.com/e-jigsaw", icon: "github" },
+    {
+      name: "neo6120",
+      href: "https://steamcommunity.com/id/neo6120",
+      icon: "steam",
     },
     {
       name: "takaya.kobayashi",
@@ -73,11 +78,6 @@ const data = {
       name: "takaya-kobayashi",
       href: "https://www.linkedin.com/in/takaya-kobayashi/",
       icon: "linkedin",
-    },
-    {
-      name: "neo6120",
-      href: "https://steamcommunity.com/id/neo6120",
-      icon: "steam",
     },
     {
       name: "neo6120",

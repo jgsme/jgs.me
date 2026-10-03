@@ -257,7 +257,7 @@ importers:
         specifier: 'catalog:'
         version: 4.13.8
       satori:
-        specifier: ^0.26.0
+        specifier: 0.26.0
         version: 0.26.0
     devDependencies:
       '@cloudflare/workers-types':

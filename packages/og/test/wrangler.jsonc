@@ -1,0 +1,9 @@
+// 回帰テスト (image.test.ts) 用。生成関数だけを呼ぶ entry に差し替え、bindings は持たない。
+// compatibility_date / flags は ../wrangler.jsonc と揃える (image.test.ts で一致を確かめる)
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "w-og-test",
+  "compatibility_date": "2025-08-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "worker.ts",
+}

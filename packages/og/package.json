@@ -4,11 +4,15 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev --persist-to ../../.wrangler/state --var ENVIRONMENT:development",
-    "gen:image": "bun scripts/generate-image.ts"
+    "gen:image": "bun scripts/generate-image.ts",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",
+    "@types/pngjs": "^6.0.5",
+    "pngjs": "^7.0.0",
     "typescript": "catalog:",
+    "vitest": "catalog:",
     "wrangler": "catalog:"
   },
   "dependencies": {

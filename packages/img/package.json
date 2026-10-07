@@ -13,14 +13,14 @@
     "@jigsaw/db": "workspace:*",
     "@jigsaw/media": "workspace:*",
     "@jigsaw/theme": "workspace:*",
-    "@vikejs/hono": "^0.2.1",
+    "@vikejs/hono": "^0.3.0",
     "@vitejs/plugin-react": "^5.2.0",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "vike": "^0.4.262",
-    "vike-react": "^0.6.13"
+    "vike": "^0.4.267",
+    "vike-react": "^0.6.29"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.54.2",

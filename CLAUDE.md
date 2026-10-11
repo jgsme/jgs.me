@@ -14,7 +14,7 @@ pnpm preview      # Preview with wrangler pages dev
 pnpm deploy       # Build and deploy to Cloudflare Pages
 
 # Database
-pnpm gen          # Generate Drizzle migrations (drizzle-kit generate)
+pnpm --filter @jigsaw/db gen   # Generate Drizzle migrations (drizzle-kit generate)
 
 # D1 に migration を当てる (packages/ingest から打つ。詳細は「### Database」)
 cd packages/ingest && npx wrangler d1 migrations list w --remote   # 未適用を見る
@@ -84,6 +84,10 @@ npx wrangler d1 migrations apply w --remote
 
 順番は schema を変える PR を merge → migration を当てる → データを入れる。カラム追加
 (`ADD COLUMN ... DEFAULT`) は既存コードが読まないので、deploy より先に当ててよい。
+**読む側のコードと同じ PR で表を足すときは、merge より前に当てる。** merge で Workers Builds が
+deploy し、新しいコードが無い表を引いて落ちる (zet 表の追加がこれ)。branch の worktree の
+`packages/ingest` から `npx wrangler d1 migrations apply w --remote` を打てば、その branch の
+migration が当たる。
 
 ### Pages (Vike)
 
@@ -127,6 +131,7 @@ npx wrangler d1 migrations apply w --remote
 - `article` - 登録済み記事 (id, pageID, created, date)
 - `excluded_page` - 除外ページ (id, pageID, created)
 - `clip` - クリップ (id, pageID, created, kind)
+- `zet` - diary の日々の断片 (id, pageID, rkey, date, title, created)。本体は PDS (ds.jgs.me) の `me.jgs.diary.zet` record。page.title は内部用 `zet:<rkey>`、at-uri と CID は `copy` (protocol = `atproto-zet`)
 
 ### Environment Variables
 

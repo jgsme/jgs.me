@@ -92,6 +92,38 @@ export const clipRelations = relations(clips, ({ one }) => ({
   }),
 }));
 
+// zet (diary の日々の断片)。本体は PDS (ds.jgs.me) の me.jgs.diary.zet record で、
+// ここと R2 (<bodyKey>.sb) はその写し。at-uri と CID は copy 表
+// (protocol = "atproto-zet") が持つ。
+// page.title は内部用の "zet:<rkey>" (@jigsaw/db/zet)。人に見せる題は title、
+// 無ければ date。
+export const zets = sqliteTable(
+  "zet",
+  {
+    id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+    pageID: integer("pageID")
+      .notNull()
+      .references(() => pages.id),
+    // record key (TID)。/zets/<rkey> の実キー。
+    rkey: text("rkey").notNull(),
+    // record の date ("YYYY-MM-DD")。一覧はこの降順。
+    date: text("date").notNull(),
+    // record の title。省かれた record では null。
+    title: text("title"),
+    created: text("created")
+      .notNull()
+      .default(sql`(CURRENT_TIMESTAMP)`),
+  },
+  (t) => [uniqueIndex("zet_rkey_unique").on(t.rkey)],
+);
+
+export const zetRelations = relations(zets, ({ one }) => ({
+  page: one(pages, {
+    fields: [zets.pageID],
+    references: [pages.id],
+  }),
+}));
+
 // 本文中の内部リンク ([foo] / #foo) の索引。逆引きして「この題に言及している
 // ページ」を出すために持つ。
 //

@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import * as schema from "@jigsaw/db";
-import { excludedPages, pages } from "@jigsaw/db";
+import { excludedPages, pages, zets } from "@jigsaw/db";
 import { and, eq, like, notExists, sql } from "drizzle-orm";
 import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 import { getDB } from "@/db/getDB";
@@ -42,6 +42,13 @@ export const suggestTitles = async (
             .select({ one: sql`1` })
             .from(excludedPages)
             .where(eq(excludedPages.pageID, pages.id)),
+        ),
+        // zet の page.title は内部用 (zet:<rkey>)。題として候補に出さない。
+        notExists(
+          db
+            .select({ one: sql`1` })
+            .from(zets)
+            .where(eq(zets.pageID, pages.id)),
         ),
       ),
     )

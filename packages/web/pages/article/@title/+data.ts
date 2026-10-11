@@ -1,7 +1,9 @@
 import type { PageContextServer } from "vike/types";
 import type { Bindings } from "@/server/types";
 import { getDB } from "@/db/getDB";
-import { articles, clips, pageSimilarities, pages } from "@jigsaw/db";
+import { articles, clips, pageSimilarities, pages, zets } from "@jigsaw/db";
+import { redirect } from "vike/abort";
+import { zetPath } from "@jigsaw/db/zet";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { BACKLINK_INITIAL, fetchBacklinks } from "@/server/backlinks";
 import { useConfig } from "vike-react/useConfig";
@@ -34,12 +36,19 @@ const data = async (c: Context) => {
       bodyKey: pages.bodyKey,
       created: pages.created,
       date: articles.date,
+      zetRkey: zets.rkey,
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
     .leftJoin(clips, eq(clips.pageID, pages.id))
+    .leftJoin(zets, eq(zets.pageID, pages.id))
     .where(eq(pages.title, title))
     .limit(1);
+
+  // zet の page は /pages/zet:<rkey> でも引けてしまう。題の代わりに内部キーが
+  // 出るページを残さず、/zets/<rkey> へ送る。
+  const zetRkey = pageInfo[0]?.zetRkey ?? null;
+  if (zetRkey !== null) throw redirect(zetPath(zetRkey));
 
   const pageId = pageInfo[0]?.pageId ?? null;
   const bodyKey = pageInfo[0]?.bodyKey ?? "";

@@ -25,13 +25,8 @@ import { pageImage } from "./firstImage";
 import { uniqueTitle } from "./uniqueTitle";
 import { extractLinks } from "./links";
 import { chunk } from "./rows";
+import { SITE_URL, objectURI } from "./site";
 import type { Env } from "./index";
-
-const SITE_URL = "https://w.jgs.me";
-
-function objectURI(pageID: number): string {
-  return `${SITE_URL}/o/${pageID}`;
-}
 
 function articleURL(title: string): string {
   return `${SITE_URL}/pages/${encodeURIComponent(title)}`;

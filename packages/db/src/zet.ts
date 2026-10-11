@@ -4,7 +4,7 @@
 
 // page.title は /pages/<title> の実キーで UNIQUE。zet は題を持たないことがあり、
 // 題が重なることもあるので、page.title には rkey 由来の内部キーを入れる。
-// 人に見せる題は zetDisplayTitle で作る。
+// URL には出る (/pages/zet%3A<rkey>) が、人に見せる題は zetDisplayTitle で作る。
 export const ZET_TITLE_PREFIX = "zet:";
 
 // copy 表 (object.id → 他プロトコルの複製) の protocol。zet の record の at-uri と
@@ -17,9 +17,10 @@ export function zetPageTitle(rkey: string): string {
   return `${ZET_TITLE_PREFIX}${rkey}`;
 }
 
-// サイト内のパス。絶対 URL は各 package の SITE_URL と組む。
+// サイト内のパス。zet も記事と同じ /pages/<page.title> で出す
+// (記事ページがそのまま描く)。絶対 URL は各 package の SITE_URL と組む。
 export function zetPath(rkey: string): string {
-  return `/zets/${encodeURIComponent(rkey)}`;
+  return `/pages/${encodeURIComponent(zetPageTitle(rkey))}`;
 }
 
 // 人に見せる題。題の無い zet は日付を見出しにする (spec)。

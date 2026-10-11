@@ -78,8 +78,8 @@ function fake(over: Partial<ZetDeps> = {}) {
 const existing = { pageID: 7, bodyKey: "sb-old", cid: "bafyold" };
 
 describe("zetURL", () => {
-  it("w.jgs.me の /zets/<rkey>", () => {
-    expect(zetURL(RKEY)).toBe(`https://w.jgs.me/zets/${RKEY}`);
+  it("w.jgs.me の /pages/zet%3A<rkey>", () => {
+    expect(zetURL(RKEY)).toBe(`https://w.jgs.me/pages/zet%3A${RKEY}`);
   });
 });
 
@@ -88,7 +88,9 @@ describe("ingestZet: create", () => {
     const { deps } = fake();
     const res = await ingestZet(payload, deps);
     expect(res.status).toBe(201);
-    expect(res.headers.get("Location")).toBe(`https://w.jgs.me/zets/${RKEY}`);
+    expect(res.headers.get("Location")).toBe(
+      `https://w.jgs.me/pages/zet%3A${RKEY}`,
+    );
   });
 
   it("R2 には 1 行目が zet:<rkey> の本文を新しいキーで書く", async () => {
@@ -179,7 +181,9 @@ describe("ingestZet: update", () => {
     const { deps, calls } = fake({ findByAtUri: async () => existing });
     const res = await ingestZet(payload, deps);
     expect(res.status).toBe(200);
-    expect(res.headers.get("Location")).toBe(`https://w.jgs.me/zets/${RKEY}`);
+    expect(res.headers.get("Location")).toBe(
+      `https://w.jgs.me/pages/zet%3A${RKEY}`,
+    );
     expect(calls.create).toEqual([]);
   });
 
@@ -214,7 +218,7 @@ describe("ingestZet: update", () => {
   it("個別・一覧・share URL を purge し、update で publish する", async () => {
     const { deps, calls } = fake({ findByAtUri: async () => existing });
     await ingestZet(payload, deps);
-    expect(calls.purge).toEqual([["/zets", `/zets/${RKEY}`, "/p/7"]]);
+    expect(calls.purge).toEqual([["/zets", `/pages/zet%3A${RKEY}`, "/p/7"]]);
     expect(calls.publish).toEqual([[7, "update"]]);
   });
 

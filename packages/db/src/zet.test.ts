@@ -16,12 +16,13 @@ describe("zetPageTitle", () => {
 });
 
 describe("zetPath", () => {
-  it("/zets/<rkey> を返す", () => {
-    expect(zetPath(RKEY)).toBe(`/zets/${RKEY}`);
+  // zet の公開 URL は記事と同じ /pages/<page.title> (title は zet:<rkey>)。
+  it("/pages/zet%3A<rkey> を返す", () => {
+    expect(zetPath(RKEY)).toBe(`/pages/zet%3A${RKEY}`);
   });
 
   it("rkey を percent encoding する", () => {
-    expect(zetPath("a/b")).toBe("/zets/a%2Fb");
+    expect(zetPath("a/b")).toBe("/pages/zet%3Aa%2Fb");
   });
 });
 

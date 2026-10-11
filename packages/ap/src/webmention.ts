@@ -1,7 +1,6 @@
 import { eq } from "drizzle-orm";
 import { articles, clips, pages, reactions, zets } from "@jigsaw/db";
 import { publishedKind } from "./published";
-import { zetPageTitle } from "@jigsaw/db/zet";
 import { getDB, type Env, type WebmentionMessage } from "./db";
 import { MAX_BODY_BYTES, MAX_REDIRECTS, guardURL } from "./urlguard";
 import { extractMf2 } from "./mf2extract";
@@ -92,7 +91,8 @@ export type ParsedTarget =
   { by: "id"; id: number } | { by: "title"; title: string };
 
 // target の URL から、どの記事を指しているかだけを読む。DB は引かない。
-// 受け付けるのは /o/<n> / /p/<n> / /pages/<title> / /zets/<rkey>。
+// 受け付けるのは /o/<n> / /p/<n> / /pages/<title> の3つ (spec §9)。
+// zet も /pages/zet%3A<rkey> なので /pages/<title> で引ける。
 export function parseTarget(
   target: string,
   siteUrl: string,
@@ -107,11 +107,6 @@ export function parseTarget(
 
   const byID = u.pathname.match(/^\/(?:o|p)\/(\d+)\/?$/);
   if (byID) return { by: "id", id: Number(byID[1]) };
-
-  // zet の page.title は "zet:<rkey>"。/zets/<rkey> 宛の Webmention を
-  // その page に結び付ける。
-  const byZet = u.pathname.match(/^\/zets\/([^/]+?)\/?$/);
-  if (byZet) return { by: "title", title: zetPageTitle(safeDecode(byZet[1]!)) };
 
   const byTitle = u.pathname.match(/^\/pages\/(.+?)\/?$/);
   if (byTitle) return { by: "title", title: safeDecode(byTitle[1]!) };

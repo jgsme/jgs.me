@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { eq } from "drizzle-orm";
 import { articles, clips, followers, pages, zets } from "@jigsaw/db";
 import { getDB, type Env } from "../db";
-import { SITE_URL, objectURI, pageURL } from "../config";
+import { SITE_URL, articleURL, objectURI } from "../config";
 import { publishedKind } from "../published";
 import { resolveContent } from "../content";
 import { toArticle, toNote, type PageRow } from "../as2";
@@ -86,7 +86,7 @@ publish.post("/internal/publish", async (c) => {
     // リダイレクトを追わない実装に弾かれる。
     const outlinks = await extractOutlinks(content, SITE_URL);
     if (outlinks.length > 0) {
-      const source = pageURL(page);
+      const source = articleURL(page.title);
       await c.env.WM_SEND.sendBatch(
         outlinks.map((target) => ({ body: { source, target } })),
       );

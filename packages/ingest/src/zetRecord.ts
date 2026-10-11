@@ -15,7 +15,7 @@ export type FetchFn = (input: string, init?: RequestInit) => Promise<Response>;
 
 const AT_URI_PREFIX = `at://${PDS_DID}/${ZET_COLLECTION}/`;
 
-// TID (atproto の時刻順 ID)。rkey は /zets/<rkey> と page.title (zet:<rkey>)
+// TID (atproto の時刻順 ID)。rkey は page.title (zet:<rkey>)
 // にそのまま入るので、文字種をここで閉じる。
 const TID = /^[234567abcdefghij][234567abcdefghijklmnopqrstuvwxyz]{12}$/;
 

@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { and, eq } from "drizzle-orm";
 import { articles, clips, objects, pages, zets } from "@jigsaw/db";
 import { getDB, type Env } from "../db";
-import { SITE_URL, objectURI, pageURL } from "../config";
+import { SITE_URL, articleURL, objectURI } from "../config";
 import { toArticle, toNote } from "../as2";
 import { resolveContent } from "../content";
 import { publishedKind } from "../published";
@@ -75,7 +75,7 @@ objectRoute.get("/o/:id", async (c) => {
   }
 
   if (!wantsActivityJson(c.req.header("Accept") ?? null)) {
-    return c.redirect(pageURL(page), 302);
+    return c.redirect(articleURL(page.title), 302);
   }
 
   const contentHtml = await resolveContent(

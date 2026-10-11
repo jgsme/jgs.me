@@ -145,6 +145,8 @@ export async function ingestZet(
       console.error(`[zet] update failed rkey=${ref.rkey} ${message(e)}`);
       return fail(500, "failed to store zet");
     }
+    // 一覧・個別 (/pages/zet%3A<rkey>)・share URL。micropub.ts の update と同じく
+    // /p/<id> も消す。
     await bestEffort("purge", () =>
       deps.purge(["/zets", zetPath(ref.rkey), `/p/${existing.pageID}`]),
     );

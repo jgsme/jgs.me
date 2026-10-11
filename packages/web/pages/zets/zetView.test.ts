@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toZetListItem, zetCanonical } from "./zetView";
+import { toZetListItem } from "./zetView";
 
 const RKEY = "3m2abcdefghij";
 
@@ -14,7 +14,7 @@ describe("toZetListItem", () => {
       }),
     ).toEqual({
       rkey: RKEY,
-      href: `/zets/${RKEY}`,
+      href: `/pages/zet%3A${RKEY}`,
       heading: "朝の散歩",
       date: "2026-10-11",
       image: null,
@@ -30,11 +30,5 @@ describe("toZetListItem", () => {
         image: null,
       }).heading,
     ).toBe("2026-10-11");
-  });
-});
-
-describe("zetCanonical", () => {
-  it("w.jgs.me の /zets/<rkey>", () => {
-    expect(zetCanonical(RKEY)).toBe(`https://w.jgs.me/zets/${RKEY}`);
   });
 });

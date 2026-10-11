@@ -25,7 +25,7 @@ const Page = () => {
   if (!d.ok) {
     return (
       <main className="max-w-content mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-4">{d.title}</h1>
+        <h1 className="text-2xl font-bold mb-4">{d.heading}</h1>
         {/* 被リンクがあれば題と関連ページだけのページとして見せる。
             「Page not found」を出すのは本当に何も無いときだけ。 */}
         {d.backlinks.length === 0 && (
@@ -71,10 +71,13 @@ const Page = () => {
   const videoClip = d.clipKind === "video";
   const header = (
     <div className={titleBelow ? "mt-8" : "mb-8"}>
+      {/* 見出しは page.title ではなく heading (+data.ts)。zet の page.title は
+          内部キー (zet:<rkey>) なので出さない。題の無い zet の日付見出しは
+          題ではないので p-name にしない。 */}
       <h1
-        className={`p-name font-bold ${titleBelow ? "text-base" : "text-2xl"}`}
+        className={`${d.isName ? "p-name " : ""}font-bold ${titleBelow ? "text-base" : "text-2xl"}`}
       >
-        {d.title}
+        {d.heading}
       </h1>
       <div className="flex gap-2">
         {d.fromDate && (
@@ -101,7 +104,7 @@ const Page = () => {
 
         {/* hidden な要素も mf2 パーサは読む。表示を変えずに機械可読性だけ足せる。 */}
         <a className="u-url" href={canonical} hidden>
-          {d.title}
+          {d.heading}
         </a>
         <span className="p-author h-card" hidden>
           <a className="u-url" href="https://w.jgs.me/">

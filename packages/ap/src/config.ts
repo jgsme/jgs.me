@@ -1,5 +1,3 @@
-import { zetPath } from "@jigsaw/db/zet";
-
 export const SITE_URL = "https://w.jgs.me";
 
 // Cloudflare Workers の fetch は User-Agent を送らない。UA なしの
@@ -17,17 +15,6 @@ export function objectURI(pageID: number): string {
 // 人間向けの URL。h-entry の u-url もこれを指す (計画6 Task 1)。
 export function articleURL(title: string): string {
   return `${SITE_URL}/pages/${encodeURIComponent(title)}`;
-}
-
-// 人間向けの URL を page の種類で組む。zet の page.title は内部用の
-// "zet:<rkey>" なので、/pages/<title> ではなく /zets/<rkey> を指す。
-// Webmention の source と /o/<n> のブラウザ向けリダイレクトはこれを使う。
-export function pageURL(page: {
-  title: string;
-  zetRkey: string | null;
-}): string {
-  if (page.zetRkey !== null) return `${SITE_URL}${zetPath(page.zetRkey)}`;
-  return articleURL(page.title);
 }
 
 // SNS に貼る用の短い URL。ブラウザからは /pages/<title> に 302 される。

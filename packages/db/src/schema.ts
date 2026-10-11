@@ -104,7 +104,7 @@ export const zets = sqliteTable(
     pageID: integer("pageID")
       .notNull()
       .references(() => pages.id),
-    // record key (TID)。/zets/<rkey> の実キー。
+    // record key (TID)。page.title (zet:<rkey>) の元。
     rkey: text("rkey").notNull(),
     // record の date ("YYYY-MM-DD")。一覧はこの降順。
     date: text("date").notNull(),

@@ -110,7 +110,7 @@ migration が当たる。
 - `pages/a/@id/` - 共有URL用リダイレクト（`/a/{id}` → `/pages/{title}`）
 - `pages/search/` - 検索ページ
 - `pages/clips/` - クリップ一覧ページ
-- `pages/zets/` - zet 一覧 (`zet.date` 降順、`?p=N`)。`pages/zets/@rkey/` が個別 (`/zets/<rkey>`)。本文は記事と同じく R2 の `.sb`、画像は PDS の getBlob URL (取り込み時に `#.png` を付けて画像として読ませている)
+- `pages/zets/` - zet 一覧 (`zet.date` 降順、`?p=N`)。個別の zet は専用ページを持たず、記事と同じ `pages/article/@title/` が `/pages/zet%3A<rkey>` で出す (見出し・`<title>` は `zet.title`、無ければ `zet.date`。`zet:<rkey>` は出さない)。本文は記事と同じく R2 の `.sb`、画像は PDS の getBlob URL (取り込み時に `#.png` を付けて画像として読ませている)
 - `pages/on-this-day/@mmdd/` - 周年日記ページ（ルート: `/on-this-day/@mmdd`）。`article.date` の月日が一致する記事を年ごとにグルーピングして表示
 
 ### API Routes
@@ -132,7 +132,7 @@ migration が当たる。
 - `article` - 登録済み記事 (id, pageID, created, date)
 - `excluded_page` - 除外ページ (id, pageID, created)
 - `clip` - クリップ (id, pageID, created, kind)
-- `zet` - diary の日々の断片 (id, pageID, rkey, date, title, created)。本体は PDS (ds.jgs.me) の `me.jgs.diary.zet` record。page.title は内部用 `zet:<rkey>`、at-uri と CID は `copy` (protocol = `atproto-zet`)
+- `zet` - diary の日々の断片 (id, pageID, rkey, date, title, created)。本体は PDS (ds.jgs.me) の `me.jgs.diary.zet` record。page.title は内部用 `zet:<rkey>` (公開 URL は `/pages/zet%3A<rkey>`。人に見せる題は `@jigsaw/db/zet` の `pageDisplayTitle`)、at-uri と CID は `copy` (protocol = `atproto-zet`)
 
 ### Environment Variables
 

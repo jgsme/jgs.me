@@ -2,8 +2,6 @@ import type { PageContextServer } from "vike/types";
 import type { Bindings } from "@/server/types";
 import { getDB } from "@/db/getDB";
 import { articles, clips, pageSimilarities, pages, zets } from "@jigsaw/db";
-import { redirect } from "vike/abort";
-import { zetPath } from "@jigsaw/db/zet";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { BACKLINK_INITIAL, fetchBacklinks } from "@/server/backlinks";
 import { useConfig } from "vike-react/useConfig";
@@ -12,6 +10,7 @@ import { resolveArticleDate } from "@jigsaw/db/article-date";
 import { pickRandom } from "@/utils/pickRandom";
 import { pageTitleFromUrl } from "@/utils/pageTitle";
 import { buildArticleBody } from "./articleBody";
+import { articleHeading } from "./heading";
 
 // bge-m3 の cosine は下駄が高く 0.5 未満がほぼ出ないため、絶対的な意味はない。
 // ノイズ切りの調整つまみ。0.60 で全 article の 7% が候補 0 件になる。
@@ -36,7 +35,8 @@ const data = async (c: Context) => {
       bodyKey: pages.bodyKey,
       created: pages.created,
       date: articles.date,
-      zetRkey: zets.rkey,
+      zetTitle: zets.title,
+      zetDate: zets.date,
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
@@ -44,11 +44,6 @@ const data = async (c: Context) => {
     .leftJoin(zets, eq(zets.pageID, pages.id))
     .where(eq(pages.title, title))
     .limit(1);
-
-  // zet の page は /pages/zet:<rkey> でも引けてしまう。題の代わりに内部キーが
-  // 出るページを残さず、/zets/<rkey> へ送る。
-  const zetRkey = pageInfo[0]?.zetRkey ?? null;
-  if (zetRkey !== null) throw redirect(zetPath(zetRkey));
 
   const pageId = pageInfo[0]?.pageId ?? null;
   const bodyKey = pageInfo[0]?.bodyKey ?? "";
@@ -58,11 +53,22 @@ const data = async (c: Context) => {
   // clip でなければ null。
   const clipKind = pageInfo[0]?.clipKind ?? null;
   const created = pageInfo[0]?.created ?? "";
-  const storedDate = pageInfo[0]?.date ?? null;
+  // zet (diary の日々の断片) も記事と同じこのページで出す。zet.date は
+  // NOT NULL なので、zetDate が null なら zet ではない。
+  const zetDate = pageInfo[0]?.zetDate ?? null;
+  const isZet = zetDate !== null;
+  // 見出し・<title>・u-url の文字列。zet の page.title (zet:<rkey>) は出さない。
+  const { heading, isName } = articleHeading({
+    title,
+    zetTitle: pageInfo[0]?.zetTitle ?? null,
+    zetDate,
+  });
+  // zet の日付は zet.date (diary が決めた日)。本文から推さない。
+  const storedDate = pageInfo[0]?.date ?? zetDate;
 
-  // 関連記事。article でないページには出さない。
+  // 関連記事。article と zet のページに出す (clip には出さない)。
   let related: { title: string; image: string | null }[] = [];
-  if (pageId !== null && articleId !== null) {
+  if (pageId !== null && (articleId !== null || isZet)) {
     const candidates = await db
       .select({ title: pages.title, image: pages.image })
       .from(pageSimilarities)
@@ -99,11 +105,12 @@ const data = async (c: Context) => {
     );
 
     config({
-      title: `${title} - I am Electrical machine`,
+      title: `${heading} - I am Electrical machine`,
     });
     return {
       ok: false as const,
       title,
+      heading,
       pageId,
       articleId,
       clipId,
@@ -116,11 +123,12 @@ const data = async (c: Context) => {
     };
   }
 
-  // clip のページには被リンクを出す。clip は similarity の計算対象外で
-  // related が空になり、下に何も出ないため。article のページには出さない。
+  // clip と zet のページには被リンクを出す。clip は similarity の計算対象外で
+  // related が空になり、下に何も出ないため。zet も記事ページの機能をそのまま
+  // 出す。article のページには出さない。
   // SSR と「もっと見る」で同じ関数を通す理由は上の body === null 側と同じ。
   const { backlinks, hasMore } =
-    clipId !== null
+    clipId !== null || isZet
       ? await fetchBacklinks(db, title, 0, BACKLINK_INITIAL)
       : { backlinks: [], hasMore: false };
 
@@ -137,13 +145,15 @@ const data = async (c: Context) => {
     });
 
   config({
-    title: `${title} - I am Electrical machine`,
+    title: `${heading} - I am Electrical machine`,
     description,
   });
 
   return {
     ok: true as const,
     title,
+    heading,
+    isName,
     pageId,
     articleId,
     clipId,

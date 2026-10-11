@@ -50,7 +50,7 @@ describe("GET /c/:id", () => {
 
 describe("GET /p/:id", () => {
   it("記事のページへ 302", async () => {
-    const res = await request("/p/5", dbOf([["題", null]]));
+    const res = await request("/p/5", dbOf([["題"]]));
 
     expect(res.status).toBe(302);
     expect(res.headers.get("Location")).toBe(
@@ -59,15 +59,12 @@ describe("GET /p/:id", () => {
   });
 
   // AS2 の url / bsky / Threads に貼る share URL は /p/<page.id>。
-  // zet の page.title (zet:<rkey>) で /pages/ に飛ばすと内部キーの題が出る。
-  it("zet なら /zets/<rkey> へ 302", async () => {
-    const res = await request(
-      "/p/5",
-      dbOf([["zet:3m2abcdefghij", "3m2abcdefghij"]]),
-    );
+  // zet も記事と同じく /pages/<page.title> (title は zet:<rkey>) へ飛ばす。
+  it("zet なら /pages/zet%3A<rkey> へ 302", async () => {
+    const res = await request("/p/5", dbOf([["zet:3m2abcdefghij"]]));
 
     expect(res.status).toBe(302);
-    expect(res.headers.get("Location")).toBe("/zets/3m2abcdefghij");
+    expect(res.headers.get("Location")).toBe("/pages/zet%3A3m2abcdefghij");
   });
 
   it("その id の page が無ければトップへ 302", async () => {

@@ -74,8 +74,10 @@ function message(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
 
-// 配送と purge は後から再実行できる。失敗しても取り込みは成功させる
-// (micropub.ts の create / update と同じ判断)。
+// 失敗しても取り込みは成功させる (micropub.ts の create / update と同じ判断)。
+// ただし再送では直せない: 同じ CID の再送は取り込み済みとして publish せずに
+// 返るため、配送・purge に失敗した zet は再送しても配送されない。
+// 復旧は /internal/publish を手で叩く。
 async function bestEffort(
   label: string,
   f: () => Promise<void>,

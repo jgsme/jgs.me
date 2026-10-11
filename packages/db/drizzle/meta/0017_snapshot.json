@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "35651f05-e00e-40ca-a595-5ea27ee4bcfc",
+  "id": "ef967d8c-ed05-4cae-850d-a4307804a5ee",
   "prevId": "d57e80fc-1d5a-4a73-a28c-c71a36f6aed7",
   "tables": {
     "article": {
@@ -911,6 +911,13 @@
           "name": "zet_rkey_unique",
           "columns": [
             "rkey"
+          ],
+          "isUnique": true
+        },
+        "zet_page_id_unique": {
+          "name": "zet_page_id_unique",
+          "columns": [
+            "pageID"
           ],
           "isUnique": true
         }

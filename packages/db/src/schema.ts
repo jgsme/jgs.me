@@ -114,7 +114,11 @@ export const zets = sqliteTable(
       .notNull()
       .default(sql`(CURRENT_TIMESTAMP)`),
   },
-  (t) => [uniqueIndex("zet_rkey_unique").on(t.rkey)],
+  (t) => [
+    uniqueIndex("zet_rkey_unique").on(t.rkey),
+    // ap / web / og は pageID で leftJoin して 1:1 を前提にする。
+    uniqueIndex("zet_page_id_unique").on(t.pageID),
+  ],
 );
 
 export const zetRelations = relations(zets, ({ one }) => ({

@@ -8,4 +8,5 @@ CREATE TABLE `zet` (
 	FOREIGN KEY (`pageID`) REFERENCES `page`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `zet_rkey_unique` ON `zet` (`rkey`);
+CREATE UNIQUE INDEX `zet_rkey_unique` ON `zet` (`rkey`);--> statement-breakpoint
+CREATE UNIQUE INDEX `zet_page_id_unique` ON `zet` (`pageID`);

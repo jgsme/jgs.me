@@ -1,8 +1,9 @@
 import { eq } from "drizzle-orm";
-import { articles, clips, pages } from "@jigsaw/db";
+import { articles, clips, pages, zets } from "@jigsaw/db";
 import { getDB, type Env } from "../db";
 import { SITE_URL, shareURL } from "../config";
 import { resolveContent } from "../content";
+import { publishedKind } from "../published";
 import { notifyDiscord } from "../notify";
 import { buildContainerParams } from "./record";
 import { requestContainer } from "./client";
@@ -33,15 +34,17 @@ export async function createContainer(
       bodyKey: pages.bodyKey,
       articleID: articles.id,
       clipID: clips.id,
+      zetRkey: zets.rkey,
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
     .leftJoin(clips, eq(clips.pageID, pages.id))
+    .leftJoin(zets, eq(zets.pageID, pages.id))
     .where(eq(pages.id, pageID))
     .limit(1);
 
   const page = rows[0];
-  if (!page || (page.articleID === null && page.clipID === null)) {
+  if (!page || publishedKind(page) === null) {
     console.log(`[threads] page not found or not published pageID=${pageID}`);
     return null;
   }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { articleURL, objectURI, shareURL } from "./config";
+import { articleURL, objectURI, pageURL, shareURL } from "./config";
 
 describe("shareURL", () => {
   it("page.id 由来の /p/<n> を返す", () => {
@@ -24,5 +24,17 @@ describe("articleURL", () => {
     expect(articleURL("Bluesky 配信テスト")).toBe(
       "https://w.jgs.me/pages/Bluesky%20%E9%85%8D%E4%BF%A1%E3%83%86%E3%82%B9%E3%83%88",
     );
+  });
+});
+
+describe("pageURL", () => {
+  it("zet でなければ /pages/<title>", () => {
+    expect(pageURL({ title: "記事", zetRkey: null })).toBe(articleURL("記事"));
+  });
+
+  it("zet なら /zets/<rkey> (page.title の zet:<rkey> を使わない)", () => {
+    expect(
+      pageURL({ title: "zet:3m2abcdefghij", zetRkey: "3m2abcdefghij" }),
+    ).toBe("https://w.jgs.me/zets/3m2abcdefghij");
   });
 });

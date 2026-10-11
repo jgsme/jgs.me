@@ -1,8 +1,9 @@
 import { Hono } from "hono";
 import { eq } from "drizzle-orm";
-import { articles, clips, followers, pages } from "@jigsaw/db";
+import { articles, clips, followers, pages, zets } from "@jigsaw/db";
 import { getDB, type Env } from "../db";
-import { SITE_URL, articleURL, objectURI } from "../config";
+import { SITE_URL, objectURI, pageURL } from "../config";
+import { publishedKind } from "../published";
 import { resolveContent } from "../content";
 import { toArticle, toNote, type PageRow } from "../as2";
 import {
@@ -40,12 +41,13 @@ publish.post("/internal/publish", async (c) => {
         bodyKey: string;
         articleID: number | null;
         clipID: number | null;
+        zetRkey: string | null;
       })
     | null = null;
   let content = "";
 
   if (kind !== "delete") {
-    // article だけでなく clip も配送対象にする。innerJoin(articles) のままだと
+    // article / clip / zet を配送対象にする。innerJoin(articles) のままだと
     // clip しか持たない page が「not published」で 404 になる。
     // 両方ある page は article として扱う (先に立った方を尊重する)。
     const rows = await db
@@ -57,15 +59,17 @@ publish.post("/internal/publish", async (c) => {
         bodyKey: pages.bodyKey,
         articleID: articles.id,
         clipID: clips.id,
+        zetRkey: zets.rkey,
       })
       .from(pages)
       .leftJoin(articles, eq(articles.pageID, pages.id))
       .leftJoin(clips, eq(clips.pageID, pages.id))
+      .leftJoin(zets, eq(zets.pageID, pages.id))
       .where(eq(pages.id, pageID))
       .limit(1);
 
     page = rows[0] ?? null;
-    if (!page || (page.articleID === null && page.clipID === null)) {
+    if (!page || publishedKind(page) === null) {
       return c.json({ error: "page not found or not published" }, 404);
     }
 
@@ -82,7 +86,7 @@ publish.post("/internal/publish", async (c) => {
     // リダイレクトを追わない実装に弾かれる。
     const outlinks = await extractOutlinks(content, SITE_URL);
     if (outlinks.length > 0) {
-      const source = articleURL(page.title);
+      const source = pageURL(page);
       await c.env.WM_SEND.sendBatch(
         outlinks.map((target) => ({ body: { source, target } })),
       );
@@ -138,11 +142,12 @@ publish.post("/internal/publish", async (c) => {
   if (kind === "delete") {
     activity = wrapDelete(objectURI(pageID));
   } else {
-    // article 行が無い = clip としてだけ公開されている page。
+    // Article は article だけ。clip と zet は短い投稿として Note で出す
+    // (zet は name / summary を持たない)。
     const object =
-      page!.articleID === null
-        ? toNote(page!, content)
-        : toArticle(page!, content);
+      publishedKind(page!) === "article"
+        ? toArticle(page!, content)
+        : toNote(page!, content);
     activity = kind === "create" ? wrapCreate(object) : wrapUpdate(object);
   }
 

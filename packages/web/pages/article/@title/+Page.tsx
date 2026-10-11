@@ -88,7 +88,11 @@ const Page = () => {
           </p>
         )}
         <CopyButton
-          path={shareUrlPath({ articleId: d.articleId, clipId: d.clipId })}
+          path={shareUrlPath({
+            articleId: d.articleId,
+            clipId: d.clipId,
+            zetId: d.zetId,
+          })}
         />
       </div>
     </div>

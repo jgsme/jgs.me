@@ -107,7 +107,7 @@ migration が当たる。
     `<sb-uuid>.sb`。どちらも1行目が題)
   - Scrapbox 同期は廃止済みで `.json` は増えないが、Micropub 経由 (`packages/ingest`)
     でページ自体は増え続ける
-- `pages/a/@id/` - 共有URL用リダイレクト（`/a/{id}` → `/pages/{title}`）
+- `pages/a/@id/` - 共有URL用リダイレクト（`/a/{id}` → `/pages/{title}`）。clip は `/c/{id}`、zet は `/z/{zet.id}` で同型（実体は `server/routes/redirects.ts`、形は `utils/permalink.ts`、7 日 edge cache、ingest が update で purge）
 - `pages/search/` - 検索ページ
 - `pages/clips/` - クリップ一覧ページ
 - `pages/zets/` - zet 一覧 (`zet.date` 降順、`?p=N`)。個別の zet は専用ページを持たず、記事と同じ `pages/article/@title/` が `/pages/zet%3A<rkey>` で出す (見出し・`<title>` は `zet.title`、無ければ `zet.date`。`zet:<rkey>` は出さない)。本文は記事と同じく R2 の `.sb`、画像は PDS の getBlob URL (取り込み時に `#.png` を付けて画像として読ませている)

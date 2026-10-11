@@ -25,6 +25,7 @@ function zetData(heading: string, isName: boolean): Data {
     pageId: 7,
     articleId: null,
     clipId: null,
+    zetId: null,
     clipKind: null,
     blocks: [],
     fromDate: "2026-10-11",

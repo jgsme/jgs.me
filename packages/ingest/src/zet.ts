@@ -12,7 +12,13 @@ import {
 // 取り込みの手順だけを持つ。D1 / R2 / PDS / ap / web への I/O は ZetDeps で
 // 受け取る (linkIndex.ts の LinkIndexDeps と同じ形)。実装は zetStore.ts。
 
-export type ZetTarget = { pageID: number; bodyKey: string; cid: string | null };
+export type ZetTarget = {
+  pageID: number;
+  // zet.id。/z/<id> の purge に使う。
+  zetID: number;
+  bodyKey: string;
+  cid: string | null;
+};
 
 export type ZetCreateInput = {
   pageTitle: string;
@@ -146,9 +152,14 @@ export async function ingestZet(
       return fail(500, "failed to store zet");
     }
     // 一覧・個別 (/pages/zet%3A<rkey>)・share URL。micropub.ts の update と同じく
-    // /p/<id> も消す。
+    // /p/<id> も消す。/z/<id> は zet の permalink。
     await bestEffort("purge", () =>
-      deps.purge(["/zets", zetPath(ref.rkey), `/p/${existing.pageID}`]),
+      deps.purge([
+        "/zets",
+        zetPath(ref.rkey),
+        `/p/${existing.pageID}`,
+        `/z/${existing.zetID}`,
+      ]),
     );
     await bestEffort("publish", () => deps.publish(existing.pageID, "update"));
     return new Response(null, { status: 200, headers: { Location: location } });

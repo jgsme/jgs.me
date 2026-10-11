@@ -120,10 +120,16 @@ export async function findZetByAtUri(
   atUri: string,
 ): Promise<ZetTarget | null> {
   const [row] = await db
-    .select({ pageID: pages.id, bodyKey: pages.bodyKey, cid: copies.cid })
+    .select({
+      pageID: pages.id,
+      zetID: zets.id,
+      bodyKey: pages.bodyKey,
+      cid: copies.cid,
+    })
     .from(copies)
     .innerJoin(objects, eq(objects.id, copies.objectID))
     .innerJoin(pages, eq(pages.id, objects.pageID))
+    .innerJoin(zets, eq(zets.pageID, pages.id))
     .where(and(eq(copies.protocol, ZET_COPY_PROTOCOL), eq(copies.uri, atUri)))
     .limit(1);
   return row ?? null;

@@ -35,6 +35,7 @@ const data = async (c: Context) => {
       bodyKey: pages.bodyKey,
       created: pages.created,
       date: articles.date,
+      zetId: zets.id,
       zetTitle: zets.title,
       zetDate: zets.date,
     })
@@ -49,6 +50,7 @@ const data = async (c: Context) => {
   const bodyKey = pageInfo[0]?.bodyKey ?? "";
   const articleId = pageInfo[0]?.articleId ?? null;
   const clipId = pageInfo[0]?.clipId ?? null;
+  const zetId = pageInfo[0]?.zetId ?? null;
   // 引用を大きく出すか、動画を大きく出すかは kind だけで決める (+Page.tsx)。
   // clip でなければ null。
   const clipKind = pageInfo[0]?.clipKind ?? null;
@@ -114,6 +116,7 @@ const data = async (c: Context) => {
       pageId,
       articleId,
       clipId,
+      zetId,
       clipKind,
       blocks: [],
       description: null,
@@ -157,6 +160,7 @@ const data = async (c: Context) => {
     pageId,
     articleId,
     clipId,
+    zetId,
     clipKind,
     blocks: filteredBlocks,
     fromDate,

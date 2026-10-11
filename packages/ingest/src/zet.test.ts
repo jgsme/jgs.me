@@ -75,7 +75,7 @@ function fake(over: Partial<ZetDeps> = {}) {
   return { deps, calls };
 }
 
-const existing = { pageID: 7, bodyKey: "sb-old", cid: "bafyold" };
+const existing = { pageID: 7, zetID: 3, bodyKey: "sb-old", cid: "bafyold" };
 
 describe("zetURL", () => {
   it("w.jgs.me の /pages/zet%3A<rkey>", () => {
@@ -215,10 +215,12 @@ describe("ingestZet: update", () => {
     ]);
   });
 
-  it("個別・一覧・share URL を purge し、update で publish する", async () => {
+  it("個別・一覧・share URL (/p, /z) を purge し、update で publish する", async () => {
     const { deps, calls } = fake({ findByAtUri: async () => existing });
     await ingestZet(payload, deps);
-    expect(calls.purge).toEqual([["/zets", `/pages/zet%3A${RKEY}`, "/p/7"]]);
+    expect(calls.purge).toEqual([
+      ["/zets", `/pages/zet%3A${RKEY}`, "/p/7", "/z/3"],
+    ]);
     expect(calls.publish).toEqual([[7, "update"]]);
   });
 

@@ -110,6 +110,7 @@ migration が当たる。
 - `pages/a/@id/` - 共有URL用リダイレクト（`/a/{id}` → `/pages/{title}`）
 - `pages/search/` - 検索ページ
 - `pages/clips/` - クリップ一覧ページ
+- `pages/zets/` - zet 一覧 (`zet.date` 降順、`?p=N`)。`pages/zets/@rkey/` が個別 (`/zets/<rkey>`)。本文は記事と同じく R2 の `.sb`、画像は PDS の getBlob URL (取り込み時に `#.png` を付けて画像として読ませている)
 - `pages/on-this-day/@mmdd/` - 周年日記ページ（ルート: `/on-this-day/@mmdd`）。`article.date` の月日が一致する記事を年ごとにグルーピングして表示
 
 ### API Routes

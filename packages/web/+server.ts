@@ -24,6 +24,9 @@ app.use("/c/*", createCacheMiddleware(604800));
 // /clips は 1 ページ 20 件ぶん R2 GET が走るページ。トップからの導線が
 // このブランチで初めて張られるので、/ と同じ TTL でキャッシュする。
 app.use("/clips*", createCacheMiddleware(86400));
+// zet の一覧と個別。ingest が create / update のたびに /zets と
+// /zets/<rkey> を purge する (packages/ingest/src/zet.ts)。
+app.use("/zets*", createCacheMiddleware(86400));
 app.use("/on-this-day/*", createCacheMiddleware(86400));
 // 検索サジェストは打鍵ごとに飛ぶ。同じ語は他人の打鍵とも重なるので、
 // 短く焼くだけで D1 を引く回数がまとめて減る。

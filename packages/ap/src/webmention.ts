@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
-import { articles, clips, pages, reactions } from "@jigsaw/db";
+import { articles, clips, pages, reactions, zets } from "@jigsaw/db";
+import { publishedKind } from "./published";
 import { getDB, type Env, type WebmentionMessage } from "./db";
 import { MAX_BODY_BYTES, MAX_REDIRECTS, guardURL } from "./urlguard";
 import { extractMf2 } from "./mf2extract";
@@ -91,6 +92,7 @@ export type ParsedTarget =
 
 // target の URL から、どの記事を指しているかだけを読む。DB は引かない。
 // 受け付けるのは /o/<n> / /p/<n> / /pages/<title> の3つ (spec §9)。
+// zet も /pages/zet%3A<rkey> なので /pages/<title> で引ける。
 export function parseTarget(
   target: string,
   siteUrl: string,
@@ -112,7 +114,7 @@ export function parseTarget(
   return null;
 }
 
-// 公開済み (article に行がある) のものだけ受け付ける。
+// 公開済み (article / clip / zet) のものだけ受け付ける。
 export async function resolveTarget(
   target: string,
   siteUrl: string,
@@ -121,24 +123,26 @@ export async function resolveTarget(
   const parsed = parseTarget(target, siteUrl);
   if (parsed === null) return null;
 
-  // 公開済み (article か clip の行がある) page だけを target として認める。
-  // article だけを見ると clip 宛の Webmention が全部落ちる。canonical id は
-  // /o/<pageID> で article/clip 共通なので、受け側も同じ条件で見る。
+  // 公開済み (article / clip / zet のどれかの行がある) page だけを target として認める。
   const rows = await db
-    .select({ id: pages.id, articleID: articles.id, clipID: clips.id })
+    .select({
+      id: pages.id,
+      articleID: articles.id,
+      clipID: clips.id,
+      zetRkey: zets.rkey,
+    })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
     .leftJoin(clips, eq(clips.pageID, pages.id))
+    .leftJoin(zets, eq(zets.pageID, pages.id))
     .where(
       parsed.by === "id"
         ? eq(pages.id, parsed.id)
         : eq(pages.title, parsed.title),
     )
     .limit(1);
-  // leftJoin だけだと page 単体行でも 1 件返るので、
-  // article/clip どちらの id も無いケースを別途弾く。
   const row = rows[0];
-  if (!row || (row.articleID === null && row.clipID === null)) return null;
+  if (!row || publishedKind(row) === null) return null;
   return row.id;
 }
 

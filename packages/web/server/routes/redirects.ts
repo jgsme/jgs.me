@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { pages, articles, clips } from "@jigsaw/db";
+import { pages, articles, clips, zets } from "@jigsaw/db";
 import { getDB } from "@/db/getDB";
 import { eq } from "drizzle-orm";
 import type { Bindings } from "../types";
@@ -61,6 +61,29 @@ redirects.get("/c/:id", async (c) => {
     .from(clips)
     .innerJoin(pages, eq(clips.pageID, pages.id))
     .where(eq(clips.id, id))
+    .limit(1);
+
+  if (result.length === 0 || !result[0].title) {
+    return c.redirect("/");
+  }
+
+  return c.redirect(`/pages/${encodeURIComponent(result[0].title)}`);
+});
+
+// zet の permalink。/a/:id・/c/:id と同型で、行き先は同じ /pages/<title>
+// (title は zet:<rkey>)。zet の URL は rkey 入りで長いので、共有用に短い形を持つ。
+redirects.get("/z/:id", async (c) => {
+  const id = Number(c.req.param("id"));
+  if (isNaN(id)) {
+    return c.redirect("/");
+  }
+
+  const db = getDB(c.env.DB);
+  const result = await db
+    .select({ title: pages.title })
+    .from(zets)
+    .innerJoin(pages, eq(zets.pageID, pages.id))
+    .where(eq(zets.id, id))
     .limit(1);
 
   if (result.length === 0 || !result[0].title) {

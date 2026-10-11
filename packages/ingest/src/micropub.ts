@@ -25,13 +25,11 @@ import { pageImage } from "./firstImage";
 import { uniqueTitle } from "./uniqueTitle";
 import { extractLinks } from "./links";
 import { chunk } from "./rows";
+import { purge } from "./purge";
+import { isZetPayload } from "./zetRecord";
+import { handleZetPost } from "./zetStore";
+import { SITE_URL, objectURI } from "./site";
 import type { Env } from "./index";
-
-const SITE_URL = "https://w.jgs.me";
-
-function objectURI(pageID: number): string {
-  return `${SITE_URL}/o/${pageID}`;
-}
 
 function articleURL(title: string): string {
   return `${SITE_URL}/pages/${encodeURIComponent(title)}`;
@@ -148,6 +146,9 @@ export async function handleMicropubPost(
   const action = (payload as { action?: unknown } | null)?.action;
 
   if (action === undefined || action === "create") {
+    // zet は本文を持たず at-uri だけで来る。create / update は at-uri で
+    // 決まる (action は見ない) ので、parseEntry (name / content 必須) より前に分ける。
+    if (isZetPayload(payload)) return handleZetPost(payload, env);
     return handleMicropubCreate(payload, env);
   }
   if (action === "update") {
@@ -360,27 +361,6 @@ async function resolveTarget(
     bodyKey: row.bodyKey,
     updated: row.updated,
   };
-}
-
-// 記事ページはエッジに載る (web の +server.ts)。消さないと
-// 差し替えた本文も改題も TTL が切れるまで出てこない。
-// 失敗しても update 自体は成功させる。
-async function purge(env: Env, paths: string[]): Promise<void> {
-  try {
-    const res = await env.WEB.fetch("https://web.internal/internal/purge", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${env.PURGE_TOKEN}`,
-      },
-      body: JSON.stringify({ paths }),
-    });
-    if (!res.ok) {
-      console.error(`[purge] status=${res.status} paths=${paths.join(",")}`);
-    }
-  } catch (e) {
-    console.error(`[purge] failed ${String(e)}`);
-  }
 }
 
 async function handleMicropubUpdate(

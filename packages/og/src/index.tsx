@@ -5,7 +5,8 @@ import {
   WorkflowStep,
 } from "cloudflare:workers";
 import { getDB } from "./db";
-import { pages } from "@jigsaw/db";
+import { pages, zets } from "@jigsaw/db";
+import { pageDisplayTitle } from "@jigsaw/db/zet";
 import { eq } from "drizzle-orm";
 import {
   generateDefaultOgImage,
@@ -99,8 +100,14 @@ app.get("/p/:filename", async (c) => {
 
   const db = getDB(c.env.DB);
   const page = await db
-    .select({ title: pages.title, image: pages.image })
+    .select({
+      title: pages.title,
+      image: pages.image,
+      zetTitle: zets.title,
+      zetDate: zets.date,
+    })
     .from(pages)
+    .leftJoin(zets, eq(zets.pageID, pages.id))
     .where(eq(pages.id, pageId))
     .limit(1);
 
@@ -108,7 +115,10 @@ app.get("/p/:filename", async (c) => {
     return c.notFound();
   }
 
-  const { title, image } = page[0];
+  // zet の page.title は内部用 (zet:<rkey>)。画像に描く題は zet.title、
+  // 無ければ zet.date (pageDisplayTitle)。
+  const { image } = page[0];
+  const title = pageDisplayTitle(page[0]);
 
   let png: Uint8Array;
 
@@ -147,8 +157,14 @@ export class RegenerateWorkflow extends WorkflowEntrypoint<
     const pageInfo = await step.do("fetch-page-info", async () => {
       const db = getDB(this.env.DB);
       const page = await db
-        .select({ title: pages.title, image: pages.image })
+        .select({
+          title: pages.title,
+          image: pages.image,
+          zetTitle: zets.title,
+          zetDate: zets.date,
+        })
         .from(pages)
+        .leftJoin(zets, eq(zets.pageID, pages.id))
         .where(eq(pages.id, pageId))
         .limit(1);
 
@@ -159,7 +175,8 @@ export class RegenerateWorkflow extends WorkflowEntrypoint<
     });
 
     await step.do("regenerate-og", async () => {
-      const { title, image } = pageInfo;
+      const { image } = pageInfo;
+      const title = pageDisplayTitle(pageInfo);
 
       let png: Uint8Array;
       if (image) {

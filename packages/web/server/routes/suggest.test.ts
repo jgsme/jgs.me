@@ -30,7 +30,9 @@ describe("escapeLikePattern", () => {
 });
 
 describe("suggestTitles", () => {
-  const setup = (rows: { title: string; excluded?: boolean }[]): SuggestDB => {
+  const setup = (
+    rows: { title: string; excluded?: boolean; zet?: boolean }[],
+  ): SuggestDB => {
     const sqlite = new DatabaseSync(":memory:");
     sqlite.exec(
       `CREATE TABLE page (
@@ -45,6 +47,14 @@ describe("suggestTitles", () => {
         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         pageID INTEGER NOT NULL,
         created TEXT DEFAULT (CURRENT_TIMESTAMP) NOT NULL
+      );
+      CREATE TABLE zet (
+        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        pageID INTEGER NOT NULL,
+        rkey TEXT NOT NULL,
+        date TEXT NOT NULL,
+        title TEXT,
+        created TEXT DEFAULT (CURRENT_TIMESTAMP) NOT NULL
       );`,
     );
     const insertPage = sqlite.prepare(
@@ -53,9 +63,13 @@ describe("suggestTitles", () => {
     const insertExcluded = sqlite.prepare(
       `INSERT INTO excluded_page (pageID) VALUES (?)`,
     );
+    const insertZet = sqlite.prepare(
+      `INSERT INTO zet (pageID, rkey, date) VALUES (?, 'r', '2026-10-11')`,
+    );
     for (const row of rows) {
       const { lastInsertRowid } = insertPage.run(row.title);
       if (row.excluded) insertExcluded.run(lastInsertRowid);
+      if (row.zet) insertZet.run(lastInsertRowid);
     }
 
     return drizzle(async (query, params, method) => {
@@ -77,6 +91,15 @@ describe("suggestTitles", () => {
       { title: "猫の写真" },
     ]);
     expect(await suggestTitles(db, "猫")).toEqual(["猫の写真"]);
+  });
+
+  // zet の page.title は内部用の "zet:<rkey>"。題として候補に出さない。
+  it("zet のページは出さない", async () => {
+    const db = setup([
+      { title: "zet:3m2abcdefghij", zet: true },
+      { title: "zet の話" },
+    ]);
+    expect(await suggestTitles(db, "zet")).toEqual(["zet の話"]);
   });
 
   it("前方一致を部分一致より上に出す", async () => {

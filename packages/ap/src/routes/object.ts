@@ -1,10 +1,11 @@
 import { Hono } from "hono";
 import { and, eq } from "drizzle-orm";
-import { articles, clips, objects, pages } from "@jigsaw/db";
+import { articles, clips, objects, pages, zets } from "@jigsaw/db";
 import { getDB, type Env } from "../db";
 import { SITE_URL, articleURL, objectURI } from "../config";
 import { toArticle, toNote } from "../as2";
 import { resolveContent } from "../content";
+import { publishedKind } from "../published";
 
 export const AS2_CONTENT_TYPE = "application/activity+json";
 
@@ -39,16 +40,18 @@ objectRoute.get("/o/:id", async (c) => {
       bodyKey: pages.bodyKey,
       articleID: articles.id,
       clipID: clips.id,
+      zetRkey: zets.rkey,
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
     .leftJoin(clips, eq(clips.pageID, pages.id))
+    .leftJoin(zets, eq(zets.pageID, pages.id))
     .where(eq(pages.id, id))
     .limit(1);
 
   const page = rows[0];
-  // article にも clip にも行が無い = 未公開。federation の対象外。
-  if (!page || (page.articleID === null && page.clipID === null)) {
+  // article / clip / zet のどれにも行が無い = 未公開。federation の対象外。
+  if (!page || publishedKind(page) === null) {
     return c.notFound();
   }
 
@@ -82,12 +85,11 @@ objectRoute.get("/o/:id", async (c) => {
     page.title,
   );
 
-  // 配送した型と提供する型を揃える。publish.ts の分岐と同じ条件
-  // (article 行が無い = clip としてだけ公開されている page)。
+  // 配送した型と提供する型を揃える。publish.ts の分岐と同じ条件。
   const object =
-    page.articleID === null
-      ? toNote(page, contentHtml)
-      : toArticle(page, contentHtml);
+    publishedKind(page) === "article"
+      ? toArticle(page, contentHtml)
+      : toNote(page, contentHtml);
 
   return c.json(object, 200, {
     "Content-Type": AS2_CONTENT_TYPE,

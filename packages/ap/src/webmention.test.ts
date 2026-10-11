@@ -40,6 +40,22 @@ describe("parseTarget", () => {
     });
   });
 
+  it("/pages/zet%3A<rkey> を zet の page.title として読む", () => {
+    expect(p("https://w.jgs.me/pages/zet%3A3m2abcdefghij")).toEqual({
+      by: "title",
+      title: "zet:3m2abcdefghij",
+    });
+  });
+
+  // zet の公開 URL は /pages/zet%3A<rkey> だけ。/zets/<rkey> は無い。
+  it("/zets/<rkey> は null", () => {
+    expect(p("https://w.jgs.me/zets/3m2abcdefghij")).toBeNull();
+  });
+
+  it("/zets だけ (一覧) は null", () => {
+    expect(p("https://w.jgs.me/zets")).toBeNull();
+  });
+
   it("別ホストは null", () => {
     expect(p("https://evil.example/o/42")).toBeNull();
   });

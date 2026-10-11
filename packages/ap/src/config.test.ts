@@ -26,3 +26,12 @@ describe("articleURL", () => {
     );
   });
 });
+
+describe("articleURL (zet)", () => {
+  // zet の公開 URL は記事と同じ /pages/<page.title>。title は zet:<rkey>。
+  it("zet の page.title から /pages/zet%3A<rkey> を組む", () => {
+    expect(articleURL("zet:3m2abcdefghij")).toBe(
+      "https://w.jgs.me/pages/zet%3A3m2abcdefghij",
+    );
+  });
+});

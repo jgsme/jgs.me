@@ -120,6 +120,13 @@
       "when": 1790527490192,
       "tag": "0016_nostalgic_betty_ross",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1791718570929,
+      "tag": "0017_tricky_skullbuster",
+      "breakpoints": true
     }
   ]
 }

@@ -14,7 +14,7 @@ pnpm preview      # Preview with wrangler pages dev
 pnpm deploy       # Build and deploy to Cloudflare Pages
 
 # Database
-pnpm gen          # Generate Drizzle migrations (drizzle-kit generate)
+pnpm --filter @jigsaw/db gen   # Generate Drizzle migrations (drizzle-kit generate)
 
 # D1 に migration を当てる (packages/ingest から打つ。詳細は「### Database」)
 cd packages/ingest && npx wrangler d1 migrations list w --remote   # 未適用を見る
@@ -84,6 +84,10 @@ npx wrangler d1 migrations apply w --remote
 
 順番は schema を変える PR を merge → migration を当てる → データを入れる。カラム追加
 (`ADD COLUMN ... DEFAULT`) は既存コードが読まないので、deploy より先に当ててよい。
+**読む側のコードと同じ PR で表を足すときは、merge より前に当てる。** merge で Workers Builds が
+deploy し、新しいコードが無い表を引いて落ちる (zet 表の追加がこれ)。branch の worktree の
+`packages/ingest` から `npx wrangler d1 migrations apply w --remote` を打てば、その branch の
+migration が当たる。
 
 ### Pages (Vike)
 
@@ -103,9 +107,10 @@ npx wrangler d1 migrations apply w --remote
     `<sb-uuid>.sb`。どちらも1行目が題)
   - Scrapbox 同期は廃止済みで `.json` は増えないが、Micropub 経由 (`packages/ingest`)
     でページ自体は増え続ける
-- `pages/a/@id/` - 共有URL用リダイレクト（`/a/{id}` → `/pages/{title}`）
+- `pages/a/@id/` - 共有URL用リダイレクト（`/a/{id}` → `/pages/{title}`）。clip は `/c/{id}`、zet は `/z/{zet.id}` で同型（実体は `server/routes/redirects.ts`、形は `utils/permalink.ts`、7 日 edge cache、ingest が update で purge）
 - `pages/search/` - 検索ページ
 - `pages/clips/` - クリップ一覧ページ
+- `pages/zets/` - zet 一覧 (`zet.date` 降順、`?p=N`)。個別の zet は専用ページを持たず、記事と同じ `pages/article/@title/` が `/pages/zet%3A<rkey>` で出す (見出し・`<title>` は `zet.title`、無ければ `zet.date`。`zet:<rkey>` は出さない)。本文は記事と同じく R2 の `.sb`、画像は PDS の getBlob URL (取り込み時に `#.png` を付けて画像として読ませている)
 - `pages/on-this-day/@mmdd/` - 周年日記ページ（ルート: `/on-this-day/@mmdd`）。`article.date` の月日が一致する記事を年ごとにグルーピングして表示
 
 ### API Routes
@@ -127,6 +132,7 @@ npx wrangler d1 migrations apply w --remote
 - `article` - 登録済み記事 (id, pageID, created, date)
 - `excluded_page` - 除外ページ (id, pageID, created)
 - `clip` - クリップ (id, pageID, created, kind)
+- `zet` - diary の日々の断片 (id, pageID, rkey, date, title, created)。本体は PDS (ds.jgs.me) の `me.jgs.diary.zet` record。page.title は内部用 `zet:<rkey>` (公開 URL は `/pages/zet%3A<rkey>`。人に見せる題は `@jigsaw/db/zet` の `pageDisplayTitle`)、at-uri と CID は `copy` (protocol = `atproto-zet`)
 
 ### Environment Variables
 

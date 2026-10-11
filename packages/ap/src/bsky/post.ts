@@ -1,8 +1,10 @@
 import { eq } from "drizzle-orm";
-import { articles, clips, copies, pages } from "@jigsaw/db";
+import { articles, clips, copies, pages, zets } from "@jigsaw/db";
+import { pageDisplayTitle } from "@jigsaw/db/zet";
 import { getDB, type Env } from "../db";
 import { SITE_URL, USER_AGENT, objectURI, shareURL } from "../config";
 import { resolveContent } from "../content";
+import { publishedKind } from "../published";
 import { buildPostRecord } from "./record";
 import { uploadOgThumb } from "./blob";
 import { ENTRYWAY, getSession, invalidateSession } from "./session";
@@ -46,15 +48,19 @@ export async function postToBsky(pageID: number, env: Env): Promise<void> {
       bodyKey: pages.bodyKey,
       articleID: articles.id,
       clipID: clips.id,
+      zetRkey: zets.rkey,
+      zetTitle: zets.title,
+      zetDate: zets.date,
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
     .leftJoin(clips, eq(clips.pageID, pages.id))
+    .leftJoin(zets, eq(zets.pageID, pages.id))
     .where(eq(pages.id, pageID))
     .limit(1);
 
   const page = rows[0];
-  if (!page || (page.articleID === null && page.clipID === null)) {
+  if (!page || publishedKind(page) === null) {
     console.log(`[bsky] page not found or not published pageID=${pageID}`);
     return;
   }
@@ -65,7 +71,9 @@ export async function postToBsky(pageID: number, env: Env): Promise<void> {
   const thumb = await uploadOgThumb(pageID, env);
 
   const record = buildPostRecord({
-    title: page.title,
+    // zet の page.title は内部用 (zet:<rkey>)。カードには zet.title、
+    // 無ければ zet.date を出す。
+    title: pageDisplayTitle(page),
     created: page.created,
     html,
     url,

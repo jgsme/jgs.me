@@ -37,9 +37,11 @@ function pageData(
 ): Data {
   const common = {
     title,
+    heading: title,
     pageId: 1,
     articleId: null,
     clipId: null,
+    zetId: null,
     clipKind: null,
     blocks: [],
     description: null,
@@ -48,7 +50,14 @@ function pageData(
     hasMore,
   };
   return ok
-    ? { ...common, ok: true, clipId: 1, fromDate: null, description: "" }
+    ? {
+        ...common,
+        ok: true,
+        isName: true,
+        clipId: 1,
+        fromDate: null,
+        description: "",
+      }
     : { ...common, ok: false };
 }
 

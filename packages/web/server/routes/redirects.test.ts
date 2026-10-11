@@ -47,3 +47,52 @@ describe("GET /c/:id", () => {
     expect(res.headers.get("Location")).toBe("/");
   });
 });
+
+describe("GET /z/:id", () => {
+  it("zet のページへ 302 で飛ばす", async () => {
+    const res = await request("/z/5", dbOf([["zet:3abc"]]));
+
+    expect(res.status).toBe(302);
+    expect(res.headers.get("Location")).toBe("/pages/zet%3A3abc");
+  });
+
+  it("その id の zet が無ければトップへ 302", async () => {
+    const res = await request("/z/999", dbOf([]));
+
+    expect(res.status).toBe(302);
+    expect(res.headers.get("Location")).toBe("/");
+  });
+
+  it("数値でない id はトップへ 302", async () => {
+    const res = await request("/z/abc", dbOf([["zet:3abc"]]));
+
+    expect(res.status).toBe(302);
+    expect(res.headers.get("Location")).toBe("/");
+  });
+});
+
+describe("GET /p/:id", () => {
+  it("記事のページへ 302", async () => {
+    const res = await request("/p/5", dbOf([["題"]]));
+
+    expect(res.status).toBe(302);
+    expect(res.headers.get("Location")).toBe(
+      `/pages/${encodeURIComponent("題")}`,
+    );
+  });
+
+  // AS2 の url / bsky / Threads に貼る share URL は /p/<page.id>。
+  // zet も記事と同じく /pages/<page.title> (title は zet:<rkey>) へ飛ばす。
+  it("zet なら /pages/zet%3A<rkey> へ 302", async () => {
+    const res = await request("/p/5", dbOf([["zet:3m2abcdefghij"]]));
+
+    expect(res.status).toBe(302);
+    expect(res.headers.get("Location")).toBe("/pages/zet%3A3m2abcdefghij");
+  });
+
+  it("その id の page が無ければトップへ 302", async () => {
+    const res = await request("/p/999", dbOf([]));
+
+    expect(res.headers.get("Location")).toBe("/");
+  });
+});

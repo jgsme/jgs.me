@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildCreateR2Put } from "./micropub";
+import { buildCreateR2Put, handleMicropubPost } from "./micropub";
+import type { Env } from "./index";
 
 // handleMicropubCreate が R2 に書く内容 (body.test.ts / bodyKey.test.ts が別々に
 // 保証している buildSbBody と r2KeyOf を、実際に create の配線でどう組み合わせて
@@ -36,5 +37,45 @@ describe("buildCreateR2Put", () => {
     const a = buildCreateR2Put("題", "本文");
     const b = buildCreateR2Put("題", "本文");
     expect(a?.bodyKey).not.toBe(b?.bodyKey);
+  });
+});
+
+describe("handleMicropubPost: zet", () => {
+  // at-uri の検証で落ちるので D1 にも PDS にも届かない。
+  const env = { MICROPUB_TOKEN: "t", DB: {} } as unknown as Env;
+  const post = (body: unknown) =>
+    handleMicropubPost(
+      new Request("https://ingest.example/micropub", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer t",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      }),
+      env,
+    );
+
+  it("category に zet があれば zet の取り込みに回す (name / content を要求しない)", async () => {
+    const res = await post({
+      type: ["h-entry"],
+      properties: {
+        category: ["zet"],
+        "at-uri": ["at://did:web:example.com/me.jgs.diary.zet/3m2abcdefghij"],
+      },
+    });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({
+      error: "invalid_request",
+      error_description: expect.stringContaining("at-uri"),
+    });
+  });
+
+  it("zet でなければ従来どおり記事として検証する", async () => {
+    const res = await post({ type: ["h-entry"], properties: {} });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({
+      error_description: "name is required",
+    });
   });
 });

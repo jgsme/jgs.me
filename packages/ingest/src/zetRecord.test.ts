@@ -227,6 +227,14 @@ describe("fetchZetRecord", () => {
     ).toMatchObject({ ok: false, status: 502 });
   });
 
+  it("body が object でなければ 502", async () => {
+    for (const body of [null, [], 42, "x"]) {
+      expect(
+        await fetchZetRecord(RKEY, fakeFetch(Response.json(body))),
+      ).toMatchObject({ ok: false, status: 502 });
+    }
+  });
+
   it("record が壊れていれば 400", async () => {
     const f = fakeFetch(
       Response.json({ uri: AT_URI, cid: "c", value: value({ date: "x" }) }),

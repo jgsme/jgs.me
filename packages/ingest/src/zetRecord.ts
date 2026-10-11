@@ -160,6 +160,9 @@ export async function fetchZetRecord(
   } catch {
     return { ok: false, status: 502, description: "pds returned invalid json" };
   }
+  if (typeof body !== "object" || body === null || Array.isArray(body)) {
+    return { ok: false, status: 502, description: "pds returned invalid json" };
+  }
   const b = body as { uri?: unknown; cid?: unknown; value?: unknown };
   if (typeof b.uri !== "string" || typeof b.cid !== "string") {
     return {

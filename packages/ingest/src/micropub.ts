@@ -30,14 +30,15 @@ import { isZetPayload } from "./zetRecord";
 import { handleZetPost } from "./zetStore";
 import { SITE_URL, objectURI } from "./site";
 import type { Env } from "./index";
+import { pagePath } from "@jigsaw/db/page-path";
 
 function articleURL(title: string): string {
-  return `${SITE_URL}/pages/${encodeURIComponent(title)}`;
+  return `${SITE_URL}${pagePath(title)}`;
 }
 
 // purge に渡すのは site-relative なパス (web の parsePurgePaths が絶対 URL を弾く)。
 function articlePath(title: string): string {
-  return `/pages/${encodeURIComponent(title)}`;
+  return pagePath(title);
 }
 
 export interface CreateR2Put {

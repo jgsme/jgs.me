@@ -1,6 +1,7 @@
 import React from "react";
 import { useData } from "vike-react/useData";
 import type data from "./+data";
+import { pagePath } from "@jigsaw/db/page-path";
 
 const Page = () => {
   const d = useData<Awaited<ReturnType<typeof data>>>();
@@ -16,10 +17,7 @@ const Page = () => {
       <ul>
         {d.payload.results.map((result, i) => (
           <li key={i} className="my-6 pb-6 border-b border-border-subtle">
-            <a
-              href={`/pages/${encodeURIComponent(result.title)}`}
-              className="block hover:opacity-70"
-            >
+            <a href={pagePath(result.title)} className="block hover:opacity-70">
               <div className="font-bold text-lg mb-2">{result.title}</div>
               <p className="text-fg-muted text-sm line-clamp-3">
                 {result.snippet}

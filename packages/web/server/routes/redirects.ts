@@ -3,6 +3,7 @@ import { pages, articles, clips, zets } from "@jigsaw/db";
 import { getDB } from "@/db/getDB";
 import { eq } from "drizzle-orm";
 import type { Bindings } from "../types";
+import { pagePath } from "@jigsaw/db/page-path";
 
 const redirects = new Hono<{ Bindings: Bindings }>();
 
@@ -24,7 +25,7 @@ redirects.get("/a/:id", async (c) => {
     return c.redirect("/");
   }
 
-  return c.redirect(`/pages/${encodeURIComponent(result[0].title)}`);
+  return c.redirect(pagePath(result[0].title));
 });
 
 redirects.get("/p/:id", async (c) => {
@@ -44,7 +45,7 @@ redirects.get("/p/:id", async (c) => {
     return c.redirect("/");
   }
 
-  return c.redirect(`/pages/${encodeURIComponent(result[0].title)}`);
+  return c.redirect(pagePath(result[0].title));
 });
 
 // clip の permalink。/a/:id (article) と同型で、行き先は同じ /pages/<title>。
@@ -67,7 +68,7 @@ redirects.get("/c/:id", async (c) => {
     return c.redirect("/");
   }
 
-  return c.redirect(`/pages/${encodeURIComponent(result[0].title)}`);
+  return c.redirect(pagePath(result[0].title));
 });
 
 // zet の permalink。/a/:id・/c/:id と同型で、行き先は同じ /pages/<title>
@@ -90,7 +91,7 @@ redirects.get("/z/:id", async (c) => {
     return c.redirect("/");
   }
 
-  return c.redirect(`/pages/${encodeURIComponent(result[0].title)}`);
+  return c.redirect(pagePath(result[0].title));
 });
 
 export { redirects };

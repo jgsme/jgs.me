@@ -2,13 +2,14 @@ import React from "react";
 import { useData } from "vike-react/useData";
 import type data from "./+data";
 import { OG_BASE_URL } from "@/constants/og";
+import { pagePath } from "@jigsaw/db/page-path";
 
 type Data = Awaited<ReturnType<typeof data>>;
 
 export function Head() {
   const d = useData<Data>();
 
-  const ogUrl = `https://w.jgs.me/pages/${encodeURIComponent(d.title)}`;
+  const ogUrl = `https://w.jgs.me${pagePath(d.title)}`;
   const ogImage = d.pageId
     ? `${OG_BASE_URL}/p/${d.pageId}.png`
     : `${OG_BASE_URL}/default.png`;

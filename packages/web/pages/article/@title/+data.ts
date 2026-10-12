@@ -5,6 +5,7 @@ import { articles, clips, pageSimilarities, pages, zets } from "@jigsaw/db";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { BACKLINK_INITIAL, fetchBacklinks } from "@/server/backlinks";
 import { useConfig } from "vike-react/useConfig";
+import { render } from "vike/abort";
 import { fetchBody } from "@jigsaw/db/fetch-body";
 import { resolveArticleDate } from "@jigsaw/db/article-date";
 import { pickRandom } from "@/utils/pickRandom";
@@ -105,6 +106,9 @@ const data = async (c: Context) => {
       0,
       BACKLINK_INITIAL,
     );
+    // 本当に何も無い題は 404。200 で「Page not found」を返していると、壊れた
+    // URL を外形監視のステータスチェックが見逃す。
+    if (backlinks.length === 0) throw render(404);
 
     config({
       title: `${heading} - I am Electrical machine`,

@@ -34,9 +34,33 @@ type ImageInfo = {
   height: number;
 };
 
+function isWebp(bytes: Uint8Array): boolean {
+  // "RIFF" <size> "WEBP"
+  return (
+    bytes[0] === 0x52 &&
+    bytes[1] === 0x49 &&
+    bytes[2] === 0x46 &&
+    bytes[3] === 0x46 &&
+    bytes[8] === 0x57 &&
+    bytes[9] === 0x45 &&
+    bytes[10] === 0x42 &&
+    bytes[11] === 0x50
+  );
+}
+
 async function fetchImageAsDataUri(url: string): Promise<ImageInfo> {
-  const res = await fetch(url, { redirect: "follow" });
-  const buffer = await res.arrayBuffer();
+  let buffer = await (await fetch(url, { redirect: "follow" })).arrayBuffer();
+  // satori 0.26 は webp のサイズを読めず、@resvg/resvg-wasm 2.6.2 も webp を
+  // デコードできない (test/image.test.ts)。Image Transformations で jpeg に
+  // 変換して取り直す。
+  if (isWebp(new Uint8Array(buffer))) {
+    buffer = await (
+      await fetch(url, {
+        redirect: "follow",
+        cf: { image: { format: "jpeg" } },
+      })
+    ).arrayBuffer();
+  }
   const bytes = new Uint8Array(buffer);
 
   let width = 0;
@@ -77,29 +101,10 @@ async function fetchImageAsDataUri(url: string): Promise<ImageInfo> {
       offset += 2 + length;
     }
   }
-  // WebP check
-  else if (
-    bytes[0] === 0x52 &&
-    bytes[1] === 0x49 &&
-    bytes[2] === 0x46 &&
-    bytes[3] === 0x46
-  ) {
-    mimeType = "image/webp";
-    // Simple WebP VP8 parsing
-    if (bytes[12] === 0x56 && bytes[13] === 0x50 && bytes[14] === 0x38) {
-      // VP8
-      if (bytes[15] === 0x20) {
-        width = (bytes[26] | (bytes[27] << 8)) & 0x3fff;
-        height = (bytes[28] | (bytes[29] << 8)) & 0x3fff;
-      }
-      // VP8L
-      else if (bytes[15] === 0x4c) {
-        const bits =
-          bytes[21] | (bytes[22] << 8) | (bytes[23] << 16) | (bytes[24] << 24);
-        width = (bits & 0x3fff) + 1;
-        height = ((bits >> 14) & 0x3fff) + 1;
-      }
-    }
+  // 変換できなかった webp は、satori の分かりにくい例外 (u2 is not iterable)
+  // で落ちる前にここで止める。
+  else if (isWebp(bytes)) {
+    throw new Error(`webp could not be converted: ${url}`);
   }
 
   // Convert to base64

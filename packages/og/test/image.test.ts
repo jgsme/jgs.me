@@ -118,11 +118,9 @@ describe("generateImageWithTitleOgImage", () => {
     expectImageDrawnAt(png, x, y);
   });
 
-  // 既知の失敗。satori 0.26 は data URI の画像サイズを PNG / GIF / JPEG しか
-  // 読めず、webp だと `u2 is not iterable` で落ちる。satori を通しても
-  // @resvg/resvg-wasm 2.6.2 が webp をデコードできず空白になる。
-  // 直ったら it.fails が落ちるので it に戻す
-  it.fails.each([
+  // satori 0.26 も @resvg/resvg-wasm 2.6.2 も webp を読めないので、
+  // fetchImageAsDataUri が Image Transformations で jpeg に変換してから渡す
+  it.each([
     ["webp VP8 (横長)", "landscape.webp", LANDSCAPE_IMAGE_AT],
     ["webp VP8L (横長)", "landscape-lossless.webp", LANDSCAPE_IMAGE_AT],
   ])("%s", async (_, fixture, [x, y]) => {

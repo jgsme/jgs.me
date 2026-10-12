@@ -36,12 +36,7 @@ const Page = () => {
                 {zet.title && (
                   <div className="font-bold text-lg mb-1">{zet.title}</div>
                 )}
-                {zet.excerpt ? (
-                  <p className="line-clamp-3">{zet.excerpt}</p>
-                ) : (
-                  !zet.title &&
-                  !zet.image && <p className="text-fg-subtle">(本文なし)</p>
-                )}
+                {zet.excerpt && <p className="line-clamp-3">{zet.excerpt}</p>}
               </div>
             </a>
           </li>

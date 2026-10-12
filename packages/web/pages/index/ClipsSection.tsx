@@ -1,5 +1,6 @@
 import React from "react";
 import { tileImageSources } from "@/utils/listImage";
+import { pagePath } from "@jigsaw/db/page-path";
 
 type Clip = {
   id: number;
@@ -21,7 +22,7 @@ export const ClipsSection = ({ clips }: { clips: Clip[] }) => {
         {clips.map((clip) => (
           <li key={clip.id}>
             <a
-              href={`/pages/${encodeURIComponent(clip.title)}`}
+              href={pagePath(clip.title)}
               className="relative block aspect-square overflow-hidden rounded bg-brand transition-shadow hover:shadow-md"
             >
               {clip.image ? (

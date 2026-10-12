@@ -2,6 +2,7 @@ import React from "react";
 import { useData } from "vike-react/useData";
 import { cardImageSources } from "@/utils/listImage";
 import type data from "./+data";
+import { pagePath } from "@jigsaw/db/page-path";
 
 const Page = () => {
   const d = useData<Awaited<ReturnType<typeof data>>>();
@@ -11,7 +12,7 @@ const Page = () => {
       <ul>
         {d.payload.clips.map((clip) => (
           <li key={clip.id} className="my-8">
-            <a href={`/pages/${encodeURIComponent(clip.title)}`}>
+            <a href={pagePath(clip.title)}>
               {clip.image ? (
                 <img
                   {...cardImageSources(clip.image)}

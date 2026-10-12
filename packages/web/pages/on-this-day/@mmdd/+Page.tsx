@@ -2,6 +2,7 @@ import React from "react";
 import { useData } from "vike-react/useData";
 import type data from "./+data";
 import { WarpButton } from "../../components/WarpButton";
+import { pagePath } from "@jigsaw/db/page-path";
 
 type Data = Awaited<ReturnType<typeof data>>;
 
@@ -41,10 +42,7 @@ const Page = () => {
           <ul className="space-y-2">
             {group.articles.map((article) => (
               <li key={article.id}>
-                <a
-                  href={`/pages/${encodeURIComponent(article.title)}`}
-                  className="underline"
-                >
+                <a href={pagePath(article.title)} className="underline">
                   {article.title}
                 </a>
               </li>

@@ -10,6 +10,7 @@ import { RelatedPages } from "./components/RelatedPages";
 import { Backlinks } from "./components/Backlinks";
 import { clientOnly } from "vike-react/clientOnly";
 import { WarpButton } from "../../components/WarpButton";
+import { pagePath } from "@jigsaw/db/page-path";
 
 // 反応は SSR に載せない。記事ページは s-maxage=86400 でエッジに載るため、
 // 含めるとキャッシュが切れるまで反応が増えない。島として切り出してクライアントで
@@ -26,11 +27,8 @@ const Page = () => {
     return (
       <main className="max-w-content mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-4">{d.heading}</h1>
-        {/* 被リンクがあれば題と関連ページだけのページとして見せる。
-            「Page not found」を出すのは本当に何も無いときだけ。 */}
-        {d.backlinks.length === 0 && (
-          <p className="text-fg-muted">Page not found</p>
-        )}
+        {/* 本文が無くても被リンクがあれば、題と被リンクだけのページとして見せる。
+            被リンクも無い題は +data.ts が 404 にするのでここには来ない。 */}
         <Backlinks
           key={d.title}
           title={d.title}
@@ -45,7 +43,7 @@ const Page = () => {
   // 表示は従来どおり "/" 区切りにする。日付が取れない記事もあるため、null なら
   // dt-published ごと出さない。
   const publishedDisplay = d.fromDate ? d.fromDate.replaceAll("-", "/") : null;
-  const canonical = `https://w.jgs.me/pages/${encodeURIComponent(d.title)}`;
+  const canonical = `https://w.jgs.me${pagePath(d.title)}`;
 
   // 引用が本体の clip か。diary で人が選んだ kind をそのまま見る。
   //

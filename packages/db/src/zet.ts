@@ -2,6 +2,8 @@
 // 題と URL の規則。ingest (取り込み) / ap (配送) / web (表示) / og (OG 画像) が
 // 同じ規則を使うのでここに置く。
 
+import { pagePath } from "./pagePath";
+
 // page.title は /pages/<title> の実キーで UNIQUE。zet は題を持たないことがあり、
 // 題が重なることもあるので、page.title には rkey 由来の内部キーを入れる。
 // URL には出る (/pages/zet%3A<rkey>) が、人に見せる題は zetDisplayTitle で作る。
@@ -20,7 +22,7 @@ export function zetPageTitle(rkey: string): string {
 // サイト内のパス。zet も記事と同じ /pages/<page.title> で出す
 // (記事ページがそのまま描く)。絶対 URL は各 package の SITE_URL と組む。
 export function zetPath(rkey: string): string {
-  return `/pages/${encodeURIComponent(zetPageTitle(rkey))}`;
+  return pagePath(zetPageTitle(rkey));
 }
 
 // 人に見せる題。題の無い zet は日付を見出しにする (spec)。

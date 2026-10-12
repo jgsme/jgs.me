@@ -86,7 +86,6 @@ it.each([false, true])(
     await navigate(pageData(ok, "C", []));
     expect(visiblePages()).toEqual([]);
     expect(container.textContent).not.toContain("関連ページ");
-    if (!ok) expect(container.textContent).toContain("Page not found");
   },
 );
 

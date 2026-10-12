@@ -1,13 +1,12 @@
 import React, { useEffect, useId, useRef, useState } from "react";
 import { nextActiveIndex } from "@/utils/suggestNav";
+import { pagePath } from "@jigsaw/db/page-path";
 
 // 打鍵ごとに投げない程度に短く。ここを伸ばすと「打った後に一拍置いて出る」
 // 感じになり、インクリメンタルに見えなくなる。
 const DEBOUNCE_MS = 150;
 
 type Suggestion = { title: string };
-
-const hrefForTitle = (title: string) => `/pages/${encodeURIComponent(title)}`;
 
 export const SearchForm: React.FC = () => {
   const [query, setQuery] = useState("");
@@ -92,7 +91,7 @@ export const SearchForm: React.FC = () => {
       // AI Search のセマンティック検索が走る。
       if (picked === undefined) return;
       e.preventDefault();
-      window.location.href = hrefForTitle(picked.title);
+      window.location.href = pagePath(picked.title);
       return;
     }
 
@@ -185,7 +184,7 @@ export const SearchForm: React.FC = () => {
               // mousedown で blur してしまうと click が届かない。
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
-                window.location.href = hrefForTitle(suggestion.title);
+                window.location.href = pagePath(suggestion.title);
               }}
             >
               {suggestion.title}

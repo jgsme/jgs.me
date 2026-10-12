@@ -3,6 +3,7 @@ import { pages, articles } from "@jigsaw/db";
 import { getDB } from "@/db/getDB";
 import { eq, sql } from "drizzle-orm";
 import type { Bindings } from "../types";
+import { pagePath } from "@jigsaw/db/page-path";
 
 const random = new Hono<{ Bindings: Bindings }>();
 
@@ -27,7 +28,7 @@ random.get("/random", async (c) => {
     return c.redirect("/");
   }
 
-  return c.redirect(`/pages/${encodeURIComponent(result[0].title)}`);
+  return c.redirect(pagePath(result[0].title));
 });
 
 export { random };

@@ -3,6 +3,7 @@ import { useData } from "vike-react/useData";
 import { cardImageSources } from "@/utils/listImage";
 import type data from "./+data";
 import { ClipsSection } from "./ClipsSection";
+import { pagePath } from "@jigsaw/db/page-path";
 
 const Page = () => {
   const d = useData<Awaited<ReturnType<typeof data>>>();
@@ -13,7 +14,7 @@ const Page = () => {
         {d.payload.articles.map((article, i) => (
           <React.Fragment key={article.id}>
             <li className="my-8">
-              <a href={`/pages/${encodeURIComponent(article.title ?? "")}`}>
+              <a href={pagePath(article.title ?? "")}>
                 {article.image ? (
                   <img
                     {...cardImageSources(article.image)}

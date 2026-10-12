@@ -1,5 +1,6 @@
 import React from "react";
 import { tileImageSources } from "@/utils/listImage";
+import { pagePath } from "@jigsaw/db/page-path";
 
 // 記事ページの下に出すページカードの並び。「似てるかもしれんページ」
 // (similarity) と「関連ページ」(被リンク) の両方が同じ見た目なので、
@@ -20,7 +21,7 @@ export const PageTileGrid: React.FC<{
         {pages.map((r) => (
           <li key={r.title}>
             <a
-              href={`/pages/${encodeURIComponent(r.title)}`}
+              href={pagePath(r.title)}
               className="relative block aspect-square overflow-hidden rounded bg-brand transition-shadow hover:shadow-md"
             >
               {r.image ? (

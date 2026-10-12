@@ -7,7 +7,8 @@
     "./body-key": "./src/bodyKey.ts",
     "./article-date": "./src/articleDate.ts",
     "./fetch-body": "./src/fetchBody.ts",
-    "./zet": "./src/zet.ts"
+    "./zet": "./src/zet.ts",
+    "./page-path": "./src/pagePath.ts"
   },
   "scripts": {
     "gen": "drizzle-kit generate",

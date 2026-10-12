@@ -8,6 +8,7 @@ import {
 import { quoteClassName } from "./quote";
 import { getYouTubeVideoId } from "./youtube";
 import { YouTubeEmbed } from "./YouTubeEmbed";
+import { pagePath } from "@jigsaw/db/page-path";
 
 export const ScrapboxNode: React.FC<{
   node: NodeType;
@@ -27,10 +28,7 @@ export const ScrapboxNode: React.FC<{
     case "link": {
       if (node.pathType === "relative") {
         return (
-          <a
-            href={`/pages/${encodeURIComponent(node.href)}`}
-            className="text-link hover:underline"
-          >
+          <a href={pagePath(node.href)} className="text-link hover:underline">
             {node.href}
           </a>
         );
@@ -62,10 +60,7 @@ export const ScrapboxNode: React.FC<{
 
     case "hashTag":
       return (
-        <a
-          href={`/pages/${encodeURIComponent(node.href)}`}
-          className="text-link hover:underline"
-        >
+        <a href={pagePath(node.href)} className="text-link hover:underline">
           #{node.href}
         </a>
       );
@@ -174,10 +169,7 @@ export const ScrapboxNode: React.FC<{
     case "icon": {
       if (node.pathType === "relative") {
         return (
-          <a
-            href={`/pages/${encodeURIComponent(node.path)}`}
-            className="text-link hover:underline"
-          >
+          <a href={pagePath(node.path)} className="text-link hover:underline">
             {node.path}
           </a>
         );

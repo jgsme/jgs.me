@@ -1,6 +1,9 @@
 import React, { useEffect, useId, useRef, useState } from "react";
 import { nextActiveIndex } from "@/utils/suggestNav";
 import { pagePath } from "@jigsaw/db/page-path";
+import { navigate } from "vike/client/router";
+import { parseSearchType, searchPath } from "@/utils/searchResults";
+import { startSearch } from "@/utils/searchNavigation";
 
 // 打鍵ごとに投げない程度に短く。ここを伸ばすと「打った後に一拍置いて出る」
 // 感じになり、インクリメンタルに見えなくなる。
@@ -100,12 +103,26 @@ export const SearchForm: React.FC = () => {
     }
   };
 
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    close();
+    // 検索ページで絞り込み中なら、検索し直しても絞り込みを保つ。filter を
+    // 切り替えてもこの form は作り直されないので、送る時点の URL から読む。
+    const params = new URLSearchParams(window.location.search);
+    const type =
+      window.location.pathname === "/search"
+        ? parseSearchType(params.get("type") ?? undefined)
+        : null;
+    startSearch({ query, type });
+    void navigate(searchPath(query, type));
+  };
+
   const expanded = open && suggestions.length > 0;
   const activeID =
     expanded && activeIndex >= 0 ? `${listID}-${activeIndex}` : undefined;
 
   return (
-    <form action="/search" method="get">
+    <form action="/search" method="get" onSubmit={handleSubmit}>
       <div className="relative flex gap-2 my-2">
         <input
           type="text"

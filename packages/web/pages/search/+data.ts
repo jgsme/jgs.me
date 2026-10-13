@@ -2,10 +2,13 @@ import type { PageContextServer } from "vike/types";
 import type { Bindings } from "@/server/types";
 import { getDB } from "@/db/getDB";
 import { pages } from "@jigsaw/db";
-import { inArray } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import {
   bodyKeyFromFilename,
   dedupeByBodyKey,
+  matchesSearchType,
+  maxNumResultsFor,
+  parseSearchType,
   snippetFromMd,
 } from "@/utils/searchResults";
 
@@ -19,16 +22,16 @@ type SearchResult = {
   score: number;
 };
 
-const MAX_NUM_RESULTS = 20;
-
 const data = async (c: Context) => {
   const query = c.urlParsed.search.q;
+  const type = parseSearchType(c.urlParsed.search.type);
 
   if (!query) {
     return {
       ok: true,
       payload: {
         query: "",
+        type,
         results: [] as SearchResult[],
       },
     };
@@ -36,7 +39,7 @@ const data = async (c: Context) => {
 
   const response = await c.env.AI.autorag("w-rag-md-512").search({
     query,
-    max_num_results: MAX_NUM_RESULTS,
+    max_num_results: maxNumResultsFor(type),
   });
 
   // filename は R2 のキー。w-md のキーは <bodyKey>.md なので、そこから
@@ -58,11 +61,22 @@ const data = async (c: Context) => {
   );
 
   if (hits.length === 0) {
-    return { ok: true, payload: { query, results: [] as SearchResult[] } };
+    return {
+      ok: true,
+      payload: { query, type, results: [] as SearchResult[] },
+    };
   }
 
   const rows = await getDB(c.env.DB)
-    .select({ bodyKey: pages.bodyKey, title: pages.title })
+    .select({
+      bodyKey: pages.bodyKey,
+      title: pages.title,
+      // article と clip の両方に登録されているページがあるので join ではなく
+      // exists で引く。join だと行が増える。列を ${} で埋めると select 句では
+      // 修飾されず、サブクエリ内の "id" が article.id に化けるので直書きする。
+      isArticle: sql<number>`exists (select 1 from "article" where "article"."pageID" = "page"."id")`,
+      isClip: sql<number>`exists (select 1 from "clip" where "clip"."pageID" = "page"."id")`,
+    })
     .from(pages)
     .where(
       inArray(
@@ -70,20 +84,23 @@ const data = async (c: Context) => {
         hits.map((h) => h.bodyKey),
       ),
     );
-  const titleOf = new Map(rows.map((r) => [r.bodyKey, r.title]));
+  const rowOf = new Map(rows.map((r) => [r.bodyKey, r]));
 
   // 題が引けないのは page が消えたのに md が残っている場合。出しても
   // リンク先が無いので落とす。
   const results: SearchResult[] = hits.flatMap((hit) => {
-    const title = titleOf.get(hit.bodyKey);
-    if (title === undefined) return [];
-    return [{ title, snippet: hit.snippet, score: hit.score }];
+    const row = rowOf.get(hit.bodyKey);
+    if (row === undefined) return [];
+    const kinds = { isArticle: row.isArticle === 1, isClip: row.isClip === 1 };
+    if (!matchesSearchType(kinds, type)) return [];
+    return [{ title: row.title, snippet: hit.snippet, score: hit.score }];
   });
 
   return {
     ok: true,
     payload: {
       query,
+      type,
       results,
     },
   };

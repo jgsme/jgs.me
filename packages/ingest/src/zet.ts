@@ -3,11 +3,8 @@ import { buildSbBody } from "./body";
 import { extractLinks } from "./links";
 import { firstImageURL } from "./firstImage";
 import { SITE_URL } from "./site";
-import {
-  markBlobImages,
-  parseZetAtUri,
-  type FetchZetResult,
-} from "./zetRecord";
+import { rehostBlobImages, type RehostBlob } from "./zetBlob";
+import { parseZetAtUri, type FetchZetResult } from "./zetRecord";
 
 // 取り込みの手順だけを持つ。D1 / R2 / PDS / ap / web への I/O は ZetDeps で
 // 受け取る (linkIndex.ts の LinkIndexDeps と同じ形)。実装は zetStore.ts。
@@ -51,6 +48,7 @@ export type ZetUpdateInput = {
 
 export type ZetDeps = {
   getRecord: (rkey: string) => Promise<FetchZetResult>;
+  rehostBlob: RehostBlob;
   findByAtUri: (atUri: string) => Promise<ZetTarget | null>;
   putBody: (bodyKey: string, body: string) => Promise<void>;
   // 書いた page.id を返す。
@@ -114,7 +112,18 @@ export async function ingestZet(
   const { record, cid, raw } = got.zet;
 
   const pageTitle = zetPageTitle(ref.rkey);
-  const text = markBlobImages(record.text);
+  // create / update は action ではなく copy 表で決める (spec)。
+  const existing = await deps.findByAtUri(ref.atUri);
+  // 同じ CID = 同じ record の再送。書き直すと publish が Webmention を
+  // 再送するので何もしない。blob を落とす前に返す。
+  if (existing && existing.cid === cid) {
+    return new Response(null, {
+      status: 200,
+      headers: { Location: zetURL(ref.rkey) },
+    });
+  }
+
+  const { text } = await rehostBlobImages(record.text, deps.rehostBlob);
   // 1 行目が題 (body.ts)。読み側は先頭を題として捨てる。
   const body = buildSbBody(pageTitle, text);
   const links = extractLinks(body);
@@ -122,18 +131,7 @@ export async function ingestZet(
   const mf2 = JSON.stringify(payload);
   const location = zetURL(ref.rkey);
 
-  // create / update は action ではなく copy 表で決める (spec)。
-  const existing = await deps.findByAtUri(ref.atUri);
-
   if (existing) {
-    // 同じ CID = 同じ record の再送。書き直すと publish が Webmention を
-    // 再送するので何もしない。
-    if (existing.cid === cid) {
-      return new Response(null, {
-        status: 200,
-        headers: { Location: location },
-      });
-    }
     try {
       await deps.putBody(existing.bodyKey, body);
       await deps.update({

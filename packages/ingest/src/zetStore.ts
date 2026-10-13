@@ -8,6 +8,7 @@ import { chunk } from "./rows";
 import { SITE_URL, objectURI } from "./site";
 import { purge } from "./purge";
 import { fetchZetRecord } from "./zetRecord";
+import { envRehoster } from "./zetBlob";
 import {
   ingestZet,
   type ZetCreateInput,
@@ -141,6 +142,7 @@ export function zetDeps(env: Env): ZetDeps {
     // global fetch を素で渡すと this が外れて Illegal invocation になる。
     getRecord: (rkey) =>
       fetchZetRecord(rkey, (input, init) => fetch(input, init)),
+    rehostBlob: envRehoster(env),
     findByAtUri: (atUri) => findZetByAtUri(db, atUri),
     putBody: async (bodyKey, body) => {
       const key = r2KeyOf(bodyKey);

@@ -5,7 +5,7 @@ import { pagePath } from "@jigsaw/db/page-path";
 import { searchPath, type SearchType } from "@/utils/searchResults";
 import {
   isSameSearch,
-  navigateSearch,
+  startSearch,
   useSearchTarget,
 } from "@/utils/searchNavigation";
 
@@ -22,7 +22,7 @@ const Page = () => {
   // 描画中のデータが行き先と一致するまでは古い結果なので出さない。
   const pending = target !== null && !isSameSearch(target, shown);
   // 押した filter を結果が届く前から選択中に見せる。
-  const selected = target?.type ?? d.payload.type;
+  const selected = target !== null ? target.type : d.payload.type;
 
   return (
     <main className="max-w-content mx-auto px-4 pb-48">
@@ -38,8 +38,10 @@ const Page = () => {
                 onClick={(e) => {
                   // 修飾キー付きは新しいタブなどブラウザに任せる。
                   if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-                  e.preventDefault();
-                  void navigateSearch({ query: d.payload.query, type: f.type });
+                  // 遷移そのものは Vike のリンク処理に任せる。ここで
+                  // navigate() も呼ぶと同じ URL への遷移が 2 本走り、互いに
+                  // 打ち消して古い結果に戻る。
+                  startSearch({ query: d.payload.query, type: f.type });
                 }}
                 className={`px-3 py-1 rounded border border-solid ${
                   current

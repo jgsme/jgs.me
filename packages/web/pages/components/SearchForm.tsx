@@ -1,7 +1,7 @@
 import React, { useEffect, useId, useRef, useState } from "react";
 import { nextActiveIndex } from "@/utils/suggestNav";
 import { pagePath } from "@jigsaw/db/page-path";
-import { parseSearchType, searchPath } from "@/utils/searchResults";
+import { parseSearchType } from "@/utils/searchResults";
 import { navigateSearch } from "@/utils/searchNavigation";
 
 // 打鍵ごとに投げない程度に短く。ここを伸ばすと「打った後に一拍置いて出る」
@@ -112,7 +112,7 @@ export const SearchForm: React.FC = () => {
       window.location.pathname === "/search"
         ? parseSearchType(params.get("type") ?? undefined)
         : null;
-    void navigateSearch(searchPath(query, type));
+    void navigateSearch({ query, type });
   };
 
   const expanded = open && suggestions.length > 0;

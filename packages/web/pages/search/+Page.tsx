@@ -1,9 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useData } from "vike-react/useData";
 import type data from "./+data";
 import { pagePath } from "@jigsaw/db/page-path";
 import { searchPath, type SearchType } from "@/utils/searchResults";
-import { navigateSearch, useSearchPending } from "@/utils/searchNavigation";
+import {
+  isSameSearch,
+  navigateSearch,
+  useSearchTarget,
+} from "@/utils/searchNavigation";
 
 const FILTERS: { type: SearchType | null; label: string }[] = [
   { type: null, label: "すべて" },
@@ -13,10 +17,12 @@ const FILTERS: { type: SearchType | null; label: string }[] = [
 
 const Page = () => {
   const d = useData<Awaited<ReturnType<typeof data>>>();
-  const pending = useSearchPending();
+  const target = useSearchTarget();
+  const shown = { query: d.payload.query, type: d.payload.type };
+  // 描画中のデータが行き先と一致するまでは古い結果なので出さない。
+  const pending = target !== null && !isSameSearch(target, shown);
   // 押した filter を結果が届く前から選択中に見せる。
-  const [selected, setSelected] = useState(d.payload.type);
-  useEffect(() => setSelected(d.payload.type), [d]);
+  const selected = target?.type ?? d.payload.type;
 
   return (
     <main className="max-w-content mx-auto px-4 pb-48">
@@ -33,8 +39,7 @@ const Page = () => {
                   // 修飾キー付きは新しいタブなどブラウザに任せる。
                   if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
                   e.preventDefault();
-                  setSelected(f.type);
-                  void navigateSearch(e.currentTarget.href);
+                  void navigateSearch({ query: d.payload.query, type: f.type });
                 }}
                 className={`px-3 py-1 rounded border border-solid ${
                   current

@@ -4,16 +4,16 @@ import { getDB } from "@/db/getDB";
 import { pages } from "@jigsaw/db";
 import { inArray, sql } from "drizzle-orm";
 import {
-  bodyKeyFromFilename,
+  chunksFor,
   dedupeByBodyKey,
   matchesSearchType,
-  maxNumResultsFor,
   parseSearchType,
-  snippetFromMd,
 } from "@/utils/searchResults";
+import { searchChunks } from "@/server/searchHits";
 
 type Context = PageContextServer & {
   env: Bindings;
+  ctx?: ExecutionContext;
 };
 
 type SearchResult = {
@@ -37,27 +37,23 @@ const data = async (c: Context) => {
     };
   }
 
-  const response = await c.env.AI.autorag("w-rag-md-512").search({
-    query,
-    max_num_results: maxNumResultsFor(type),
+  const startedAt = Date.now();
+  const { chunks, cached } = await searchChunks(query, {
+    origin: new URL(c.urlOriginal).origin,
+    search: (req) => c.env.AI.autorag("w-rag-md-512").search(req),
+    waitUntil: c.ctx ? (p) => c.ctx?.waitUntil(p) : undefined,
   });
+  const searchedAt = Date.now();
 
   // filename は R2 のキー。w-md のキーは <bodyKey>.md なので、そこから
   // page を引ける。chunk の中身から題を取ると、題が入っている先頭 chunk に
   // 当たらなかったページが結果から落ちる。
   const hits = dedupeByBodyKey(
-    response.data.flatMap((item) => {
-      const bodyKey = bodyKeyFromFilename(item.filename);
-      if (!bodyKey) return [];
-      const content = item.content as Array<{ text: string }>;
-      return [
-        {
-          bodyKey,
-          score: item.score,
-          snippet: snippetFromMd(content[0]?.text ?? ""),
-        },
-      ];
-    }),
+    chunks
+      .slice(0, chunksFor(type))
+      .flatMap(({ bodyKey, score, snippet }) =>
+        bodyKey === null ? [] : [{ bodyKey, score, snippet }],
+      ),
   );
 
   if (hits.length === 0) {
@@ -85,6 +81,17 @@ const data = async (c: Context) => {
       ),
     );
   const rowOf = new Map(rows.map((r) => [r.bodyKey, r]));
+  // どこが遅いかを Workers Logs で見るため。検索語は残さない。
+  console.log(
+    JSON.stringify({
+      msg: "search timing",
+      type,
+      cached,
+      autoragMs: searchedAt - startedAt,
+      d1Ms: Date.now() - searchedAt,
+      chunks: chunks.length,
+    }),
+  );
 
   // 題が引けないのは page が消えたのに md が残っている場合。出しても
   // リンク先が無いので落とす。

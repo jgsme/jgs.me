@@ -29,21 +29,30 @@ export const pages = sqliteTable(
   },
   // title は /pages/<title> の実キー。重複すると片方が引けなくなり、
   // Micropub の update も「同題が 2 件」で弾かれる。今 0 件なので貼れる。
-  (t) => [uniqueIndex("page_title_unique").on(t.title)],
+  (t) => [
+    uniqueIndex("page_title_unique").on(t.title),
+    // 検索は AutoRAG の結果 (R2 のキー) から sbID で page を引く。
+    index("page_sb_id").on(t.bodyKey),
+  ],
 );
 
-export const articles = sqliteTable("article", {
-  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
-  pageID: integer("pageID")
-    .notNull()
-    .references(() => pages.id),
-  created: text("created")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
-  // 記事が書かれた日 "YYYY-MM-DD"。決まらない記事は null で、周年日記に出ない。
-  // created はページが D1 に入った時刻で、記事が書かれた日ではない。
-  date: text("date"),
-});
+export const articles = sqliteTable(
+  "article",
+  {
+    id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+    pageID: integer("pageID")
+      .notNull()
+      .references(() => pages.id),
+    created: text("created")
+      .notNull()
+      .default(sql`(CURRENT_TIMESTAMP)`),
+    // 記事が書かれた日 "YYYY-MM-DD"。決まらない記事は null で、周年日記に出ない。
+    // created はページが D1 に入った時刻で、記事が書かれた日ではない。
+    date: text("date"),
+  },
+  // 検索の種別判定などで pageID から引く。
+  (t) => [index("article_page_id").on(t.pageID)],
+);
 
 export const articleRelations = relations(articles, ({ one }) => ({
   page: one(pages, {
@@ -69,21 +78,25 @@ export const excludedPageRelations = relations(excludedPages, ({ one }) => ({
   }),
 }));
 
-export const clips = sqliteTable("clip", {
-  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
-  pageID: integer("pageID")
-    .notNull()
-    .references(() => pages.id),
-  created: text("created")
-    .notNull()
-    .default(sql`(CURRENT_TIMESTAMP)`),
-  // clip の種類。link / quote / photo / video。投入時に diary 側で人が選び、
-  // Micropub の category に混ぜて運ばれる (packages/ingest の clipKind)。
-  // CHECK 制約を付けないのは、値を増やすときに migration を要らなくするため。
-  // 既定が link なのは、kind を送らない古いクライアントからの投入と、
-  // 既存 1665 件の移行後の値を一致させるため。
-  kind: text("kind").notNull().default("link"),
-});
+export const clips = sqliteTable(
+  "clip",
+  {
+    id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+    pageID: integer("pageID")
+      .notNull()
+      .references(() => pages.id),
+    created: text("created")
+      .notNull()
+      .default(sql`(CURRENT_TIMESTAMP)`),
+    // clip の種類。link / quote / photo / video。投入時に diary 側で人が選び、
+    // Micropub の category に混ぜて運ばれる (packages/ingest の clipKind)。
+    // CHECK 制約を付けないのは、値を増やすときに migration を要らなくするため。
+    // 既定が link なのは、kind を送らない古いクライアントからの投入と、
+    // 既存 1665 件の移行後の値を一致させるため。
+    kind: text("kind").notNull().default("link"),
+  },
+  (t) => [index("clip_page_id").on(t.pageID)],
+);
 
 export const clipRelations = relations(clips, ({ one }) => ({
   page: one(pages, {

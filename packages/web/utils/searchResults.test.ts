@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   bodyKeyFromFilename,
+  chunksFor,
   dedupeByBodyKey,
   matchesSearchType,
-  maxNumResultsFor,
   parseSearchType,
   searchPath,
   snippetFromMd,
@@ -83,11 +83,11 @@ describe("parseSearchType", () => {
   });
 });
 
-describe("maxNumResultsFor", () => {
+describe("chunksFor", () => {
   it("絞り込み中は多めに取る", () => {
-    expect(maxNumResultsFor(null)).toBe(20);
-    expect(maxNumResultsFor("article")).toBe(50);
-    expect(maxNumResultsFor("clip")).toBe(50);
+    expect(chunksFor(null)).toBe(20);
+    expect(chunksFor("article")).toBe(50);
+    expect(chunksFor("clip")).toBe(50);
   });
 });
 

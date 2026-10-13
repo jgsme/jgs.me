@@ -42,10 +42,14 @@ export function parseSearchType(value: string | undefined): SearchType | null {
   return value === "article" || value === "clip" ? value : null;
 }
 
-// w-md のキーは種別を含まないので AutoRAG 側では絞れない。D1 で種別を
-// 引いて後から落とすぶん、絞り込み中は多めに取る (AutoRAG の上限は 50)。
-export function maxNumResultsFor(type: SearchType | null): number {
-  return type === null ? 20 : 50;
+// AutoRAG の上限。種別に関わらずこの数で引いてキャッシュに置き、絞り込みの
+// 切り替えでは AutoRAG を叩き直さない (server/searchHits.ts)。
+export const AUTORAG_MAX_NUM_RESULTS = 50;
+
+// 何 chunk 目までを結果に使うか。w-md のキーは種別を含まないので AutoRAG 側
+// では絞れない。D1 で種別を引いて後から落とすぶん、絞り込み中は多めに使う。
+export function chunksFor(type: SearchType | null): number {
+  return type === null ? 20 : AUTORAG_MAX_NUM_RESULTS;
 }
 
 // article と clip の両方に登録されているページは、どちらで絞っても出す。

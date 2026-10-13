@@ -1,7 +1,8 @@
 import React, { useEffect, useId, useRef, useState } from "react";
 import { nextActiveIndex } from "@/utils/suggestNav";
 import { pagePath } from "@jigsaw/db/page-path";
-import { parseSearchType, type SearchType } from "@/utils/searchResults";
+import { parseSearchType, searchPath } from "@/utils/searchResults";
+import { navigateSearch } from "@/utils/searchNavigation";
 
 // 打鍵ごとに投げない程度に短く。ここを伸ばすと「打った後に一拍置いて出る」
 // 感じになり、インクリメンタルに見えなくなる。
@@ -11,8 +12,6 @@ type Suggestion = { title: string };
 
 export const SearchForm: React.FC = () => {
   const [query, setQuery] = useState("");
-  // 検索ページで絞り込み中なら、検索し直しても絞り込みを保つ。
-  const [type, setType] = useState<SearchType | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [open, setOpen] = useState(false);
@@ -26,9 +25,6 @@ export const SearchForm: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     const q = params.get("q");
     if (q) setQuery(q);
-    if (window.location.pathname === "/search") {
-      setType(parseSearchType(params.get("type") ?? undefined));
-    }
   }, []);
 
   useEffect(() => {
@@ -106,13 +102,25 @@ export const SearchForm: React.FC = () => {
     }
   };
 
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    close();
+    // 検索ページで絞り込み中なら、検索し直しても絞り込みを保つ。filter を
+    // 切り替えてもこの form は作り直されないので、送る時点の URL から読む。
+    const params = new URLSearchParams(window.location.search);
+    const type =
+      window.location.pathname === "/search"
+        ? parseSearchType(params.get("type") ?? undefined)
+        : null;
+    void navigateSearch(searchPath(query, type));
+  };
+
   const expanded = open && suggestions.length > 0;
   const activeID =
     expanded && activeIndex >= 0 ? `${listID}-${activeIndex}` : undefined;
 
   return (
-    <form action="/search" method="get">
-      {type !== null && <input type="hidden" name="type" value={type} />}
+    <form action="/search" method="get" onSubmit={handleSubmit}>
       <div className="relative flex gap-2 my-2">
         <input
           type="text"

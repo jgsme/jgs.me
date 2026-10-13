@@ -201,3 +201,26 @@ const BLOB_URL =
 export function markBlobImages(text: string): string {
   return text.replace(BLOB_URL, `$1${BLOB_IMAGE_MARK}`);
 }
+
+// 既に付いた fragment (#.png) ごと拾う。page.image のように URL だけの
+// 文字列も通すので、末尾でも止まる。R2 の URL に差し替えると拡張子が
+// 付くので印は要らない。g 付きなので呼ぶたびに作る (gyazo.ts と同じ理由)。
+function blobURLPattern(): RegExp {
+  return /(https:\/\/ds\.jgs\.me\/xrpc\/com\.atproto\.sync\.getBlob\?[^\s\]#]+)(?:#[^\s\]]*)?(?=[\s\]]|$)/g;
+}
+
+// 本文中の getBlob URL (fragment を除いた形) を重複なしで返す。
+export function extractBlobURLs(text: string): string[] {
+  return [...new Set([...text.matchAll(blobURLPattern())].map((m) => m[1]!))];
+}
+
+// resolved に無い URL は元のまま残す。
+export function replaceBlobURLs(
+  text: string,
+  resolved: ReadonlyMap<string, string>,
+): string {
+  return text.replace(
+    blobURLPattern(),
+    (match, url: string) => resolved.get(url) ?? match,
+  );
+}

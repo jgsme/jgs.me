@@ -4,7 +4,9 @@ import {
   fetchZetRecord,
   getRecordURL,
   isZetPayload,
+  extractBlobURLs,
   markBlobImages,
+  replaceBlobURLs,
   parseZetAtUri,
   parseZetRecordValue,
 } from "./zetRecord";
@@ -282,5 +284,38 @@ describe("markBlobImages", () => {
     const text =
       "[https://example.com/xrpc/com.atproto.sync.getBlob?cid=x] [https://ds.jgs.me/xrpc/other?x=1]";
     expect(markBlobImages(text)).toBe(text);
+  });
+});
+
+describe("extractBlobURLs", () => {
+  it("fragment を除いて重複なしで返す", () => {
+    const other = BLOB.replace("bafkreiimg", "bafkreiimg2");
+    expect(
+      extractBlobURLs(`[${BLOB}]\n[[${BLOB}#.png]]\n[${other} https://x.test]`),
+    ).toEqual([BLOB, other]);
+  });
+
+  it("ds.jgs.me の getBlob 以外は拾わない", () => {
+    expect(
+      extractBlobURLs(
+        "[https://example.com/xrpc/com.atproto.sync.getBlob?cid=x]",
+      ),
+    ).toEqual([]);
+  });
+});
+
+describe("replaceBlobURLs", () => {
+  const R2 = "https://r2.jgs.me/abc.png";
+
+  it("印ごと差し替える", () => {
+    const resolved = new Map([[BLOB, R2]]);
+    expect(replaceBlobURLs(`[${BLOB}#.png] [[${BLOB}]]`, resolved)).toBe(
+      `[${R2}] [[${R2}]]`,
+    );
+  });
+
+  it("対応の無い URL は残す", () => {
+    const text = `[${BLOB}#.png]`;
+    expect(replaceBlobURLs(text, new Map())).toBe(text);
   });
 });

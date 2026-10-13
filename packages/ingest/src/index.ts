@@ -12,6 +12,7 @@ import {
 import { handleGyazoMigrate } from "./gyazoMigrate";
 import { handleLinkIndex } from "./linkIndex";
 import { handleMdBackfill } from "./mdBackfill";
+import { handleZetRehost } from "./zetBlob";
 
 export interface Env {
   DB: D1Database;
@@ -82,6 +83,11 @@ export default {
     // 対象は article か clip として登録されているページだけ。
     if (request.method === "POST" && url.pathname === "/internal/md-backfill") {
       return handleMdBackfill(request, env);
+    }
+
+    // 取り込み済みの zet の画像を PDS の blob から w-media に写すバッチ。
+    if (request.method === "POST" && url.pathname === "/internal/zet-rehost") {
+      return handleZetRehost(request, env);
     }
 
     // 類似度計算の対象。article として公開しているページだけを返す。

@@ -25,6 +25,7 @@ pnpm undo <url|id> [<url|id>...]  # 登録を取り消す（article/clip/exclude
 pnpm kind <url|id> <kind>        # clip.kind を書き換える (link/quote/photo/video)
 pnpm kind --csv <path>           # CSV から一括で書き換える
 pnpm md-backfill                 # 検索インデックス用の md (w-md) を既存ページぶん埋める
+pnpm zet-rehost                  # 取り込み済み zet の画像を PDS の blob から w-media に写す
 
 # Lint
 pnpm lint:tokens  # design token から外れた書き方を検出する
@@ -110,7 +111,7 @@ migration が当たる。
 - `pages/a/@id/` - 共有URL用リダイレクト（`/a/{id}` → `/pages/{title}`）。clip は `/c/{id}`、zet は `/z/{zet.id}` で同型（実体は `server/routes/redirects.ts`、形は `utils/permalink.ts`、7 日 edge cache、ingest が update で purge）
 - `pages/search/` - 検索ページ
 - `pages/clips/` - クリップ一覧ページ
-- `pages/zets/` - zet 一覧 (`zet.date` 降順、`?p=N`)。個別の zet は専用ページを持たず、記事と同じ `pages/article/@title/` が `/pages/zet%3A<rkey>` で出す (見出し・`<title>` は `zet.title`、無ければ `zet.date`。`zet:<rkey>` は出さない)。本文は記事と同じく R2 の `.sb`、画像は PDS の getBlob URL (取り込み時に `#.png` を付けて画像として読ませている)
+- `pages/zets/` - zet 一覧 (`zet.date` 降順、`?p=N`)。個別の zet は専用ページを持たず、記事と同じ `pages/article/@title/` が `/pages/zet%3A<rkey>` で出す (見出し・`<title>` は `zet.title`、無ければ `zet.date`。`zet:<rkey>` は出さない)。本文は記事と同じく R2 の `.sb`、画像は取り込み時に PDS の blob を w-media に写して r2.jgs.me の URL に差し替える (Image Transformations を効かせるため)。写せなかった blob だけ getBlob URL のまま `#.png` を付けて画像として読ませ、`pnpm zet-rehost` で後から拾う
 - `pages/on-this-day/@mmdd/` - 周年日記ページ（ルート: `/on-this-day/@mmdd`）。`article.date` の月日が一致する記事を年ごとにグルーピングして表示
 
 ### API Routes

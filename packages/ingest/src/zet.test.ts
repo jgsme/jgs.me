@@ -12,6 +12,7 @@ const RKEY = "3m2abcdefghij";
 const AT_URI = `at://did:web:ds.jgs.me/me.jgs.diary.zet/${RKEY}`;
 const BLOB =
   "https://ds.jgs.me/xrpc/com.atproto.sync.getBlob?did=did:web:ds.jgs.me&cid=bafkreiimg";
+const R2 = "https://r2.jgs.me/abc.png";
 
 const payload = {
   type: ["h-entry"],
@@ -40,6 +41,7 @@ const found = (
 function fake(over: Partial<ZetDeps> = {}) {
   const calls = {
     getRecord: [] as string[],
+    rehostBlob: [] as string[],
     putBody: [] as [string, string][],
     create: [] as ZetCreateInput[],
     update: [] as ZetUpdateInput[],
@@ -50,6 +52,10 @@ function fake(over: Partial<ZetDeps> = {}) {
     getRecord: async (rkey) => {
       calls.getRecord.push(rkey);
       return found();
+    },
+    rehostBlob: async (url) => {
+      calls.rehostBlob.push(url);
+      return R2;
     },
     findByAtUri: async () => null,
     putBody: async (key, body) => {
@@ -102,9 +108,21 @@ describe("ingestZet: create", () => {
     expect(body.split("\n")[0]).toBe(`zet:${RKEY}`);
   });
 
-  it("本文の getBlob URL に画像の印を付ける", async () => {
+  it("本文の getBlob URL を R2 に写した URL に差し替える", async () => {
     const { deps, calls } = fake();
     await ingestZet(payload, deps);
+    expect(calls.rehostBlob).toEqual([BLOB]);
+    expect(calls.putBody[0]![1]).toContain(`[${R2}]`);
+    expect(calls.create[0]!.image).toBe(R2);
+  });
+
+  it("写せなかった blob は getBlob のまま画像の印を付けて取り込む", async () => {
+    const { deps, calls } = fake({
+      rehostBlob: async () => {
+        throw new Error("pds down");
+      },
+    });
+    expect((await ingestZet(payload, deps)).status).toBe(201);
     expect(calls.putBody[0]![1]).toContain(`[${BLOB}#.png]`);
     expect(calls.create[0]!.image).toBe(`${BLOB}#.png`);
   });
@@ -118,7 +136,7 @@ describe("ingestZet: create", () => {
         rkey: RKEY,
         bodyKey: "sb-new",
         created: "2026-10-11T01:00:00.000Z",
-        image: `${BLOB}#.png`,
+        image: R2,
         date: "2026-10-11",
         zetTitle: null,
         atUri: AT_URI,
@@ -204,7 +222,7 @@ describe("ingestZet: update", () => {
       {
         pageID: 7,
         updated: "2026-10-11T02:00:00.000Z",
-        image: `${BLOB}#.png`,
+        image: R2,
         date: "2026-10-10",
         zetTitle: "改題",
         cid: "bafycid2",
@@ -231,6 +249,7 @@ describe("ingestZet: update", () => {
     });
     const res = await ingestZet(payload, deps);
     expect(res.status).toBe(200);
+    expect(calls.rehostBlob).toEqual([]);
     expect(calls.putBody).toEqual([]);
     expect(calls.update).toEqual([]);
     expect(calls.publish).toEqual([]);

@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   bodyKeyFromFilename,
   dedupeByBodyKey,
+  matchesSearchType,
+  maxNumResultsFor,
+  parseSearchType,
+  searchPath,
   snippetFromMd,
 } from "./searchResults";
 
@@ -66,5 +70,56 @@ describe("snippetFromMd", () => {
     expect(snippetFromMd(`# 題\n\n${"あ".repeat(300)}`, 10)).toBe(
       `${"あ".repeat(10)}…`,
     );
+  });
+});
+
+describe("parseSearchType", () => {
+  it("article と clip だけ受ける", () => {
+    expect(parseSearchType("article")).toBe("article");
+    expect(parseSearchType("clip")).toBe("clip");
+    expect(parseSearchType("zet")).toBeNull();
+    expect(parseSearchType("")).toBeNull();
+    expect(parseSearchType(undefined)).toBeNull();
+  });
+});
+
+describe("maxNumResultsFor", () => {
+  it("絞り込み中は多めに取る", () => {
+    expect(maxNumResultsFor(null)).toBe(20);
+    expect(maxNumResultsFor("article")).toBe(50);
+    expect(maxNumResultsFor("clip")).toBe(50);
+  });
+});
+
+describe("matchesSearchType", () => {
+  const article = { isArticle: true, isClip: false };
+  const clip = { isArticle: false, isClip: true };
+  const both = { isArticle: true, isClip: true };
+
+  it("絞らなければ全部通す", () => {
+    expect(matchesSearchType(article, null)).toBe(true);
+    expect(matchesSearchType(clip, null)).toBe(true);
+  });
+
+  it("種別で絞る", () => {
+    expect(matchesSearchType(article, "article")).toBe(true);
+    expect(matchesSearchType(article, "clip")).toBe(false);
+    expect(matchesSearchType(clip, "clip")).toBe(true);
+    expect(matchesSearchType(clip, "article")).toBe(false);
+  });
+
+  it("両方に登録されているページはどちらでも出す", () => {
+    expect(matchesSearchType(both, "article")).toBe(true);
+    expect(matchesSearchType(both, "clip")).toBe(true);
+  });
+});
+
+describe("searchPath", () => {
+  it("type が無ければ q だけ", () => {
+    expect(searchPath("猫", null)).toBe("/search?q=%E7%8C%AB");
+  });
+
+  it("type を付ける", () => {
+    expect(searchPath("a b", "clip")).toBe("/search?q=a+b&type=clip");
   });
 });

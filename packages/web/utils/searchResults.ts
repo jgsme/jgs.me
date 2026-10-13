@@ -35,3 +35,30 @@ export function snippetFromMd(md: string, maxLength = 200): string {
 
   return text.length > maxLength ? `${text.slice(0, maxLength)}…` : text;
 }
+
+export type SearchType = "article" | "clip";
+
+export function parseSearchType(value: string | undefined): SearchType | null {
+  return value === "article" || value === "clip" ? value : null;
+}
+
+// w-md のキーは種別を含まないので AutoRAG 側では絞れない。D1 で種別を
+// 引いて後から落とすぶん、絞り込み中は多めに取る (AutoRAG の上限は 50)。
+export function maxNumResultsFor(type: SearchType | null): number {
+  return type === null ? 20 : 50;
+}
+
+// article と clip の両方に登録されているページは、どちらで絞っても出す。
+export function matchesSearchType(
+  kinds: { isArticle: boolean; isClip: boolean },
+  type: SearchType | null,
+): boolean {
+  if (type === null) return true;
+  return type === "article" ? kinds.isArticle : kinds.isClip;
+}
+
+export function searchPath(query: string, type: SearchType | null): string {
+  const params = new URLSearchParams({ q: query });
+  if (type !== null) params.set("type", type);
+  return `/search?${params.toString()}`;
+}

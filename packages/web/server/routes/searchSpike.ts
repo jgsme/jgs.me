@@ -23,6 +23,10 @@ const DEFAULT_QUERIES = [
   "ネタバレ",
 ];
 
+// ai_search_namespaces binding を足すと Workers Builds の preview が落ちたので、
+// 既存の AI binding 経由で namespace を取る (deprecated)。
+const ns = (env: Bindings) => env.AI.aiSearch();
+
 const searchSpike = new Hono<{ Bindings: Bindings }>();
 
 searchSpike.use("/internal/search-spike/*", async (c, next) => {
@@ -33,9 +37,9 @@ searchSpike.use("/internal/search-spike/*", async (c, next) => {
 });
 
 searchSpike.get("/internal/search-spike/info", async (c) => {
-  const list = await c.env.AI_SEARCH.list();
+  const list = await ns(c.env).list();
   const detail = async (id: string) => {
-    const inst = c.env.AI_SEARCH.get(id);
+    const inst = ns(c.env).get(id);
     try {
       return { info: await inst.info(), stats: await inst.stats() };
     } catch (e) {
@@ -50,8 +54,8 @@ searchSpike.get("/internal/search-spike/info", async (c) => {
 });
 
 searchSpike.post("/internal/search-spike/setup", async (c) => {
-  const old = await c.env.AI_SEARCH.get(OLD).info();
-  const inst = await c.env.AI_SEARCH.create({
+  const old = await ns(c.env).get(OLD).info();
+  const inst = await ns(c.env).create({
     id: NEW,
     type: "r2",
     source: "w-md",
@@ -121,14 +125,16 @@ searchSpike.get("/internal/search-spike/bench", async (c) => {
   const modern =
     (id: string, query: string, type?: "vector" | "keyword" | "hybrid") =>
     async () => {
-      const r = await c.env.AI_SEARCH.get(id).search({
-        query,
-        ai_search_options: {
-          retrieval: { retrieval_type: type, max_num_results: max },
-          query_rewrite: { enabled: false },
-          reranking: { enabled: false },
-        },
-      });
+      const r = await ns(c.env)
+        .get(id)
+        .search({
+          query,
+          ai_search_options: {
+            retrieval: { retrieval_type: type, max_num_results: max },
+            query_rewrite: { enabled: false },
+            reranking: { enabled: false },
+          },
+        });
       return r.chunks.map((ch) => ({ key: ch.item.key, score: ch.score }));
     };
 

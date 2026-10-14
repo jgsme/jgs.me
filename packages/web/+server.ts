@@ -13,6 +13,7 @@ import { reactions } from "./server/routes/reactions";
 import { backlinks } from "./server/routes/backlinks";
 import { internal } from "./server/routes/internal";
 import { suggest } from "./server/routes/suggest";
+import { searchSpike } from "./server/routes/searchSpike";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -43,6 +44,7 @@ app.route("/", reactions);
 app.route("/", backlinks);
 app.route("/", internal);
 app.route("/", suggest);
+app.route("/", searchSpike);
 
 vike(app);
 

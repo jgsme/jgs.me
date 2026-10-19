@@ -11,6 +11,7 @@ import { Backlinks } from "./components/Backlinks";
 import { clientOnly } from "vike-react/clientOnly";
 import { WarpButton } from "../../components/WarpButton";
 import { pagePath } from "@jigsaw/db/page-path";
+import { pdslsUrl } from "@jigsaw/db/zet";
 
 // 反応は SSR に載せない。記事ページは s-maxage=86400 でエッジに載るため、
 // 含めるとキャッシュが切れるまで反応が増えない。島として切り出してクライアントで
@@ -93,6 +94,14 @@ const Page = () => {
           })}
         />
       </div>
+      {d.atUri && (
+        <a
+          href={pdslsUrl(d.atUri)}
+          className="block text-fg-subtle text-xs mt-1 break-all hover:underline"
+        >
+          {d.atUri}
+        </a>
+      )}
     </div>
   );
 

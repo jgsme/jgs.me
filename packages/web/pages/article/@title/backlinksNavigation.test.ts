@@ -42,6 +42,7 @@ function pageData(
     articleId: null,
     clipId: null,
     zetId: null,
+    atUri: null,
     clipKind: null,
     blocks: [],
     description: null,

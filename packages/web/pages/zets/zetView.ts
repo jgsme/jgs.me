@@ -1,9 +1,10 @@
-import { zetDisplayTitle, zetPath } from "@jigsaw/db/zet";
+import { zetAtUri, zetDisplayTitle, zetPath } from "@jigsaw/db/zet";
 
 export type ZetListItem = {
   rkey: string;
   // 記事と同じ /pages/zet%3A<rkey>。記事ページがそのまま描く。
   href: string;
+  atUri: string;
   // 題、無ければ日付 (spec)。page.title (zet:<rkey>) は出さない。画像の alt 用。
   heading: string;
   // 題があるときだけ。タイムラインは左に日付を出すので、題の無い zet に
@@ -37,6 +38,7 @@ export function toZetListItem(row: Row): ZetListItem {
   return {
     rkey: row.rkey,
     href: zetPath(row.rkey),
+    atUri: zetAtUri(row.rkey),
     heading: zetDisplayTitle(row),
     title,
     date: row.date,

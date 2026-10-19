@@ -3,9 +3,10 @@
 // (本文は送らない)。ここでは payload から at-uri を取り出し、PDS から record を
 // 読み、jgs.me に載せられる形かを確かめる。DB と R2 は触らない。
 
+import { ZET_DID as PDS_DID, ZET_COLLECTION } from "@jigsaw/db/zet";
+
 export const PDS_URL = "https://ds.jgs.me";
-export const PDS_DID = "did:web:ds.jgs.me";
-export const ZET_COLLECTION = "me.jgs.diary.zet";
+export { PDS_DID, ZET_COLLECTION };
 export const ZET_CATEGORY = "zet";
 
 // Workers の global fetch を引数に渡すときは素の参照を渡さない

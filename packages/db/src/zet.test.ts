@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   ZET_COPY_PROTOCOL,
   pageDisplayTitle,
+  pdslsUrl,
+  zetAtUri,
   zetDisplayTitle,
   zetPageTitle,
   zetPath,
@@ -79,5 +81,21 @@ describe("pageDisplayTitle", () => {
         zetDate: "2026-10-11",
       }),
     ).toBe("朝の散歩");
+  });
+});
+
+describe("zetAtUri", () => {
+  it("ds.jgs.me の me.jgs.diary.zet の at-uri", () => {
+    expect(zetAtUri(RKEY)).toBe(
+      `at://did:web:ds.jgs.me/me.jgs.diary.zet/${RKEY}`,
+    );
+  });
+});
+
+describe("pdslsUrl", () => {
+  it("at-uri をパスに付ける", () => {
+    expect(pdslsUrl(zetAtUri(RKEY))).toBe(
+      `https://pdsls.dev/at://did:web:ds.jgs.me/me.jgs.diary.zet/${RKEY}`,
+    );
   });
 });

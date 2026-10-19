@@ -8,6 +8,7 @@ import { useConfig } from "vike-react/useConfig";
 import { render } from "vike/abort";
 import { fetchBody } from "@jigsaw/db/fetch-body";
 import { resolveArticleDate } from "@jigsaw/db/article-date";
+import { zetAtUri } from "@jigsaw/db/zet";
 import { pickRandom } from "@/utils/pickRandom";
 import { pageTitleFromUrl } from "@/utils/pageTitle";
 import { buildArticleBody } from "./articleBody";
@@ -39,6 +40,7 @@ const data = async (c: Context) => {
       zetId: zets.id,
       zetTitle: zets.title,
       zetDate: zets.date,
+      zetRkey: zets.rkey,
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
@@ -60,6 +62,8 @@ const data = async (c: Context) => {
   // NOT NULL なので、zetDate が null なら zet ではない。
   const zetDate = pageInfo[0]?.zetDate ?? null;
   const isZet = zetDate !== null;
+  const zetRkey = pageInfo[0]?.zetRkey ?? null;
+  const atUri = zetRkey === null ? null : zetAtUri(zetRkey);
   // 見出し・<title>・u-url の文字列。zet の page.title (zet:<rkey>) は出さない。
   const { heading, isName } = articleHeading({
     title,
@@ -121,6 +125,7 @@ const data = async (c: Context) => {
       articleId,
       clipId,
       zetId,
+      atUri,
       clipKind,
       blocks: [],
       description: null,
@@ -165,6 +170,7 @@ const data = async (c: Context) => {
     articleId,
     clipId,
     zetId,
+    atUri,
     clipKind,
     blocks: filteredBlocks,
     fromDate,

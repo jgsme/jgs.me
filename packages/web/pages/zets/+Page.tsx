@@ -1,6 +1,7 @@
 import React from "react";
 import { useData } from "vike-react/useData";
 import { tileImageSources } from "@/utils/listImage";
+import { ZET_COLLECTION, ZET_DID, pdslsUrl } from "@jigsaw/db/zet";
 import type data from "./+data";
 
 const Page = () => {
@@ -8,6 +9,12 @@ const Page = () => {
 
   return (
     <main className="max-w-content mx-auto px-4 pb-48">
+      <a
+        href={pdslsUrl(`at://${ZET_DID}/${ZET_COLLECTION}`)}
+        className="block py-4 text-fg-subtle text-xs break-all hover:underline"
+      >
+        {ZET_DID}
+      </a>
       <ul>
         {d.payload.zets.map((zet) => (
           <li key={zet.rkey} className="border-b border-border-subtle">

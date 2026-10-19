@@ -44,7 +44,7 @@ const Page = () => {
                     image: zet.image,
                   }))}
                   moreHref="/zets"
-                  moreLabel="zets をもっと見る"
+                  moreLabel="Zettelkasten をもっと見る"
                 />
                 <TileSection
                   heading="クリップ"

@@ -36,7 +36,7 @@ const Page = () => {
             {i === 2 && (
               <li className="my-12 divide-y divide-black/10 border-y border-black/10 empty:hidden">
                 <TileSection
-                  heading="zets"
+                  heading="Zettelkasten"
                   tiles={d.payload.recentZets.map((zet) => ({
                     key: zet.rkey,
                     href: zetPath(zet.rkey),

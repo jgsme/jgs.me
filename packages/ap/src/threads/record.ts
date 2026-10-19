@@ -28,3 +28,14 @@ export function buildContainerParams(input: ThreadsPostInput): ContainerParams {
 
   return { text, linkAttachment: input.url };
 }
+
+// 画像だけの zet は本文が空なので、Grain の gallery を代わりに流す。
+// TEXT 投稿は text 必須なので URL を本文にも入れる。題があれば前に置く。
+export function buildGrainContainerParams(input: {
+  title: string | null;
+  grainURL: string;
+}): ContainerParams {
+  const title = input.title?.trim();
+  const text = title ? `${title}\n${input.grainURL}` : input.grainURL;
+  return { text, linkAttachment: input.grainURL };
+}

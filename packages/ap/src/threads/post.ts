@@ -5,7 +5,8 @@ import { SITE_URL, shareURL } from "../config";
 import { resolveContent } from "../content";
 import { publishedKind } from "../published";
 import { notifyDiscord } from "../notify";
-import { buildContainerParams } from "./record";
+import { grainURLForEmptyZet } from "../grain";
+import { buildContainerParams, buildGrainContainerParams } from "./record";
 import { requestContainer } from "./client";
 import { withToken } from "./token";
 
@@ -35,6 +36,7 @@ export async function createContainer(
       articleID: articles.id,
       clipID: clips.id,
       zetRkey: zets.rkey,
+      zetTitle: zets.title,
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
@@ -50,12 +52,15 @@ export async function createContainer(
   }
 
   const html = await resolveContent(page.bodyKey, env.R2, SITE_URL, page.title);
-  const params = buildContainerParams({ html, url: shareURL(page.id) });
+  const grainURL = await grainURLForEmptyZet(page.zetRkey, html);
+  const params = grainURL
+    ? buildGrainContainerParams({ title: page.zetTitle, grainURL })
+    : buildContainerParams({ html, url: shareURL(page.id) });
 
   // resolveContent は R2 に本文が無いと "" を返す。TEXT 投稿は text 必須なので
   // 空のまま投げても弾かれるだけ。これも retry では直らない。
   if (params.text === "") {
-    const msg = `Threads に投げる本文が空になった (pageID=${pageID})`;
+    const msg = `Threads に投げる本文が空で、Grain の gallery も無い (pageID=${pageID})`;
     console.error(`[threads] ${msg}`);
     await notifyDiscord(env.DISCORD_REACTION_WEBHOOK, `${msg}。`);
     return null;

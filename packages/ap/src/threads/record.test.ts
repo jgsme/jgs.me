@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { MAX_THREADS_GRAPHEMES, buildContainerParams } from "./record";
+import {
+  MAX_THREADS_GRAPHEMES,
+  buildContainerParams,
+  buildGrainContainerParams,
+} from "./record";
 import { countGraphemes } from "../bsky/text";
 
 const base = {
@@ -46,5 +50,29 @@ describe("buildContainerParams", () => {
 
   it("上限は 500", () => {
     expect(MAX_THREADS_GRAPHEMES).toBe(500);
+  });
+});
+
+describe("buildGrainContainerParams", () => {
+  const grainURL = "https://grain.social/profile/ds.jgs.me/gallery/r";
+
+  it("題が無ければ URL だけを本文にする", () => {
+    expect(buildGrainContainerParams({ title: null, grainURL })).toEqual({
+      text: grainURL,
+      linkAttachment: grainURL,
+    });
+  });
+
+  it("題があれば前に置く", () => {
+    expect(buildGrainContainerParams({ title: "夕焼け", grainURL })).toEqual({
+      text: `夕焼け\n${grainURL}`,
+      linkAttachment: grainURL,
+    });
+  });
+
+  it("空白だけの題は無いものとする", () => {
+    expect(buildGrainContainerParams({ title: "  ", grainURL }).text).toBe(
+      grainURL,
+    );
   });
 });

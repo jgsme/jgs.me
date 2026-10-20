@@ -15,6 +15,19 @@ export const ZET_TITLE_PREFIX = "zet:";
 // bsky 投稿の at-uri で上書きされ、次の update で zet を引けなくなる。
 export const ZET_COPY_PROTOCOL = "atproto-zet";
 
+// zet の record がある PDS (ds.jgs.me) の DID と collection。
+export const ZET_DID = "did:web:ds.jgs.me";
+export const ZET_COLLECTION = "me.jgs.diary.zet";
+
+export function zetAtUri(rkey: string): string {
+  return `at://${ZET_DID}/${ZET_COLLECTION}/${rkey}`;
+}
+
+// PDS の中身を見るビューア。at-uri をそのままパスに付ける。
+export function pdslsUrl(atUri: string): string {
+  return `https://pdsls.dev/${atUri}`;
+}
+
 export function zetPageTitle(rkey: string): string {
   return `${ZET_TITLE_PREFIX}${rkey}`;
 }

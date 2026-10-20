@@ -26,6 +26,7 @@ function zetData(heading: string, isName: boolean): Data {
     articleId: null,
     clipId: null,
     zetId: null,
+    atUri: `at://did:web:ds.jgs.me/me.jgs.diary.zet/${RKEY}`,
     clipKind: null,
     blocks: [],
     fromDate: "2026-10-11",
@@ -55,4 +56,13 @@ it("題のある zet は題を p-name の見出しにする", () => {
 
   expect(html).toMatch(/<h1[^>]*p-name[^>]*>朝の散歩<\/h1>/);
   expect(html).not.toContain("zet:");
+});
+
+it("zet は at-uri を pdsls へのリンクで出す", () => {
+  vi.mocked(useData).mockReturnValue(zetData("朝の散歩", true));
+  const html = renderToString(createElement(Page));
+
+  const atUri = `at://did:web:ds.jgs.me/me.jgs.diary.zet/${RKEY}`;
+  expect(html).toContain(`href="https://pdsls.dev/${atUri}"`);
+  expect(html).toContain(`>${atUri}</a>`);
 });

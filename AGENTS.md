@@ -40,6 +40,7 @@ pnpm kind <url|id> <kind>       # clip.kind を変更 (link/quote/photo/video)
 pnpm kind --csv <path>         # CSV から一括変更
 pnpm md-backfill               # 検索インデックス用の md (w-md) を既存ページぶん埋める
 pnpm zet-rehost                # 取り込み済み zet の画像を PDS の blob から w-media に写す
+pnpm clip-margin [--dry-run|--delete] # clip を Margin の at.margin.note として PDS に書き、clips コレクションに入れる。--delete は消す
 ```
 
 ## Architecture

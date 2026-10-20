@@ -1,6 +1,7 @@
 import React from "react";
 import { useData } from "vike-react/useData";
 import { tileImageSources } from "@/utils/listImage";
+import { pdslsUrl } from "@jigsaw/db/zet";
 import type data from "./+data";
 
 const Page = () => {
@@ -11,7 +12,10 @@ const Page = () => {
       <ul>
         {d.payload.zets.map((zet) => (
           <li key={zet.rkey} className="border-b border-border-subtle">
-            <a href={zet.href} className="flex gap-4 py-6 hover:opacity-70">
+            <a
+              href={zet.href}
+              className="flex gap-4 pt-6 pb-2 hover:opacity-70"
+            >
               <div className="w-16 shrink-0">
                 {zet.showDate && (
                   <time dateTime={zet.date} className="block leading-tight">
@@ -39,6 +43,15 @@ const Page = () => {
                 {zet.excerpt && <p className="line-clamp-3">{zet.excerpt}</p>}
               </div>
             </a>
+            <div className="flex gap-4 pb-6">
+              <div className="w-16 shrink-0" />
+              <a
+                href={pdslsUrl(zet.atUri)}
+                className="min-w-0 text-fg-subtle text-xs break-all hover:underline"
+              >
+                {zet.atUri}
+              </a>
+            </div>
           </li>
         ))}
       </ul>

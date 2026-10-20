@@ -2,8 +2,9 @@ import React from "react";
 import { useData } from "vike-react/useData";
 import { cardImageSources } from "@/utils/listImage";
 import type data from "./+data";
-import { ClipsSection } from "./ClipsSection";
+import { TileSection } from "./TileSection";
 import { pagePath } from "@jigsaw/db/page-path";
+import { zetDisplayTitle, zetPath } from "@jigsaw/db/zet";
 
 const Page = () => {
   const d = useData<Awaited<ReturnType<typeof data>>>();
@@ -30,11 +31,32 @@ const Page = () => {
                 <div className="font-bold text-xl">{article.title}</div>
               </a>
             </li>
-            {/* 最新記事を 3 件見せてから clip を挟む。先頭に置くと
-                記事より clip が目立ち、末尾だと誰も辿り着かない。 */}
+            {/* 最新記事を 3 件見せてから zet と clip を挟む。先頭に置くと
+                記事より目立ち、末尾だと誰も辿り着かない。 */}
             {i === 2 && (
-              <li>
-                <ClipsSection clips={d.payload.recentClips} />
+              <li className="my-12 divide-y divide-black/10 border-y border-black/10 empty:hidden">
+                <TileSection
+                  heading="Zettelkasten"
+                  tiles={d.payload.recentZets.map((zet) => ({
+                    key: zet.rkey,
+                    href: zetPath(zet.rkey),
+                    label: zetDisplayTitle(zet),
+                    image: zet.image,
+                  }))}
+                  moreHref="/zets"
+                  moreLabel="Zettelkasten をもっと見る"
+                />
+                <TileSection
+                  heading="クリップ"
+                  tiles={d.payload.recentClips.map((clip) => ({
+                    key: clip.id,
+                    href: pagePath(clip.title),
+                    label: clip.title,
+                    image: clip.image,
+                  }))}
+                  moreHref="/clips"
+                  moreLabel="クリップをもっと見る"
+                />
               </li>
             )}
           </React.Fragment>

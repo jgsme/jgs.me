@@ -17,6 +17,7 @@ describe("toZetListItem", () => {
     expect(toZetListItem(row({ title: "朝の散歩" }))).toEqual({
       rkey: RKEY,
       href: `/pages/zet%3A${RKEY}`,
+      atUri: `at://did:web:ds.jgs.me/me.jgs.diary.zet/${RKEY}`,
       heading: "朝の散歩",
       title: "朝の散歩",
       date: "2026-10-11",

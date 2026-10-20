@@ -26,6 +26,7 @@ pnpm kind <url|id> <kind>        # clip.kind を書き換える (link/quote/phot
 pnpm kind --csv <path>           # CSV から一括で書き換える
 pnpm md-backfill                 # 検索インデックス用の md (w-md) を既存ページぶん埋める
 pnpm zet-rehost                  # 取り込み済み zet の画像を PDS の blob から w-media に写す
+pnpm clip-margin [--dry-run]     # clip を Margin の at.margin.note として PDS に書き、clips コレクションに入れる
 
 # Lint
 pnpm lint:tokens  # design token から外れた書き方を検出する

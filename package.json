@@ -16,7 +16,8 @@
     "gyazo": "pnpm --filter cli gyazo",
     "kind": "pnpm --filter cli kind",
     "md-backfill": "pnpm --filter cli md-backfill",
-    "zet-rehost": "pnpm --filter cli zet-rehost"
+    "zet-rehost": "pnpm --filter cli zet-rehost",
+    "clip-margin": "pnpm --filter cli clip-margin"
   },
   "devDependencies": {
     "prettier": "^3.9.6",

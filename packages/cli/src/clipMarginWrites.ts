@@ -38,19 +38,24 @@ const CLOCK_BITS = 10n;
 const CLOCK_MASK = 1023;
 const MICROS_PER_MS = 1000n;
 
+/** createdAt の時刻と 10 bit の clock id から TID を作る */
+export function tid(createdAt: string, clock: number): string {
+  const ms = Date.parse(createdAt);
+  if (Number.isNaN(ms)) throw new Error(`createdAt を読めない: ${createdAt}`);
+  const n =
+    ((BigInt(ms) * MICROS_PER_MS) << CLOCK_BITS) | BigInt(clock & CLOCK_MASK);
+  return Array.from({ length: TID_LENGTH }, (_, i) => {
+    const shift = BigInt(TID_LENGTH - 1 - i) * TID_CHAR_BITS;
+    return TID_ALPHABET[Number((n >> shift) & TID_CHAR_MASK)];
+  }).join("");
+}
+
 /**
  * clip から決まる TID。時刻は clip の createdAt、clock id は clip id の下位 10 bit。
  * 同じ clip は何度流しても同じ rkey になるので、update (upsert) で上書きするだけで済む
  */
 export function clipTid(createdAt: string, clipId: number): string {
-  const ms = Date.parse(createdAt);
-  if (Number.isNaN(ms)) throw new Error(`createdAt を読めない: ${createdAt}`);
-  const n =
-    ((BigInt(ms) * MICROS_PER_MS) << CLOCK_BITS) | BigInt(clipId & CLOCK_MASK);
-  return Array.from({ length: TID_LENGTH }, (_, i) => {
-    const shift = BigInt(TID_LENGTH - 1 - i) * TID_CHAR_BITS;
-    return TID_ALPHABET[Number((n >> shift) & TID_CHAR_MASK)];
-  }).join("");
+  return tid(createdAt, clipId);
 }
 
 /** note 1 件と、それを clips コレクションに入れる collectionItem 1 件 */

@@ -11,5 +11,5 @@ jobs:
     steps:
       - uses: gwennlbh/to-tangled@v0.6
         with:
-          repo: ds.jgs.me/jgs.me
+          repo: jgs.me/jgs.me
           ssh-key: ${{ secrets.JGSME_MIRROR }}

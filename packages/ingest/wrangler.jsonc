@@ -48,7 +48,7 @@
     {
       // /internal/crawl が取ったページの原本と md。
       "binding": "CRAWL",
-      "bucket_name": "w-crawl",
+      "bucket_name": "archive",
     },
   ],
   "ai": {

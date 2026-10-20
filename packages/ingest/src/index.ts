@@ -14,6 +14,7 @@ import { handleLinkIndex } from "./linkIndex";
 import { handleMdBackfill } from "./mdBackfill";
 import { handleZetRehost } from "./zetBlob";
 import { handleClipNotes } from "./clipNotes";
+import { handleCrawlGet, handleCrawlPost } from "./crawl";
 
 export interface Env {
   DB: D1Database;
@@ -30,6 +31,10 @@ export interface Env {
   // 記事ページのエッジキャッシュを消す口 (web の POST /internal/purge)。
   WEB: Fetcher;
   PURGE_TOKEN: string;
+  // toMarkdown で crawl したページを md にする。
+  AI: Ai;
+  // crawl したページの原本と md。
+  CRAWL: R2Bucket;
 }
 
 function unauthorized(): Response {
@@ -94,6 +99,12 @@ export default {
     // clip を Margin の at.margin.note に写した形で返す。PDS への書き込みは CLI がやる。
     if (request.method === "POST" && url.pathname === "/internal/clip-notes") {
       return handleClipNotes(request, env);
+    }
+
+    // ページを取って md にして w-crawl に置く。GET は置いたものを返す。
+    if (url.pathname === "/internal/crawl") {
+      if (request.method === "POST") return handleCrawlPost(request, env);
+      if (request.method === "GET") return handleCrawlGet(request, env);
     }
 
     // 類似度計算の対象。article として公開しているページだけを返す。

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   clipTid,
+  deletesFor,
   reportLines,
   writesFor,
   type ClipNoteItem,
@@ -57,6 +58,29 @@ describe("writesFor", () => {
     expect(
       writesFor(item({ note: undefined, skip: "x" }), DID, COLLECTION),
     ).toEqual([]);
+  });
+});
+
+describe("deletesFor", () => {
+  it("collectionItem と note を同じ rkey で消す", () => {
+    const rkey = clipTid(CREATED, CLIP_ID);
+
+    expect(deletesFor(item())).toEqual([
+      {
+        $type: "com.atproto.repo.applyWrites#delete",
+        collection: "at.margin.collectionItem",
+        rkey,
+      },
+      {
+        $type: "com.atproto.repo.applyWrites#delete",
+        collection: "at.margin.note",
+        rkey,
+      },
+    ]);
+  });
+
+  it("note が無ければ何も積まない", () => {
+    expect(deletesFor(item({ note: undefined, skip: "x" }))).toEqual([]);
   });
 });
 

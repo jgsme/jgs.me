@@ -1,4 +1,5 @@
 import {
+  deletesFor,
   reportLines,
   writesFor,
   type ClipNoteItem,
@@ -23,10 +24,12 @@ type Envelope = {
 
 type Session = { readonly did: string; readonly accessJwt: string };
 
+type Mode = "write" | "dry-run" | "delete";
+
 function usage(): never {
   console.error(
     [
-      "usage: pnpm clip-margin [--dry-run]",
+      "usage: pnpm clip-margin [--dry-run | --delete]",
       "",
       "  clip を Margin の at.margin.note として PDS (ds.jgs.me) に書き、",
       "  clips コレクションに入れる (at.margin.collectionItem)。",
@@ -35,6 +38,8 @@ function usage(): never {
       "  出典 URL を拾えなかった clip は書かずに skip として標準出力に出す。",
       "",
       "  --dry-run  PDS に書かず、変換結果の集計と skip / warn だけ出す",
+      "  --delete   書いた note と collectionItem を消す。Margin に届け直すときは",
+      "             これを流してから、付けずにもう一度流す",
       "",
       "  環境変数: INGEST_URL / SIMILARITY_TOKEN",
       "            PDS_IDENTIFIER / PDS_PASSWORD (--dry-run では不要)",
@@ -131,7 +136,7 @@ type Totals = {
 };
 
 async function run(
-  dryRun: boolean,
+  mode: Mode,
   cursor: number,
   session: Session | null,
   totals: Totals,
@@ -144,32 +149,45 @@ async function run(
       ? null
       : await applyWrites(
           session,
-          writable.flatMap((i) => writesFor(i, session.did, collection)),
+          writable.flatMap((i) =>
+            mode === "delete"
+              ? deletesFor(i)
+              : writesFor(i, session.did, collection),
+          ),
         );
 
   const seen = totals.seen + r.processed;
-  console.error(`clip-margin: ${seen} clips${dryRun ? " (dry-run)" : ""}`);
+  console.error(`clip-margin: ${seen} clips (${mode})`);
   const after: Totals = {
     seen,
     written: totals.written + writable.length,
     lines: [...totals.lines, ...reportLines(r.items)],
   };
-  return r.nextCursor === null ? after : run(dryRun, r.nextCursor, next, after);
+  return r.nextCursor === null ? after : run(mode, r.nextCursor, next, after);
 }
 
 async function main(): Promise<void> {
   const args = process.argv.slice(ARGV_OFFSET);
-  const dryRun = args.includes("--dry-run");
-  if (args.some((a) => a !== "--dry-run")) usage();
+  const flags = new Map<string, Mode>([
+    ["--dry-run", "dry-run"],
+    ["--delete", "delete"],
+  ]);
+  if (args.length > 1 || args.some((a) => !flags.has(a))) usage();
+  const mode = flags.get(args[0] ?? "") ?? "write";
 
-  const session = dryRun ? null : await createSession();
-  const totals = await run(dryRun, 0, session, {
+  const session = mode === "dry-run" ? null : await createSession();
+  const totals = await run(mode, 0, session, {
     seen: 0,
     written: 0,
     lines: [],
   });
 
-  const verb = dryRun ? "would write" : "wrote";
+  const verbs = new Map<Mode, string>([
+    ["write", "wrote"],
+    ["dry-run", "would write"],
+    ["delete", "deleted"],
+  ]);
+  const verb = verbs.get(mode);
   const skipped = totals.lines.filter((l) => l.startsWith("skip")).length;
   console.log(
     `${totals.seen} clips, ${verb} ${totals.written}, skipped ${skipped}`,

@@ -38,7 +38,7 @@ describe("runClipNotes", () => {
 
     expect(r.items.map((i) => i.skip)).toEqual([
       undefined,
-      "出典 URL が見つからない",
+      undefined,
       "本文が読めない",
     ]);
     expect(r.items[0]?.note?.target.source).toBe("https://example.com/a");

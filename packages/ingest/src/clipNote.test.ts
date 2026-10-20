@@ -5,11 +5,8 @@ const created = "2022-09-21 12:34:56";
 const TAGS_MAX = 10;
 const TAGS_GIVEN = TAGS_MAX + 2;
 
-async function note(body: string, title = "題") {
-  const r = await buildClipNote({ title, created, body });
-  if (!r.ok) throw new Error(r.reason);
-  return r;
-}
+const note = (body: string, title = "題") =>
+  buildClipNote({ title, created, body });
 
 describe("buildClipNote", () => {
   it("diary の link clip は card の URL を出典にして bookmarking にする", async () => {
@@ -31,12 +28,12 @@ describe("buildClipNote", () => {
     expect(r.note.target.title).toBe("Ladle | Ladle");
     expect(r.note.target.selector).toBeUndefined();
     expect(r.note.body?.value).toBe("Storybook と互換性があるらしい");
-    expect(r.note.tags).toEqual(["Storybook", "Uber"]);
+    expect(r.note.tags).toEqual(["Uber"]);
     expect(r.note.createdAt).toBe("2022-09-21T12:34:56.000Z");
-    expect(r.warnings).toEqual(["画像を落とした"]);
+    expect(r.warnings).toEqual([]);
   });
 
-  it("アーカイブの [題 URL] 行は出典にして本文から抜く", async () => {
+  it("アーカイブの [題 URL] 行は出典にし、内部リンクだけの行は tags にする", async () => {
     const body = [
       "What the Flux?",
       "[What the Flux? http://jaysoo.ca/2015/02/06/what-the-flux/]",
@@ -49,7 +46,7 @@ describe("buildClipNote", () => {
     expect(r.note.target.source).toBe(
       "http://jaysoo.ca/2015/02/06/what-the-flux/",
     );
-    expect(r.note.body?.value).toBe("flux ddd");
+    expect(r.note.body).toBeUndefined();
     expect(r.note.tags).toEqual(["flux", "ddd"]);
   });
 
@@ -72,7 +69,6 @@ describe("buildClipNote", () => {
       exact: "DHHは LIQUID と書いていました。\nLess Indirection",
     });
     expect(r.note.body?.value).toBe("> 2つ目の引用\nなるほど");
-    expect(r.warnings).toContain("2つ目以降の引用を本文に入れた");
   });
 
   it("引用だけなら highlighting", async () => {
@@ -99,10 +95,29 @@ describe("buildClipNote", () => {
     expect(r.note.target.source).toBe("https://example.com/c");
   });
 
-  it("出典が無ければ skip", async () => {
-    const r = await buildClipNote({ title: "題", created, body: "題\n[Core]" });
+  it("文中の内部リンクは文字にするだけで tags にしない", async () => {
+    const r = await note("題\n[https://example.com/a]\n[Core] の話 #memo");
 
-    expect(r).toEqual({ ok: false, reason: "出典 URL が見つからない" });
+    expect(r.note.body?.value).toBe("Core の話 #memo");
+    expect(r.note.tags).toEqual(["memo"]);
+  });
+
+  it("他の Scrapbox project へのリンクは scrapbox.io の URL を出典にする", async () => {
+    const r = await note("題\n[/yuta25/2022/8/12]\nおつかれさまでした");
+
+    expect(r.note.target.source).toBe("https://scrapbox.io/yuta25/2022/8/12");
+    expect(r.note.body?.value).toBe("おつかれさまでした");
+  });
+
+  it("出典が無ければ jgs.me の自分のページを target にする", async () => {
+    const r = await note("君の名は\n[Core]\n感想", "君の名は");
+
+    expect(r.note.target.source).toBe(
+      "https://w.jgs.me/pages/%E5%90%9B%E3%81%AE%E5%90%8D%E3%81%AF",
+    );
+    expect(r.warnings).toEqual([
+      "出典が無いので jgs.me のページを target にした",
+    ]);
   });
 
   it("本文の 1 行目に題が繰り返されていたら落とす", async () => {

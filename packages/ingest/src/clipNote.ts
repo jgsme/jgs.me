@@ -7,6 +7,7 @@ import {
   type Line,
   type Node,
 } from "@progfay/scrapbox-parser";
+import { pagePath } from "@jigsaw/db/page-path";
 
 export type ClipNoteInput = {
   readonly title: string;
@@ -32,13 +33,10 @@ export type MarginNote = {
   readonly createdAt: string;
 };
 
-export type ClipNoteResult =
-  | {
-      readonly ok: true;
-      readonly note: MarginNote;
-      readonly warnings: readonly string[];
-    }
-  | { readonly ok: false; readonly reason: string };
+export type ClipNoteResult = {
+  readonly note: MarginNote;
+  readonly warnings: readonly string[];
+};
 
 // 自サイトの画像と記事は clip の出典ではない (diary の clip-import と同じ規則)。
 const SKIP_HOSTS: ReadonlySet<string> = new Set([
@@ -47,6 +45,9 @@ const SKIP_HOSTS: ReadonlySet<string> = new Set([
   "gyazo.com",
   "i.gyazo.com",
 ]);
+
+const SCRAPBOX_ORIGIN = "https://scrapbox.io";
+const SITE_URL = "https://w.jgs.me";
 
 // lexicon の上限。
 const BODY_MAX = 3000;
@@ -105,11 +106,7 @@ const NODE_TEXT: {
   commandLine: (n) => `${n.symbol} ${n.text}`,
   helpfeel: (n) => `? ${n.text}`,
   formula: (n) => n.formula,
-  link: (n, c) => {
-    if (n.pathType === "absolute") return n.content || n.href;
-    c.tags.push(n.href);
-    return n.href;
-  },
+  link: (n) => (n.pathType === "absolute" ? n.content || n.href : n.href),
   hashTag: (n, c) => {
     c.tags.push(n.href);
     return `#${n.href}`;
@@ -127,16 +124,11 @@ function nodeText(n: Node, c: Collect): string {
   return f(n, c);
 }
 
-// 行が出典リンク 1 つだけでできているか ([題 URL] / [URL 題] / [URL])。
+// 行が出典リンク 1 つだけでできているか ([題 URL] / [URL 題] / [URL] / [/project/page])。
 function isSourceOnlyLine(line: Line, url: string): boolean {
   const nodes = solidNodes(line);
   const only = nodes[0];
-  return (
-    nodes.length === 1 &&
-    only?.type === "link" &&
-    only.pathType === "absolute" &&
-    only.href === url
-  );
+  return nodes.length === 1 && only !== undefined && linkSource(only) === url;
 }
 
 const MEDIA_TYPES: ReadonlySet<Node["type"]> = new Set([
@@ -151,9 +143,17 @@ function isMediaOnlyLine(line: Line): boolean {
   return nodes.length > 0 && nodes.every((n) => MEDIA_TYPES.has(n.type));
 }
 
+const isTagNode = (n: Node): boolean =>
+  n.type === "hashTag" || (n.type === "link" && n.pathType === "relative");
+
+// ハッシュタグと内部リンクだけの行は Scrapbox でのタグ付け。本文には入れず tags にする。
 function isTagOnlyLine(line: Line): boolean {
   const nodes = solidNodes(line);
-  return nodes.length > 0 && nodes.every((n) => n.type === "hashTag");
+  return nodes.length > 0 && nodes.every(isTagNode);
+}
+
+function tagOf(n: Node): readonly string[] {
+  return isTagNode(n) && "href" in n ? [n.href] : [];
 }
 
 const isQuoteLine = (line: Line): boolean => line.nodes[0]?.type === "quote";
@@ -170,10 +170,16 @@ function linksOf(n: Node): readonly Node[] {
   return [];
 }
 
-function absoluteSource(n: Node): string | null {
-  return n.type === "link" && n.pathType === "absolute"
-    ? sourceUrl(n.href)
-    : null;
+// [/project/page] は他の Scrapbox project のページ。
+function scrapboxUrl(href: string): string {
+  return `${SCRAPBOX_ORIGIN}${href.split("/").map(encodeURIComponent).join("/")}`;
+}
+
+function linkSource(n: Node): string | null {
+  if (n.type !== "link") return null;
+  if (n.pathType === "absolute") return sourceUrl(n.href);
+  if (n.pathType === "root") return scrapboxUrl(n.href);
+  return null;
 }
 
 function findSource(blocks: readonly Block[]): string | null {
@@ -188,7 +194,7 @@ function findSource(blocks: readonly Block[]): string | null {
 
   const fromLink = blocks
     .flatMap((b) => (b.type === "line" ? b.nodes.flatMap(linksOf) : []))
-    .map(absoluteSource)
+    .map(linkSource)
     .find((u) => u !== null);
   return fromLink ?? null;
 }
@@ -246,15 +252,10 @@ type Walk = {
 
 function stepLine(w: Walk, b: Line, source: string, c: Collect): Walk {
   if (isSourceOnlyLine(b, source)) return w;
-  if (isMediaOnlyLine(b)) {
-    return {
-      ...w,
-      inQuote: false,
-      warnings: [...w.warnings, "画像を落とした"],
-    };
-  }
+  // 画像は置く場所が無い。ほぼ全部が unfurl のサムネなので warn にもしない。
+  if (isMediaOnlyLine(b)) return { ...w, inQuote: false };
   if (isTagOnlyLine(b)) {
-    b.nodes.forEach((n) => nodeText(n, c));
+    c.tags.push(...b.nodes.flatMap(tagOf));
     return w;
   }
 
@@ -314,8 +315,9 @@ export async function buildClipNote(
   input: ClipNoteInput,
 ): Promise<ClipNoteResult> {
   const blocks = parse(input.body);
-  const source = findSource(blocks);
-  if (!source) return { ok: false, reason: "出典 URL が見つからない" };
+  // 出典の無い clip (メモやスクショだけのもの) は jgs.me の自分のページを target にする。
+  const found = findSource(blocks);
+  const source = found ?? `${SITE_URL}${pagePath(input.title)}`;
 
   const c: Collect = { tags: [] };
   const init: Walk = {
@@ -333,7 +335,7 @@ export async function buildClipNote(
 
   const warnings = [
     ...w.warnings,
-    ...(w.quotes.length > 1 ? ["2つ目以降の引用を本文に入れた"] : []),
+    ...(found ? [] : ["出典が無いので jgs.me のページを target にした"]),
     ...(tags.length < new Set(c.tags).size ? ["タグを間引いた"] : []),
     ...(exact && [...exact].length > EXACT_MAX ? ["引用を切り詰めた"] : []),
     ...([...bodyText].length > BODY_MAX ? ["本文を切り詰めた"] : []),
@@ -362,5 +364,5 @@ export async function buildClipNote(
     createdAt: toIsoDatetime(input.created),
   };
 
-  return { ok: true, note, warnings: [...new Set(warnings)] };
+  return { note, warnings: [...new Set(warnings)] };
 }

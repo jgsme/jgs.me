@@ -42,9 +42,7 @@ async function convert(
       created: row.created,
       body,
     });
-    return r.ok
-      ? { ...base, note: r.note, warnings: r.warnings }
-      : { ...base, skip: r.reason };
+    return { ...base, note: r.note, warnings: r.warnings };
   } catch (e) {
     // 1 件の例外でリクエストごと 500 にすると nextCursor が返らず、同じ cursor で止まり続ける。
     return { ...base, skip: e instanceof Error ? e.message : String(e) };

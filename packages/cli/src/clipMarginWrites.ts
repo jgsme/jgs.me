@@ -14,12 +14,18 @@ export type ClipNoteItem = {
   readonly skip?: string;
 };
 
-export type Write = {
-  readonly $type: "com.atproto.repo.applyWrites#update";
-  readonly collection: string;
-  readonly rkey: string;
-  readonly value: Readonly<Record<string, unknown>>;
-};
+export type Write =
+  | {
+      readonly $type: "com.atproto.repo.applyWrites#update";
+      readonly collection: string;
+      readonly rkey: string;
+      readonly value: Readonly<Record<string, unknown>>;
+    }
+  | {
+      readonly $type: "com.atproto.repo.applyWrites#delete";
+      readonly collection: string;
+      readonly rkey: string;
+    };
 
 export const NOTE_COLLECTION = "at.margin.note";
 export const ITEM_COLLECTION = "at.margin.collectionItem";
@@ -75,6 +81,21 @@ export function writesFor(
       },
     },
   ];
+}
+
+/**
+ * writesFor で書いた 2 件を消す。同じ値で update しても op が中身の変わらない
+ * update になり Jetstream に流れないので、Margin に届け直すときは一度消してから書く
+ */
+export function deletesFor(item: ClipNoteItem): readonly Write[] {
+  const note = item.note;
+  if (!note) return [];
+  const rkey = clipTid(note.createdAt, item.clipId);
+  return [ITEM_COLLECTION, NOTE_COLLECTION].map((collection) => ({
+    $type: "com.atproto.repo.applyWrites#delete",
+    collection,
+    rkey,
+  }));
 }
 
 /** 人が見る行。skip と warnings があるものだけ */

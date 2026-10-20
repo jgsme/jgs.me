@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "md-backfill": "node src/mdBackfill.ts",
     "zet-rehost": "node src/zetRehost.ts",
-    "clip-margin": "node src/clipMargin.ts"
+    "clip-margin": "node src/clipMargin.ts",
+    "clip-semble": "node src/clipSemble.ts"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

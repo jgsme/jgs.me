@@ -19,14 +19,10 @@ import {
 // 1 回で 50 clip。delete は 1 clip 最大 3 write で 150、dirig の applyWrites の上限 200 に収まる。
 const PAGE_SIZE = 50;
 const ARGV_OFFSET = 2;
+const SETTLE_MS = 60_000;
+const MS_PER_SECOND = 1000;
 
 type Mode = "write" | "dry-run" | "delete";
-
-type Totals = {
-  readonly seen: number;
-  readonly written: number;
-  readonly lines: readonly string[];
-};
 
 function usage(): never {
   console.error(
@@ -58,21 +54,21 @@ function strongRef(r: WriteResult | undefined): StrongRef {
   return { uri: r.uri, cid: r.cid };
 }
 
-async function writePage(
+type Pending = { readonly clip: SembleClip; readonly card: StrongRef };
+
+/** URL カードだけ書いて、後で NOTE と link を積むための strongRef を返す */
+async function writeCards(
   session: Session,
   clips: readonly SembleClip[],
-  collection: StrongRef,
-): Promise<Session> {
-  const cards = await applyWrites(session, clips.map(urlCardWrite));
-  const rest = clips.flatMap((c, i) =>
-    followUpWrites(
-      c,
-      strongRef(cards.results[i]),
-      collection,
-      cards.session.did,
-    ),
-  );
-  return (await applyWrites(cards.session, rest)).session;
+): Promise<{
+  readonly session: Session;
+  readonly pending: readonly Pending[];
+}> {
+  const r = await applyWrites(session, clips.map(urlCardWrite));
+  return {
+    session: r.session,
+    pending: clips.map((clip, i) => ({ clip, card: strongRef(r.results[i]) })),
+  };
 }
 
 async function deletePage(
@@ -82,36 +78,45 @@ async function deletePage(
   return (await applyWrites(session, clips.flatMap(deleteWrites))).session;
 }
 
-function apply(
-  mode: Mode,
-  session: Session,
-  clips: readonly SembleClip[],
-  collection: StrongRef | null,
-): Promise<Session> {
-  if (mode === "delete") return deletePage(session, clips);
-  return writePage(session, clips, strongRef(collection ?? undefined));
-}
-
 function truncatedLines(clips: readonly SembleClip[]): readonly string[] {
   return clips
     .filter((c) => c.truncated)
     .map((c) => `warn\tc/${c.clipId}\tNOTE カードの本文を切り詰めた`);
 }
 
+type Totals = {
+  readonly seen: number;
+  readonly written: number;
+  readonly lines: readonly string[];
+  readonly pending: readonly Pending[];
+};
+
+async function step(
+  mode: Mode,
+  session: Session | null,
+  clips: readonly SembleClip[],
+): Promise<{
+  readonly session: Session | null;
+  readonly pending: readonly Pending[];
+}> {
+  if (session === null) return { session, pending: [] };
+  if (mode === "delete")
+    return { session: await deletePage(session, clips), pending: [] };
+  return writeCards(session, clips);
+}
+
 async function run(
   mode: Mode,
   cursor: number,
   session: Session | null,
-  collection: StrongRef | null,
   totals: Totals,
-): Promise<Totals> {
+): Promise<{ readonly session: Session | null; readonly totals: Totals }> {
   const r = await fetchNotes(cursor, PAGE_SIZE);
   const clips = r.items
     .map(toSembleClip)
     .filter((c): c is SembleClip => c !== null);
 
-  const next =
-    session === null ? null : await apply(mode, session, clips, collection);
+  const next = await step(mode, session, clips);
 
   const seen = totals.seen + r.processed;
   console.error(`clip-semble: ${seen} clips (${mode})`);
@@ -119,10 +124,33 @@ async function run(
     seen,
     written: totals.written + clips.length,
     lines: [...totals.lines, ...reportLines(r.items), ...truncatedLines(clips)],
+    pending: [...totals.pending, ...next.pending],
   };
   return r.nextCursor === null
-    ? after
-    : run(mode, r.nextCursor, next, collection, after);
+    ? { session: next.session, totals: after }
+    : run(mode, r.nextCursor, next.session, after);
+}
+
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * NOTE カードと collectionLink を書く。Semble は Jetstream の event を並行に処理するので、
+ * 親の URL カードが取り込まれる前に NOTE が来ると捨てられる。URL カードを全部書いて
+ * 少し待ってから流す
+ */
+async function writeFollowUps(
+  session: Session,
+  pending: readonly Pending[],
+  collection: StrongRef,
+): Promise<Session> {
+  if (pending.length === 0) return session;
+  const page = pending.slice(0, PAGE_SIZE);
+  const writes = page.flatMap((p) =>
+    followUpWrites(p.clip, p.card, collection, session.did),
+  );
+  const next = (await applyWrites(session, writes)).session;
+  return writeFollowUps(next, pending.slice(PAGE_SIZE), collection);
 }
 
 /** clips コレクションを用意して、その strongRef と session を返す */
@@ -147,13 +175,20 @@ async function main(): Promise<void> {
     session !== null && mode === "write"
       ? await ensureCollection(session)
       : null;
-  const totals = await run(
-    mode,
-    0,
-    prepared?.session ?? session,
-    prepared?.ref ?? null,
-    { seen: 0, written: 0, lines: [] },
-  );
+  const done = await run(mode, 0, prepared?.session ?? session, {
+    seen: 0,
+    written: 0,
+    lines: [],
+    pending: [],
+  });
+  const totals = done.totals;
+  if (prepared && done.session && totals.pending.length > 0) {
+    console.error(
+      `clip-semble: URL カードを書いた。${SETTLE_MS / MS_PER_SECOND} 秒待ってから NOTE と link を書く`,
+    );
+    await sleep(SETTLE_MS);
+    await writeFollowUps(done.session, totals.pending, prepared.ref);
+  }
 
   const verbs = new Map<Mode, string>([
     ["write", "wrote"],

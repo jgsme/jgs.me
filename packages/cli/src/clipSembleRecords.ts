@@ -2,7 +2,6 @@
 import { tid, type ClipNoteItem, type Write } from "./clipMarginWrites.ts";
 
 export const CARD = "network.cosmik.card";
-export const COLLECTION = "network.cosmik.collection";
 export const LINK = "network.cosmik.collectionLink";
 
 // noteContent.text の上限。lexicon の maxLength は UTF-8 のバイト数。
@@ -10,10 +9,6 @@ const NOTE_MAX_BYTES = 10000;
 // URL カードと NOTE カードは同じ collection に入るので、clock id の最上位 bit で分ける。
 const NOTE_CLOCK_BIT = 512;
 const CLIP_CLOCK_MASK = 511;
-
-// clips コレクションは 1 つだけ。rkey と createdAt を固定して、何度流しても同じ record にする。
-export const CLIPS_COLLECTION_CREATED = "2026-10-20T00:00:00.000Z";
-export const CLIPS_COLLECTION_RKEY = tid(CLIPS_COLLECTION_CREATED, 0);
 
 export type StrongRef = { readonly uri: string; readonly cid: string };
 
@@ -107,15 +102,6 @@ const remove = (collection: string, rkey: string): Write => ({
   collection,
   rkey,
 });
-
-export function collectionWrite(): Write {
-  return update(COLLECTION, CLIPS_COLLECTION_RKEY, {
-    name: "clips",
-    accessType: "CLOSED",
-    createdAt: CLIPS_COLLECTION_CREATED,
-    updatedAt: CLIPS_COLLECTION_CREATED,
-  });
-}
 
 export function urlCardWrite(c: SembleClip): Write {
   const metadata = c.title

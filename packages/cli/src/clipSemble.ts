@@ -1,6 +1,5 @@
 import { reportLines } from "./clipMarginWrites.ts";
 import {
-  collectionWrite,
   deleteWrites,
   followUpWrites,
   toSembleClip,
@@ -12,6 +11,7 @@ import {
   applyWrites,
   createSession,
   fetchNotes,
+  pdsUrl,
   type Session,
   type WriteResult,
 } from "./pdsClient.ts";
@@ -19,6 +19,9 @@ import {
 // 1 回で 50 clip。delete は 1 clip 最大 3 write で 150、dirig の applyWrites の上限 200 に収まる。
 const PAGE_SIZE = 50;
 const ARGV_OFFSET = 2;
+// Semble で作った「clips」コレクション。
+const DEFAULT_COLLECTION =
+  "at://did:web:ds.jgs.me/network.cosmik.collection/3mycbyxwmtc2q";
 const SETTLE_MS = 60_000;
 const MS_PER_SECOND = 1000;
 
@@ -30,7 +33,7 @@ function usage(): never {
       "usage: pnpm clip-semble [--dry-run | --delete]",
       "",
       "  clip を Semble の network.cosmik.card として PDS (ds.jgs.me) に書き、",
-      "  clips コレクションに入れる (network.cosmik.collectionLink)。",
+      "  Semble の clips コレクションに入れる (network.cosmik.collectionLink)。",
       "  出典 URL が URL カード、引用・本文・タグがそれにぶら下がる NOTE カードになる。",
       "",
       "  rkey は clip から決まるので、何度流しても同じ record を上書きするだけ。",
@@ -43,6 +46,7 @@ function usage(): never {
       "  環境変数: INGEST_URL / SIMILARITY_TOKEN",
       "            PDS_IDENTIFIER / PDS_PASSWORD (--dry-run では不要)",
       "            PDS_URL (既定 https://ds.jgs.me)",
+      "            SEMBLE_COLLECTION (既定 clips コレクションの at-uri)",
     ].join("\n"),
   );
   process.exit(1);
@@ -153,12 +157,18 @@ async function writeFollowUps(
   return writeFollowUps(next, pending.slice(PAGE_SIZE), collection);
 }
 
-/** clips コレクションを用意して、その strongRef と session を返す */
-async function ensureCollection(
-  session: Session,
-): Promise<{ readonly session: Session; readonly ref: StrongRef }> {
-  const r = await applyWrites(session, [collectionWrite()]);
-  return { session: r.session, ref: strongRef(r.results[0]) };
+/** collectionLink に要る clips コレクションの strongRef を PDS から引く */
+async function collectionRef(): Promise<StrongRef> {
+  const uri = process.env.SEMBLE_COLLECTION ?? DEFAULT_COLLECTION;
+  const [repo, collection, rkey] = uri.replace("at://", "").split("/");
+  const q = new URLSearchParams({
+    repo: repo ?? "",
+    collection: collection ?? "",
+    rkey: rkey ?? "",
+  });
+  const res = await fetch(`${pdsUrl()}/xrpc/com.atproto.repo.getRecord?${q}`);
+  if (!res.ok) throw new Error(`getRecord ${res.status}: ${await res.text()}`);
+  return strongRef((await res.json()) as WriteResult);
 }
 
 async function main(): Promise<void> {
@@ -171,23 +181,20 @@ async function main(): Promise<void> {
   const mode = flags.get(args[0] ?? "") ?? "write";
 
   const session = mode === "dry-run" ? null : await createSession();
-  const prepared =
-    session !== null && mode === "write"
-      ? await ensureCollection(session)
-      : null;
-  const done = await run(mode, 0, prepared?.session ?? session, {
+  const collection = mode === "write" ? await collectionRef() : null;
+  const done = await run(mode, 0, session, {
     seen: 0,
     written: 0,
     lines: [],
     pending: [],
   });
   const totals = done.totals;
-  if (prepared && done.session && totals.pending.length > 0) {
+  if (collection && done.session && totals.pending.length > 0) {
     console.error(
       `clip-semble: URL カードを書いた。${SETTLE_MS / MS_PER_SECOND} 秒待ってから NOTE と link を書く`,
     );
     await sleep(SETTLE_MS);
-    await writeFollowUps(done.session, totals.pending, prepared.ref);
+    await writeFollowUps(done.session, totals.pending, collection);
   }
 
   const verbs = new Map<Mode, string>([

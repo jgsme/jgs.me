@@ -45,7 +45,15 @@
       "binding": "MD",
       "bucket_name": "w-md",
     },
+    {
+      // /internal/crawl が取ったページの原本と md。
+      "binding": "CRAWL",
+      "bucket_name": "archive",
+    },
   ],
+  "ai": {
+    "binding": "AI",
+  },
   "services": [
     {
       // 記事公開を ActivityPub の fan-out に繋ぐ内部呼び出し。

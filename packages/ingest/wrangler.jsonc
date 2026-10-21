@@ -52,6 +52,7 @@
     },
   ],
   "ai": {
+    // crawl の toMarkdown と、news の clef 中継 (POST /internal/clef) が使う。
     "binding": "AI",
   },
   "services": [

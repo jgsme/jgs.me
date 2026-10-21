@@ -15,6 +15,7 @@ import { handleMdBackfill } from "./mdBackfill";
 import { handleZetRehost } from "./zetBlob";
 import { handleClipNotes } from "./clipNotes";
 import { handleCrawlGet, handleCrawlPost } from "./crawl";
+import { handleClef } from "./clef";
 
 export interface Env {
   DB: D1Database;
@@ -31,10 +32,12 @@ export interface Env {
   // 記事ページのエッジキャッシュを消す口 (web の POST /internal/purge)。
   WEB: Fetcher;
   PURGE_TOKEN: string;
-  // toMarkdown で crawl したページを md にする。
+  // toMarkdown で crawl したページを md にする。news の clef 中継 (POST /internal/clef) も使う。
   AI: Ai;
   // crawl したページの原本と md。
   CRAWL: R2Bucket;
+  // 任意。設定すると clef を AI Gateway 経由で呼ぶ。
+  AI_GATEWAY_ID?: string;
 }
 
 function unauthorized(): Response {
@@ -105,6 +108,11 @@ export default {
     if (url.pathname === "/internal/crawl") {
       if (request.method === "POST") return handleCrawlPost(request, env);
       if (request.method === "GET") return handleCrawlGet(request, env);
+    }
+
+    // news が clef を呼ぶ中継。state と questions をそのまま渡し、結果もそのまま返す。
+    if (request.method === "POST" && url.pathname === "/internal/clef") {
+      return handleClef(request, env);
     }
 
     // 類似度計算の対象。article として公開しているページだけを返す。

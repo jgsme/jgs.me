@@ -21,7 +21,7 @@
     "clip-semble": "pnpm --filter cli clip-semble"
   },
   "devDependencies": {
-    "prettier": "^3.9.6",
+    "prettier": "^3.9.10",
     "wrangler": "catalog:"
   }
 }

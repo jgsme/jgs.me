@@ -37,7 +37,7 @@
     "@types/three": "^0.185.4",
     "autoprefixer": "^10.6.1",
     "happy-dom": "^20.14.5",
-    "postcss": "^8.5.29",
+    "postcss": "^8.5.31",
     "tailwindcss": "^4.3.3",
     "typescript": "catalog:",
     "vite": "^7.3.6",

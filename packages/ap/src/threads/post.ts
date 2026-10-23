@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { articles, clips, pages, zets } from "@jigsaw/db";
+import { pageDisplayTitle } from "@jigsaw/db/zet";
 import { getDB, type Env } from "../db";
 import { SITE_URL, shareURL } from "../config";
 import { resolveContent } from "../content";
@@ -32,9 +33,12 @@ export async function createContainer(
       id: pages.id,
       title: pages.title,
       bodyKey: pages.bodyKey,
+      spoiler: pages.spoiler,
       articleID: articles.id,
       clipID: clips.id,
       zetRkey: zets.rkey,
+      zetTitle: zets.title,
+      zetDate: zets.date,
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
@@ -50,7 +54,11 @@ export async function createContainer(
   }
 
   const html = await resolveContent(page.bodyKey, env.R2, SITE_URL, page.title);
-  const params = buildContainerParams({ html, url: shareURL(page.id) });
+  const params = buildContainerParams({
+    html,
+    url: shareURL(page.id),
+    ...(page.spoiler ? { spoiler: { title: pageDisplayTitle(page) } } : {}),
+  });
 
   // resolveContent は R2 に本文が無いと "" を返す。TEXT 投稿は text 必須なので
   // 空のまま投げても弾かれるだけ。これも retry では直らない。

@@ -16,6 +16,8 @@ export type ZetListItem = {
   image: string | null;
   // 本文の抜粋 (記法を落とした先頭 200 字)。画像だけの本文だと空になるので null。
   excerpt: string | null;
+  // ネタバレなら抜粋の代わりに印を出す。
+  spoiler: boolean;
 };
 
 export type ZetTimelineItem = ZetListItem & {
@@ -29,6 +31,7 @@ type Row = {
   date: string;
   image: string | null;
   excerpt: string | null;
+  spoiler?: boolean;
 };
 
 export function toZetListItem(row: Row): ZetListItem {
@@ -45,7 +48,8 @@ export function toZetListItem(row: Row): ZetListItem {
     year,
     monthDay: `${month}/${day}`,
     image: row.image,
-    excerpt: row.excerpt === "" ? null : row.excerpt,
+    excerpt: row.spoiler || row.excerpt === "" ? null : row.excerpt,
+    spoiler: row.spoiler ?? false,
   };
 }
 

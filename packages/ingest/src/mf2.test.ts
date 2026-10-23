@@ -68,6 +68,35 @@ describe("parseEntry", () => {
     expect(parseEntry(VALID).inReplyTo).toBeNull();
   });
 
+  it("spoiler が無ければ false", () => {
+    expect(parseEntry(VALID).spoiler).toBe(false);
+  });
+
+  it('spoiler: ["true"] を読む', () => {
+    const e = parseEntry({
+      ...VALID,
+      properties: { ...VALID.properties, spoiler: ["true"] },
+    });
+    expect(e.spoiler).toBe(true);
+  });
+
+  it('spoiler: ["false"] は false', () => {
+    const e = parseEntry({
+      ...VALID,
+      properties: { ...VALID.properties, spoiler: ["false"] },
+    });
+    expect(e.spoiler).toBe(false);
+  });
+
+  it("spoiler が読めなければ throw", () => {
+    expect(() =>
+      parseEntry({
+        ...VALID,
+        properties: { ...VALID.properties, spoiler: ["yes"] },
+      }),
+    ).toThrow("spoiler must be a boolean");
+  });
+
   it("photo を取り出す", () => {
     const e = parseEntry({
       ...VALID,

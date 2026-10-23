@@ -58,6 +58,8 @@ export type ZetRecord = {
   date: string;
   // ISO8601 UTC に正規化した値。page.created に入る。
   createdAt: string;
+  // diary のネタバレの印。省かれていれば false。
+  spoiler: boolean;
 };
 
 // dirig は lexicon を検証しないので、形はここで確かめる。
@@ -84,6 +86,9 @@ export function parseZetRecordValue(value: unknown): ZetRecord {
   if (v.title !== undefined && typeof v.title !== "string") {
     throw new Error("record title must be a string");
   }
+  if (v.spoiler !== undefined && typeof v.spoiler !== "boolean") {
+    throw new Error("record spoiler must be a boolean");
+  }
   const title =
     typeof v.title === "string" && v.title.trim() !== "" ? v.title : null;
   return {
@@ -91,6 +96,7 @@ export function parseZetRecordValue(value: unknown): ZetRecord {
     title,
     date: v.date,
     createdAt: new Date(v.createdAt).toISOString(),
+    spoiler: v.spoiler === true,
   };
 }
 

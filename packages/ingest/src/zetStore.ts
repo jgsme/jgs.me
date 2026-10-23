@@ -44,6 +44,7 @@ export function zetCreateStatements(db: DB, input: ZetCreateInput): Batch {
       created: input.created,
       updated: input.created,
       image: input.image,
+      spoiler: input.spoiler,
     }),
     db.insert(zets).values({
       pageID,
@@ -85,7 +86,11 @@ export function zetUpdateStatements(db: DB, input: ZetUpdateInput): Batch {
     // page.title / bodyKey は変えない (rkey と R2 のキーは record の一生で不変)。
     db
       .update(pages)
-      .set({ image: input.image, updated: input.updated })
+      .set({
+        image: input.image,
+        spoiler: input.spoiler,
+        updated: input.updated,
+      })
       .where(eq(pages.id, input.pageID)),
     db
       .update(zets)

@@ -98,3 +98,37 @@ describe("buildPostRecord", () => {
     expect(facets[0]!.index.byteStart).toBe(4);
   });
 });
+
+describe("buildPostRecord: ネタバレ", () => {
+  const spoiler = {
+    ...base,
+    html: "<p>犯人は執事</p>",
+    url: "https://w.jgs.me/p/1",
+    spoiler: true,
+  };
+
+  it("本文の代わりに題と URL だけを出す", () => {
+    const r = buildPostRecord(spoiler);
+    expect(r.text).toBe("ネタバレ注意: テスト記事 https://w.jgs.me/p/1");
+  });
+
+  it("カードの description は空", () => {
+    const r = buildPostRecord(spoiler) as {
+      embed: { external: { description: string; title: string } };
+    };
+    expect(r.embed.external.description).toBe("");
+    expect(r.embed.external.title).toBe("テスト記事");
+  });
+
+  it("題が長くても URL を残して 300 grapheme に収める", () => {
+    const r = buildPostRecord({ ...spoiler, title: "あ".repeat(400) });
+    const text = r.text as string;
+    expect(countGraphemes(text)).toBeLessThanOrEqual(300);
+    expect(text.endsWith(" https://w.jgs.me/p/1")).toBe(true);
+  });
+
+  it("URL に facet を張る", () => {
+    const r = buildPostRecord(spoiler);
+    expect(r.facets).toHaveLength(1);
+  });
+});

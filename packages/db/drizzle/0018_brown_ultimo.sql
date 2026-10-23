@@ -1,0 +1,1 @@
+ALTER TABLE `page` ADD `spoiler` integer DEFAULT false NOT NULL;

@@ -32,6 +32,7 @@ const found = (
       title: null,
       date: "2026-10-11",
       createdAt: "2026-10-11T01:00:00.000Z",
+      spoiler: false,
       ...over,
     },
     raw: '{"uri":"x"}',
@@ -137,6 +138,7 @@ describe("ingestZet: create", () => {
         bodyKey: "sb-new",
         created: "2026-10-11T01:00:00.000Z",
         image: R2,
+        spoiler: false,
         date: "2026-10-11",
         zetTitle: null,
         atUri: AT_URI,
@@ -147,6 +149,15 @@ describe("ingestZet: create", () => {
       },
     ]);
     expect(calls.update).toEqual([]);
+  });
+
+  it("ネタバレの zet は spoiler を立て、画像をサムネに使わない", async () => {
+    const { deps, calls } = fake({
+      getRecord: async () => found({ spoiler: true }),
+    });
+    await ingestZet(payload, deps);
+    expect(calls.create[0]!.spoiler).toBe(true);
+    expect(calls.create[0]!.image).toBeNull();
   });
 
   it("題があれば zetTitle に入れる", async () => {
@@ -223,6 +234,7 @@ describe("ingestZet: update", () => {
         pageID: 7,
         updated: "2026-10-11T02:00:00.000Z",
         image: R2,
+        spoiler: false,
         date: "2026-10-10",
         zetTitle: "改題",
         cid: "bafycid2",

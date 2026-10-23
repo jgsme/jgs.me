@@ -1,5 +1,6 @@
 import { objectURI, shareURL } from "./config";
 import { ACTOR_URI } from "./actor";
+import { SPOILER_LABEL, spoilerHtml } from "./spoiler";
 
 export const PUBLIC = "https://www.w3.org/ns/activitystreams#Public";
 
@@ -10,6 +11,7 @@ export type PageRow = {
   title: string;
   created: string;
   updated: string;
+  spoiler?: boolean;
 };
 
 export type AS2Article = {
@@ -24,6 +26,7 @@ export type AS2Article = {
   url: string;
   attributedTo: string;
   to: string[];
+  sensitive?: boolean;
 };
 
 export type AS2Note = {
@@ -31,6 +34,8 @@ export type AS2Note = {
   id: string;
   type: "Note";
   content: string;
+  summary?: string;
+  sensitive?: boolean;
   published: string;
   updated: string;
   url: string;
@@ -77,6 +82,16 @@ export function summarize(html: string, maxLength = SUMMARY_MAX): string {
 }
 
 export function toArticle(page: PageRow, contentHtml: string): AS2Article {
+  if (page.spoiler) {
+    // 本文は出さず、CW 欄に「ネタバレ」と出す。sensitive は Mastodon が
+    // summary を CW として扱う合図。
+    return {
+      ...toArticle({ ...page, spoiler: false }, ""),
+      content: spoilerHtml(shareURL(page.id)),
+      summary: SPOILER_LABEL,
+      sensitive: true,
+    };
+  }
   return {
     "@context": ["https://www.w3.org/ns/activitystreams"],
     // id は page.id 由来なので改題しても変わらない。
@@ -106,6 +121,15 @@ export function toArticle(page: PageRow, contentHtml: string): AS2Article {
 // name を持つ Note は題付きの特殊な投稿として扱われることがあり、
 // summary は CW 欄になって短い clip がわざわざ折り畳まれる。
 export function toNote(page: PageRow, contentHtml: string): AS2Note {
+  if (page.spoiler) {
+    // Note は普段 summary を出さないが、ネタバレのときだけ CW を掛ける。
+    return {
+      ...toNote({ ...page, spoiler: false }, ""),
+      content: spoilerHtml(shareURL(page.id)),
+      summary: SPOILER_LABEL,
+      sensitive: true,
+    };
+  }
   return {
     "@context": ["https://www.w3.org/ns/activitystreams"],
     id: objectURI(page.id),

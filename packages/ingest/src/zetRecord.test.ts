@@ -108,7 +108,18 @@ describe("parseZetRecordValue", () => {
       title: null,
       date: "2026-10-11",
       createdAt: "2026-10-11T01:00:00.000Z",
+      spoiler: false,
     });
+  });
+
+  it("spoiler: true を読む", () => {
+    expect(parseZetRecordValue(value({ spoiler: true })).spoiler).toBe(true);
+  });
+
+  it("spoiler が boolean でなければ throw", () => {
+    expect(() => parseZetRecordValue(value({ spoiler: "true" }))).toThrow(
+      "record spoiler must be a boolean",
+    );
   });
 
   it("題があれば読む", () => {

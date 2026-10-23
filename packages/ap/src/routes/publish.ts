@@ -57,6 +57,7 @@ publish.post("/internal/publish", async (c) => {
         created: pages.created,
         updated: pages.updated,
         bodyKey: pages.bodyKey,
+        spoiler: pages.spoiler,
         articleID: articles.id,
         clipID: clips.id,
         zetRkey: zets.rkey,
@@ -84,7 +85,10 @@ publish.post("/internal/publish", async (c) => {
     // source は h-entry を持つ人間向けページ。/o/<n> ではない。
     // 受信側は source を fetch して mf2 を読むため、302 を返す URI を渡すと
     // リダイレクトを追わない実装に弾かれる。
-    const outlinks = await extractOutlinks(content, SITE_URL);
+    // ネタバレの page は送らない。受信側は source を読んで本文を抜粋する。
+    const outlinks = page.spoiler
+      ? []
+      : await extractOutlinks(content, SITE_URL);
     if (outlinks.length > 0) {
       const source = articleURL(page.title);
       await c.env.WM_SEND.sendBatch(

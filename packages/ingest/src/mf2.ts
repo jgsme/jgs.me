@@ -7,6 +7,8 @@ export type Entry = {
   categories: string[];
   inReplyTo: string | null;
   photo: string | null;
+  // diary のネタバレの印。SNS に本文を出さず、ページでは押すまで伏せる。
+  spoiler: boolean;
 };
 
 type Props = Record<string, unknown>;
@@ -37,6 +39,17 @@ function readContent(props: Props): string | null {
     );
   }
   return null;
+}
+
+// 読めない値は false に倒さず投げる。黙って false にすると、伏せたつもりの
+// 本文が Bluesky などに流れる。
+function readSpoiler(props: Props): boolean {
+  const v = props["spoiler"];
+  if (v === undefined) return false;
+  const value = Array.isArray(v) ? v[0] : v;
+  if (value === true || value === "true") return true;
+  if (value === false || value === "false" || value === undefined) return false;
+  throw new Error("spoiler must be a boolean");
 }
 
 export function parseEntry(payload: unknown): Entry {
@@ -77,6 +90,7 @@ export function parseEntry(payload: unknown): Entry {
     categories: stringList(props, "category"),
     inReplyTo: firstString(props, "in-reply-to"),
     photo: firstString(props, "photo"),
+    spoiler: readSpoiler(props),
   };
 }
 

@@ -1,4 +1,4 @@
-// clip を PDS に書く CLI (clip-margin / clip-semble) で共有する HTTP の部分。
+// clip を PDS に書く CLI (clip-margin) の HTTP の部分。
 import type { ClipNoteItem, Write } from "./clipMarginWrites.ts";
 
 const DEFAULT_PDS_URL = "https://ds.jgs.me";

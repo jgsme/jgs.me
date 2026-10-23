@@ -48,3 +48,15 @@ describe("buildContainerParams", () => {
     expect(MAX_THREADS_GRAPHEMES).toBe(500);
   });
 });
+
+describe("buildContainerParams: ネタバレ", () => {
+  it("本文の代わりに題と URL だけを出す", () => {
+    const p = buildContainerParams({
+      html: "<p>犯人は執事</p>",
+      url: "https://w.jgs.me/p/1",
+      spoiler: { title: "ミステリの感想" },
+    });
+    expect(p.text).toBe("ネタバレ注意: ミステリの感想 https://w.jgs.me/p/1");
+    expect(p.linkAttachment).toBe("https://w.jgs.me/p/1");
+  });
+});

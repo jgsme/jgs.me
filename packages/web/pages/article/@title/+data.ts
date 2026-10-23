@@ -13,6 +13,7 @@ import { pickRandom } from "@/utils/pickRandom";
 import { pageTitleFromUrl } from "@/utils/pageTitle";
 import { buildArticleBody } from "./articleBody";
 import { articleHeading } from "./heading";
+import { SPOILER_NOTICE } from "@/utils/spoiler";
 
 // bge-m3 の cosine は下駄が高く 0.5 未満がほぼ出ないため、絶対的な意味はない。
 // ノイズ切りの調整つまみ。0.60 で全 article の 7% が候補 0 件になる。
@@ -35,6 +36,7 @@ const data = async (c: Context) => {
       clipId: clips.id,
       clipKind: clips.kind,
       bodyKey: pages.bodyKey,
+      spoiler: pages.spoiler,
       created: pages.created,
       date: articles.date,
       zetId: zets.id,
@@ -57,6 +59,7 @@ const data = async (c: Context) => {
   // 引用を大きく出すか、動画を大きく出すかは kind だけで決める (+Page.tsx)。
   // clip でなければ null。
   const clipKind = pageInfo[0]?.clipKind ?? null;
+  const spoiler = pageInfo[0]?.spoiler ?? false;
   const created = pageInfo[0]?.created ?? "";
   // zet (diary の日々の断片) も記事と同じこのページで出す。zet.date は
   // NOT NULL なので、zetDate が null なら zet ではない。
@@ -146,7 +149,8 @@ const data = async (c: Context) => {
 
   const built = buildArticleBody(body);
   const filteredBlocks = built.blocks;
-  const description = built.description;
+  // og:description は Bluesky / Threads のカードに出るので本文から作らない。
+  const description = spoiler ? SPOILER_NOTICE : built.description;
   const fromDate =
     storedDate ??
     resolveArticleDate({
@@ -173,6 +177,7 @@ const data = async (c: Context) => {
     atUri,
     clipKind,
     blocks: filteredBlocks,
+    spoiler,
     fromDate,
     description,
     related,

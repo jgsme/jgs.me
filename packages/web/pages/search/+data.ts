@@ -20,6 +20,7 @@ type SearchResult = {
   title: string;
   snippet: string;
   score: number;
+  spoiler: boolean;
 };
 
 const data = async (c: Context) => {
@@ -71,6 +72,7 @@ const data = async (c: Context) => {
     .select({
       bodyKey: pages.bodyKey,
       title: pages.title,
+      spoiler: pages.spoiler,
       // article と clip の両方に登録されているページがあるので join ではなく
       // exists で引く。join だと行が増える。列を ${} で埋めると select 句では
       // 修飾されず、サブクエリ内の "id" が article.id に化けるので直書きする。
@@ -93,7 +95,15 @@ const data = async (c: Context) => {
     if (row === undefined) return [];
     const kinds = { isArticle: row.isArticle === 1, isClip: row.isClip === 1 };
     if (!matchesSearchType(kinds, type)) return [];
-    return [{ title: row.title, snippet: hit.snippet, score: hit.score }];
+    // 本文は検索に掛かるが、ネタバレの抜粋は見せない。
+    return [
+      {
+        title: row.title,
+        snippet: row.spoiler ? "" : hit.snippet,
+        score: hit.score,
+        spoiler: row.spoiler,
+      },
+    ];
   });
 
   return {

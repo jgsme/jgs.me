@@ -23,6 +23,7 @@ export type ZetCreateInput = {
   bodyKey: string;
   created: string;
   image: string | null;
+  spoiler: boolean;
   date: string;
   zetTitle: string | null;
   atUri: string;
@@ -38,6 +39,7 @@ export type ZetUpdateInput = {
   pageID: number;
   updated: string;
   image: string | null;
+  spoiler: boolean;
   date: string;
   zetTitle: string | null;
   cid: string;
@@ -127,7 +129,9 @@ export async function ingestZet(
   // 1 行目が題 (body.ts)。読み側は先頭を題として捨てる。
   const body = buildSbBody(pageTitle, text);
   const links = extractLinks(body);
-  const image = firstImageURL(text);
+  // ネタバレの zet は画像もネタバレになりうるので、サムネと OG 画像に使わない。
+  const image = record.spoiler ? null : firstImageURL(text);
+  const spoiler = record.spoiler;
   const mf2 = JSON.stringify(payload);
   const location = zetURL(ref.rkey);
 
@@ -138,6 +142,7 @@ export async function ingestZet(
         pageID: existing.pageID,
         updated: deps.now(),
         image,
+        spoiler,
         date: record.date,
         zetTitle: record.title,
         cid,
@@ -175,6 +180,7 @@ export async function ingestZet(
       bodyKey,
       created: record.createdAt,
       image,
+      spoiler,
       date: record.date,
       zetTitle: record.title,
       atUri: ref.atUri,

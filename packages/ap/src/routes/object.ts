@@ -38,6 +38,7 @@ objectRoute.get("/o/:id", async (c) => {
       created: pages.created,
       updated: pages.updated,
       bodyKey: pages.bodyKey,
+      spoiler: pages.spoiler,
       articleID: articles.id,
       clipID: clips.id,
       zetRkey: zets.rkey,

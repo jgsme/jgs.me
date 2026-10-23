@@ -8,6 +8,7 @@ import { buildArticleBody } from "@/pages/article/@title/articleBody";
 import type { Bindings } from "../types";
 import { articlePath, clipPath } from "@/utils/permalink";
 import { buildRssXml, type RssFeedItem } from "./rssFeed";
+import { SPOILER_NOTICE } from "@/utils/spoiler";
 
 const rss = new Hono<{ Bindings: Bindings }>();
 
@@ -18,11 +19,25 @@ const FEED_LIMIT = 20;
 // id は article / clip のもので、permalink (linkPath) の材料。
 async function toFeedItems(
   r2: Bindings["R2"],
-  rows: { id: number; title: string; bodyKey: string; created: string }[],
+  rows: {
+    id: number;
+    title: string;
+    bodyKey: string;
+    created: string;
+    spoiler: boolean;
+  }[],
   linkPath: (id: number) => string,
 ): Promise<RssFeedItem[]> {
   return Promise.all(
     rows.map(async (row) => {
+      if (row.spoiler) {
+        return {
+          title: row.title,
+          linkPath: linkPath(row.id),
+          created: row.created,
+          description: SPOILER_NOTICE,
+        };
+      }
       const body = await fetchBody(r2, row.bodyKey, row.title);
       return {
         title: row.title,
@@ -47,6 +62,7 @@ rss.get("/rss.xml", async (c) => {
       title: pages.title,
       bodyKey: pages.bodyKey,
       created: pages.created,
+      spoiler: pages.spoiler,
     })
     .from(articles)
     .innerJoin(pages, eq(articles.pageID, pages.id))
@@ -77,6 +93,7 @@ rss.get("/clips.xml", async (c) => {
       title: pages.title,
       bodyKey: pages.bodyKey,
       created: pages.created,
+      spoiler: pages.spoiler,
     })
     .from(clips)
     .innerJoin(pages, eq(clips.pageID, pages.id))

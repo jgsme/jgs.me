@@ -3,6 +3,7 @@ import { useData } from "vike-react/useData";
 import { tileImageSources } from "@/utils/listImage";
 import { pdslsUrl } from "@jigsaw/db/zet";
 import type data from "./+data";
+import { SPOILER_LABEL } from "@/utils/spoiler";
 
 const Page = () => {
   const d = useData<Awaited<ReturnType<typeof data>>>();
@@ -39,6 +40,9 @@ const Page = () => {
               <div className="min-w-0">
                 {zet.title && (
                   <div className="font-bold text-lg mb-1">{zet.title}</div>
+                )}
+                {zet.spoiler && (
+                  <p className="text-fg-subtle text-sm">{SPOILER_LABEL}</p>
                 )}
                 {zet.excerpt && <p className="line-clamp-3">{zet.excerpt}</p>}
               </div>

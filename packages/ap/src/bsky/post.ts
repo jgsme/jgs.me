@@ -46,6 +46,7 @@ export async function postToBsky(pageID: number, env: Env): Promise<void> {
       created: pages.created,
       updated: pages.updated,
       bodyKey: pages.bodyKey,
+      spoiler: pages.spoiler,
       articleID: articles.id,
       clipID: clips.id,
       zetRkey: zets.rkey,
@@ -78,6 +79,7 @@ export async function postToBsky(pageID: number, env: Env): Promise<void> {
     html,
     url,
     thumb,
+    spoiler: page.spoiler,
   });
 
   const session = await getSession(env);

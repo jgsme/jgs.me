@@ -120,13 +120,15 @@ web の `@/*` は `packages/web/` 基準（`tsconfig.json` と `vite.config.ts`�
 
 ### Database Schema
 
-| Table           | Fields / purpose                                                      |
-| --------------- | --------------------------------------------------------------------- |
-| `page`          | Scrapbox / Micropub ページ (id, title, created, updated, image, sbID) |
-| `article`       | 登録済み記事 (id, pageID, created, date)                              |
-| `excluded_page` | 除外ページ (id, pageID, created)                                      |
-| `clip`          | clip (id, pageID, created, kind)                                      |
-| `zet`           | diary の日々の断片 (id, pageID, rkey, date, title, created)           |
+| Table           | Fields / purpose                                                               |
+| --------------- | ------------------------------------------------------------------------------ |
+| `page`          | Scrapbox / Micropub ページ (id, title, created, updated, image, sbID, spoiler) |
+| `article`       | 登録済み記事 (id, pageID, created, date)                                       |
+| `excluded_page` | 除外ページ (id, pageID, created)                                               |
+| `clip`          | clip (id, pageID, created, kind)                                               |
+| `zet`           | diary の日々の断片 (id, pageID, rkey, date, title, created)                    |
+
+`page.spoiler` は diary が付けるネタバレの印 (article は Micropub の `spoiler` property、zet は record の `spoiler`)。立っている page は Bluesky / Threads / ActivityPub に題と URL だけを出し、Webmention を送らず、`page.image` を持たない。web は記事ページの本文を HTML に描いたまま hidden で隠し、「表示する」を押すと見せる (bot には読ませる)。zets 一覧・検索・RSS・og:description で抜粋を伏せる。
 
 zet の本体は PDS (ds.jgs.me) の `me.jgs.diary.zet` record。`page.title` は内部用の `zet:<rkey>`、公開 URL は `/pages/zet%3A<rkey>`。表示名は `@jigsaw/db/zet` の `pageDisplayTitle` を使う。at-uri と CID は `copy` (protocol = `atproto-zet`) に置く。
 

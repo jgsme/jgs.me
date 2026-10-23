@@ -27,6 +27,7 @@ const data = async (c: Context) => {
         image: pages.image,
         pageTitle: pages.title,
         bodyKey: pages.bodyKey,
+        spoiler: pages.spoiler,
       })
       .from(zets)
       // page を引けない zet があっても壊れたリンクを出さない (/clips と同じ)。
@@ -42,6 +43,8 @@ const data = async (c: Context) => {
   // ingest で D1 に持たせると、作り方を変えるたびに全件 backfill になる。
   const withExcerpt = await Promise.all(
     rows.map(async ({ pageTitle, bodyKey, ...row }) => {
+      // ネタバレは抜粋を出さないので本文も読まない。
+      if (row.spoiler) return { ...row, excerpt: null };
       const body = await fetchBody(c.env.R2, bodyKey, pageTitle);
       return {
         ...row,

@@ -2,6 +2,7 @@ import React from "react";
 import { useData } from "vike-react/useData";
 import type data from "./+data";
 import { pagePath } from "@jigsaw/db/page-path";
+import { SPOILER_LABEL } from "@/utils/spoiler";
 import { searchPath, type SearchType } from "@/utils/searchResults";
 import {
   isSameSearch,
@@ -81,7 +82,7 @@ const Page = () => {
             <a href={pagePath(result.title)} className="block hover:opacity-70">
               <div className="font-bold text-lg mb-2">{result.title}</div>
               <p className="text-fg-muted text-sm line-clamp-3">
-                {result.snippet}
+                {result.spoiler ? SPOILER_LABEL : result.snippet}
               </p>
             </a>
           </li>

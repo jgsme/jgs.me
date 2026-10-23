@@ -25,6 +25,7 @@ describe("toZetListItem", () => {
       monthDay: "10/11",
       image: null,
       excerpt: null,
+      spoiler: false,
     });
   });
 
@@ -44,6 +45,12 @@ describe("toZetListItem", () => {
 
   it("空の抜粋 (画像だけの本文) は null にする", () => {
     expect(toZetListItem(row({ excerpt: "" })).excerpt).toBeNull();
+  });
+
+  it("ネタバレは抜粋を出さず印を立てる", () => {
+    const item = toZetListItem(row({ excerpt: "犯人は執事", spoiler: true }));
+    expect(item.excerpt).toBeNull();
+    expect(item.spoiler).toBe(true);
   });
 });
 

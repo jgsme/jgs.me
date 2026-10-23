@@ -17,6 +17,7 @@ const createInput = (links: string[] = []): ZetCreateInput => ({
   bodyKey: "sb-new",
   created: "2026-10-11T01:00:00.000Z",
   image: null,
+  spoiler: false,
   date: "2026-10-11",
   zetTitle: null,
   atUri: AT_URI,
@@ -30,6 +31,7 @@ const updateInput = (links: string[] = []): ZetUpdateInput => ({
   pageID: 7,
   updated: "2026-10-11T02:00:00.000Z",
   image: "https://example.com/a.png",
+  spoiler: true,
   date: "2026-10-10",
   zetTitle: "改題",
   cid: "bafycid2",
@@ -111,6 +113,13 @@ describe("zetUpdateStatements", () => {
       "https://w.jgs.me/o/7",
       "atproto-zet",
     ]);
+  });
+
+  it("page の画像と spoiler を書き換える", () => {
+    const page = sqlOf(zetUpdateStatements(db, updateInput())[0]);
+    expect(page.sql).toMatch(/"spoiler" = \?/);
+    expect(page.params).toContain("https://example.com/a.png");
+    expect(page.params).toContain(1);
   });
 
   it("zet の題と日付を書き換える", () => {

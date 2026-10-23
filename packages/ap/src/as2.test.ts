@@ -173,3 +173,29 @@ describe("toNote", () => {
     ]);
   });
 });
+
+describe("ネタバレ", () => {
+  const page = { ...PAGE, spoiler: true };
+
+  it("Article は本文を出さず、CW に「ネタバレ」を掛ける", () => {
+    const a = toArticle(page, "<p>犯人は執事</p>");
+    expect(a.content).not.toContain("犯人");
+    expect(a.content).toContain("ネタバレ注意");
+    expect(a.content).toContain("https://w.jgs.me/p/1234");
+    expect(a.summary).toBe("ネタバレ");
+    expect(a.sensitive).toBe(true);
+    expect(a.name).toBe("テスト記事");
+  });
+
+  it("Note も本文を出さず CW を掛ける", () => {
+    const n = toNote(page, "<p>犯人は執事</p>");
+    expect(n.content).not.toContain("犯人");
+    expect(n.summary).toBe("ネタバレ");
+    expect(n.sensitive).toBe(true);
+  });
+
+  it("ネタバレでなければ sensitive を出さない", () => {
+    expect(toArticle(PAGE, "<p>本文</p>").sensitive).toBeUndefined();
+    expect(toNote(PAGE, "<p>本文</p>").sensitive).toBeUndefined();
+  });
+});

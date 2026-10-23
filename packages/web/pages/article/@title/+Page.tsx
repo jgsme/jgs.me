@@ -5,6 +5,7 @@ import { ScrapboxBlock } from "./components/ScrapboxBlock";
 import { QuoteRun } from "./components/QuoteRun";
 import { groupQuoteRuns } from "./components/quote";
 import { CopyButton } from "./components/CopyButton";
+import { SpoilerGate } from "./components/SpoilerGate";
 import { shareUrlPath } from "./components/shareUrl";
 import { RelatedPages } from "./components/RelatedPages";
 import { Backlinks } from "./components/Backlinks";
@@ -127,18 +128,20 @@ const Page = () => {
         <div
           className={`e-content space-y-1 ${videoClip ? "clip-video-body" : ""}`}
         >
-          {quoteClip
-            ? // 引用が主役のページでは、連続する引用行を 1 つの引用として出す。
-              groupQuoteRuns(d.blocks).map((item, i) =>
-                item.type === "quoteRun" ? (
-                  <QuoteRun key={i} lines={item.lines} indent={item.indent} />
-                ) : (
-                  <ScrapboxBlock key={i} block={item.block} emphasizeQuote />
-                ),
-              )
-            : d.blocks.map((block, i) => (
-                <ScrapboxBlock key={i} block={block} photo={photoClip} />
-              ))}
+          <SpoilerGate spoiler={d.spoiler}>
+            {quoteClip
+              ? // 引用が主役のページでは、連続する引用行を 1 つの引用として出す。
+                groupQuoteRuns(d.blocks).map((item, i) =>
+                  item.type === "quoteRun" ? (
+                    <QuoteRun key={i} lines={item.lines} indent={item.indent} />
+                  ) : (
+                    <ScrapboxBlock key={i} block={item.block} emphasizeQuote />
+                  ),
+                )
+              : d.blocks.map((block, i) => (
+                  <ScrapboxBlock key={i} block={block} photo={photoClip} />
+                ))}
+          </SpoilerGate>
         </div>
 
         {titleBelow && header}

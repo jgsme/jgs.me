@@ -2,8 +2,9 @@ import { toISO } from "../as2";
 import { summarize } from "../as2";
 import type { BlobRef } from "./blob";
 import { linkFacets } from "./facets";
-import { MAX_GRAPHEMES, truncateGraphemes } from "./text";
+import { MAX_GRAPHEMES, countGraphemes, truncateGraphemes } from "./text";
 import { htmlToText } from "../text";
+import { spoilerText } from "../spoiler";
 
 export type PostInput = {
   title: string;
@@ -13,19 +14,32 @@ export type PostInput = {
   html: string;
   url: string;
   thumb: BlobRef | null;
+  spoiler?: boolean;
 };
+
+function fitTitle(title: string, url: string): string {
+  const room = MAX_GRAPHEMES - countGraphemes(spoilerText("", url));
+  const capped = truncateGraphemes(title, room);
+  return capped.truncated
+    ? `${truncateGraphemes(title, room - 1).text}…`
+    : capped.text;
+}
 
 // app.bsky.feed.post のレコードを組み立てる。副作用を持たせない。
 export function buildPostRecord(input: PostInput): Record<string, unknown> {
-  const { title, created, html, url, thumb } = input;
+  const { title, created, html, url, thumb, spoiler } = input;
 
+  // ネタバレは本文を出さず、題と URL だけにする。題が長くても URL が切れない
+  // よう、題の側を詰める。
   // 本文を 300 grapheme に収める。切り詰めは grapheme cluster 単位。
   // 上限ちょうどは切らない。超えたときだけ末尾の … の分を1つ空ける。
   const plain = htmlToText(html);
   const capped = truncateGraphemes(plain, MAX_GRAPHEMES);
-  const text = capped.truncated
-    ? `${truncateGraphemes(plain, MAX_GRAPHEMES - 1).text}…`
-    : capped.text;
+  const text = spoiler
+    ? spoilerText(fitTitle(title, url), url)
+    : capped.truncated
+      ? `${truncateGraphemes(plain, MAX_GRAPHEMES - 1).text}…`
+      : capped.text;
 
   const record: Record<string, unknown> = {
     $type: "app.bsky.feed.post",
@@ -40,7 +54,7 @@ export function buildPostRecord(input: PostInput): Record<string, unknown> {
       external: {
         uri: url,
         title,
-        description: summarize(html, 200),
+        description: spoiler ? "" : summarize(html, 200),
         ...(thumb ? { thumb } : {}),
       },
     },

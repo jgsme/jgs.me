@@ -26,6 +26,9 @@ export const pages = sqliteTable(
     // <bodyKey>.sb、1行目が題の Scrapbox 記法プレーンテキスト)。
     // DB のカラム名は歴史的経緯で sbID のまま。
     bodyKey: text("sbID").notNull(),
+    // diary でネタバレの印を付けた page。SNS へは本文を出さず、ページでは
+    // 押すまで本文を伏せる。
+    spoiler: integer("spoiler", { mode: "boolean" }).notNull().default(false),
   },
   // title は /pages/<title> の実キー。重複すると片方が引けなくなり、
   // Micropub の update も「同題が 2 件」で弾かれる。今 0 件なので貼れる。

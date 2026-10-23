@@ -127,6 +127,13 @@
       "when": 1791718570929,
       "tag": "0017_tricky_skullbuster",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1792724838514,
+      "tag": "0018_brown_ultimo",
+      "breakpoints": true
     }
   ]
 }

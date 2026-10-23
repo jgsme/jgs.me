@@ -58,6 +58,7 @@ function pageData(
         clipId: 1,
         fromDate: null,
         description: "",
+        spoiler: false,
       }
     : { ...common, ok: false };
 }

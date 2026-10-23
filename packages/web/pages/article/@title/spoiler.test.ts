@@ -37,11 +37,11 @@ function articleData(spoiler: boolean): Data {
   };
 }
 
-it("ネタバレの記事は本文を描かず、表示するボタンを出す", () => {
+it("ネタバレの記事は本文を HTML に残したまま隠し、表示するボタンを出す", () => {
   vi.mocked(useData).mockReturnValue(articleData(true));
   const html = renderToString(createElement(Page));
 
-  expect(html).not.toContain("犯人は執事");
+  expect(html).toMatch(/<div hidden=""[^>]*>.*犯人は執事/s);
   expect(html).toContain("表示する");
   expect(html).toMatch(/<h1[^>]*>ミステリの感想<\/h1>/);
 });

@@ -5,6 +5,7 @@ import { getDB, type Env } from "../db";
 import { SITE_URL, USER_AGENT, objectURI, shareURL } from "../config";
 import { resolveContent } from "../content";
 import { publishedKind } from "../published";
+import { grainURLForEmptyZet } from "../grain";
 import { buildPostRecord } from "./record";
 import { uploadOgThumb } from "./blob";
 import { ENTRYWAY, getSession, invalidateSession } from "./session";
@@ -67,7 +68,9 @@ export async function postToBsky(pageID: number, env: Env): Promise<void> {
 
   const html = await resolveContent(page.bodyKey, env.R2, SITE_URL, page.title);
   // SNS に貼るのは /p/<n>。/pages/<title> は改題で壊れる。
-  const url = shareURL(page.id);
+  // 画像だけの zet は本文が空になるので、Grain の gallery を貼る。
+  const url =
+    (await grainURLForEmptyZet(page.zetRkey, html)) ?? shareURL(page.id);
   const thumb = await uploadOgThumb(pageID, env);
 
   const record = buildPostRecord({

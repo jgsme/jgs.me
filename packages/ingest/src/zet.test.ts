@@ -128,22 +128,6 @@ describe("ingestZet: create", () => {
     expect(calls.create[0]!.image).toBe(`${BLOB}#.png`);
   });
 
-  it("syndication を足した payload も mf2 にそのまま入れて 201 を返す", async () => {
-    const { deps, calls } = fake();
-    const withGrain = {
-      ...payload,
-      properties: {
-        ...payload.properties,
-        syndication: [
-          "https://grain.social/profile/did:web:ds.jgs.me/gallery/3mya474kmbdtf",
-        ],
-      },
-    };
-    const res = await ingestZet(withGrain, deps);
-    expect(res.status).toBe(201);
-    expect(calls.create[0]!.mf2).toBe(JSON.stringify(withGrain));
-  });
-
   it("page / zet / object / copy に入れる値を渡す", async () => {
     const { deps, calls } = fake();
     await ingestZet(payload, deps);

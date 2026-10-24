@@ -1,44 +1,16 @@
+import { ZET_DID } from "@jigsaw/db/zet";
 import { USER_AGENT } from "../config";
 
-const GRAIN_ORIGIN = "https://grain.social/";
+const GALLERY_COLLECTION = "social.grain.gallery";
 
-// Micropub 通知の mf2 (JSON 文字列) から Grain の gallery URL を取り出す。
-// properties.syndication のうち https://grain.social/ で始まる最初の文字列だけ。
-export function grainUrlFromMf2(mf2: string | null): string | null {
-  if (!mf2) return null;
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(mf2);
-  } catch {
-    return null;
-  }
-  const props = (parsed as { properties?: { syndication?: unknown } } | null)
-    ?.properties;
-  const list = props?.syndication;
-  if (!Array.isArray(list)) return null;
-  const hit = list.find(
-    (v): v is string => typeof v === "string" && v.startsWith(GRAIN_ORIGIN),
-  );
-  return hit ?? null;
+// diary は gallery を zet と同じ rkey で PDS に置く。rkey だけで at-uri と URL が決まる。
+export function grainGalleryAtUri(rkey: string): string {
+  return `at://${ZET_DID}/${GALLERY_COLLECTION}/${rkey}`;
 }
 
-// https://grain.social/profile/<actor>/gallery/<rkey> を gallery の at-uri にする。
-// 形が違えば null。
-export function galleryAtUri(grainUrl: string): string | null {
-  let url: URL;
-  try {
-    url = new URL(grainUrl);
-  } catch {
-    return null;
-  }
-  if (url.origin !== "https://grain.social") return null;
-  const m = /^\/profile\/([^/]+)\/gallery\/([^/]+)$/.exec(url.pathname);
-  if (!m) return null;
-  try {
-    return `at://${decodeURIComponent(m[1]!)}/social.grain.gallery/${m[2]}`;
-  } catch {
-    return null;
-  }
+// DID はエンコードしない (grain.social の URL は did:web:... のまま)。
+export function grainGalleryUrl(rkey: string): string {
+  return `https://grain.social/profile/${ZET_DID}/gallery/${rkey}`;
 }
 
 // Grain の AppView が gallery をまだ取り込んでいない間は、URL を投稿しても
@@ -50,7 +22,7 @@ export class GrainNotIndexedError extends Error {
   }
 }
 
-type FetchFn = (input: string, init?: RequestInit) => Promise<Response>;
+export type FetchFn = (input: string, init?: RequestInit) => Promise<Response>;
 
 // getGallery が 200 を返したら取り込み済み。未取り込みは 400 (Gallery not found)、
 // 一時障害は 502 などで返るので、200 以外とネットワーク失敗は全部「まだ」とみなす。
@@ -68,4 +40,30 @@ export async function isGrainIndexed(
   } catch {
     return false;
   }
+}
+
+// diary が Grain に gallery を出したかを PDS で確かめる。diary は Grain への書き込みを
+// Micropub 通知より前に済ませるので、通知を受けた時点で record の有無は確定している。
+// 無い record は 400 RecordNotFound (ingest の fetchZetRecord と同じ判定)。
+// 判定できないとき (5xx・他の 400・通信失敗) に false へ倒すと、画像だけの zet が
+// 本文空で二度と投稿されないので throw して queue の retry に任せる。
+export async function hasGrainGallery(
+  rkey: string,
+  f: FetchFn = (i, init) => fetch(i, init),
+): Promise<boolean> {
+  const u = new URL("https://ds.jgs.me/xrpc/com.atproto.repo.getRecord");
+  u.searchParams.set("repo", ZET_DID);
+  u.searchParams.set("collection", GALLERY_COLLECTION);
+  u.searchParams.set("rkey", rkey);
+  const res = await f(u.toString(), {
+    headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
+  });
+  if (res.status === 200) return true;
+  if (res.status === 400) {
+    const err = (await res.json().catch(() => null)) as {
+      error?: unknown;
+    } | null;
+    if (err?.error === "RecordNotFound") return false;
+  }
+  throw new Error(`PDS の gallery 確認に失敗: ${res.status} (rkey=${rkey})`);
 }

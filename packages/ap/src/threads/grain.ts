@@ -13,8 +13,9 @@ export function grainGalleryUrl(rkey: string): string {
   return `https://grain.social/profile/${ZET_DID}/gallery/${rkey}`;
 }
 
-// Grain の AppView が gallery をまだ取り込んでいない間は、URL を投稿しても
-// リンク先が 404 になる。待てば直るので、通常の失敗と区別して遅延 retry する。
+// Grain の AppView が gallery をまだ取り込んでいない間も grain.social は 200 を返すが、
+// OGP が汎用 (Gallery on Grain + 既定画像) になる。Threads の投稿は後から直せないので、
+// 通常の失敗と区別して遅延 retry する。
 export class GrainNotIndexedError extends Error {
   constructor(atUri: string) {
     super(`grain.social に gallery が取り込まれていない: ${atUri}`);

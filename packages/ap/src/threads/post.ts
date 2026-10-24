@@ -67,7 +67,7 @@ export async function createContainer(
   // (article / clip は Grain に出ない)。判定に失敗したら throw して retry に乗せる。
   let grainUrl: string | null = null;
   if (page.zetRkey && (await hasGrainGallery(page.zetRkey))) {
-    // 取り込み前の URL を出すとリンク先が 404 になる。待てば直るので投げて遅延 retry させる。
+    // 取り込み前に出すとリンクカードが汎用になる。待てば直るので投げて遅延 retry させる。
     const atUri = grainGalleryAtUri(page.zetRkey);
     if (!(await isGrainIndexed(atUri))) throw new GrainNotIndexedError(atUri);
     grainUrl = grainGalleryUrl(page.zetRkey);

@@ -58,11 +58,14 @@ describe("isGrainIndexed", () => {
   const at = "at://did:web:ds.jgs.me/social.grain.gallery/3mya474kmbdtf";
   it("getGallery に at-uri を渡し、200 なら true", async () => {
     const seen: string[] = [];
-    const ok = await isGrainIndexed(at, async (u) => {
+    const uas: string[] = [];
+    const ok = await isGrainIndexed(at, async (u, init) => {
       seen.push(u);
+      uas.push(new Headers(init?.headers).get("User-Agent") ?? "");
       return new Response("{}", { status: 200 });
     });
     expect(ok).toBe(true);
+    expect(uas[0]).toContain("jgs-me/");
     expect(seen[0]).toBe(
       "https://grain.social/xrpc/social.grain.unspecced.getGallery?gallery=" +
         encodeURIComponent(at),

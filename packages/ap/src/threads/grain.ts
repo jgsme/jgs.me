@@ -1,3 +1,5 @@
+import { USER_AGENT } from "../config";
+
 const GRAIN_ORIGIN = "https://grain.social/";
 
 // Micropub 通知の mf2 (JSON 文字列) から Grain の gallery URL を取り出す。
@@ -60,6 +62,7 @@ export async function isGrainIndexed(
   try {
     const res = await f(
       `https://grain.social/xrpc/social.grain.unspecced.getGallery?gallery=${encodeURIComponent(atUri)}`,
+      { headers: { "User-Agent": USER_AGENT } },
     );
     return res.status === 200;
   } catch {

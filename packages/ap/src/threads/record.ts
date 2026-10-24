@@ -13,6 +13,9 @@ export type ThreadsPostInput = {
   url: string;
   // ネタバレなら本文の代わりに題と URL だけを出す。
   spoiler?: { title: string };
+  // Grain に出した画像だけの zet。あれば本文の代わりにこの URL だけを出す
+  // (link_attachment も同じ URL で、Threads 側がカードを作る)。
+  grainUrl?: string | null;
 };
 
 export type ContainerParams = {
@@ -23,6 +26,9 @@ export type ContainerParams = {
 // container 作成に渡すパラメータを組み立てる。副作用を持たせない。
 // 上限ちょうどは切らない。超えたときだけ末尾の … の分を1つ空ける。
 export function buildContainerParams(input: ThreadsPostInput): ContainerParams {
+  if (input.grainUrl) {
+    return { text: input.grainUrl, linkAttachment: input.grainUrl };
+  }
   if (input.spoiler) {
     const title = truncateGraphemes(input.spoiler.title, 200);
     return {

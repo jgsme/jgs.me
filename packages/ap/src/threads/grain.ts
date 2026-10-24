@@ -38,3 +38,31 @@ export function galleryAtUri(grainUrl: string): string | null {
     return null;
   }
 }
+
+// Grain の AppView が gallery をまだ取り込んでいない間は、URL を投稿しても
+// リンク先が 404 になる。待てば直るので、通常の失敗と区別して遅延 retry する。
+export class GrainNotIndexedError extends Error {
+  constructor(atUri: string) {
+    super(`grain.social に gallery が取り込まれていない: ${atUri}`);
+    this.name = "GrainNotIndexedError";
+  }
+}
+
+type FetchFn = (input: string, init?: RequestInit) => Promise<Response>;
+
+// getGallery が 200 を返したら取り込み済み。未取り込みは 400 (Gallery not found)、
+// 一時障害は 502 などで返るので、200 以外とネットワーク失敗は全部「まだ」とみなす。
+// Workers の fetch は素の参照を渡すと Illegal invocation になるのでラップする。
+export async function isGrainIndexed(
+  atUri: string,
+  f: FetchFn = (i, init) => fetch(i, init),
+): Promise<boolean> {
+  try {
+    const res = await f(
+      `https://grain.social/xrpc/social.grain.unspecced.getGallery?gallery=${encodeURIComponent(atUri)}`,
+    );
+    return res.status === 200;
+  } catch {
+    return false;
+  }
+}

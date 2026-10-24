@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { articles, clips, pages, zets } from "@jigsaw/db";
+import { articles, clips, objects, pages, zets } from "@jigsaw/db";
 import { pageDisplayTitle } from "@jigsaw/db/zet";
 import { getDB, type Env } from "../db";
 import { SITE_URL, shareURL } from "../config";
@@ -8,6 +8,12 @@ import { publishedKind } from "../published";
 import { notifyDiscord } from "../notify";
 import { buildContainerParams } from "./record";
 import { requestContainer } from "./client";
+import {
+  GrainNotIndexedError,
+  galleryAtUri,
+  grainUrlFromMf2,
+  isGrainIndexed,
+} from "./grain";
 import { withToken } from "./token";
 
 // container を作って creation_id を返す。publish は別 queue が受け持つ。
@@ -39,11 +45,13 @@ export async function createContainer(
       zetRkey: zets.rkey,
       zetTitle: zets.title,
       zetDate: zets.date,
+      mf2: objects.mf2,
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
     .leftJoin(clips, eq(clips.pageID, pages.id))
     .leftJoin(zets, eq(zets.pageID, pages.id))
+    .leftJoin(objects, eq(objects.pageID, pages.id))
     .where(eq(pages.id, pageID))
     .limit(1);
 
@@ -54,9 +62,20 @@ export async function createContainer(
   }
 
   const html = await resolveContent(page.bodyKey, env.R2, SITE_URL, page.title);
+
+  // 画像だけの zet は本文が空なので、Grain の gallery URL をリンクカードで投稿する。
+  // gallery の at-uri に直せない URL は無いものとして扱う。
+  const grainUrl = grainUrlFromMf2(page.mf2);
+  const atUri = grainUrl && galleryAtUri(grainUrl);
+  // 取り込み前の URL を出すとリンク先が 404 になる。待てば直るので投げて遅延 retry させる。
+  if (atUri && !(await isGrainIndexed(atUri))) {
+    throw new GrainNotIndexedError(atUri);
+  }
+
   const params = buildContainerParams({
     html,
     url: shareURL(page.id),
+    ...(atUri ? { grainUrl } : {}),
     ...(page.spoiler ? { spoiler: { title: pageDisplayTitle(page) } } : {}),
   });
 

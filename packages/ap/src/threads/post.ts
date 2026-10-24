@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { articles, clips, objects, pages, zets } from "@jigsaw/db";
 import { pageDisplayTitle } from "@jigsaw/db/zet";
 import { getDB, type Env } from "../db";
-import { SITE_URL, shareURL } from "../config";
+import { SITE_URL, objectURI, shareURL } from "../config";
 import { resolveContent } from "../content";
 import { publishedKind } from "../published";
 import { notifyDiscord } from "../notify";
@@ -51,7 +51,10 @@ export async function createContainer(
     .leftJoin(articles, eq(articles.pageID, pages.id))
     .leftJoin(clips, eq(clips.pageID, pages.id))
     .leftJoin(zets, eq(zets.pageID, pages.id))
-    .leftJoin(objects, eq(objects.pageID, pages.id))
+    // objects.pageID は unique ではないので id (主キー) で引く。自分の object の
+    // id は常に objectURI(pageID)。sourceProtocol では絞らない (zet の行は
+    // atproto で入り、mf2 に Micropub の payload を持つ)。
+    .leftJoin(objects, eq(objects.id, objectURI(pageID)))
     .where(eq(pages.id, pageID))
     .limit(1);
 

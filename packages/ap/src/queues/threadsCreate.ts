@@ -1,10 +1,14 @@
 import type { Env, ThreadsCreateMessage } from "../db";
 import { notifyDiscord } from "../notify";
+import { GrainNotIndexedError } from "../threads/grain";
 import { createContainer } from "../threads/post";
 
 // wrangler.jsonc の ap-threads-create consumer の max_retries と揃える。
 // 片方だけ変えると最終試行の判定がずれて通知が出なくなるので、必ず両方直す。
 const MAX_RETRIES = 3;
+
+// Grain の取り込みは数十秒〜数分かかる。既定の即時 retry だと 3 回を数秒で使い切る。
+export const GRAIN_RETRY_DELAY_SECONDS = 60;
 
 export async function runThreadsCreate(
   batch: MessageBatch<ThreadsCreateMessage>,
@@ -33,10 +37,16 @@ export async function runThreadsCreate(
       if (msg.attempts > MAX_RETRIES) {
         await notifyDiscord(
           env.DISCORD_REACTION_WEBHOOK,
-          `Threads の container 作成が retry を使い切った (pageID=${msg.body.pageID}): ${String(e)}`,
+          e instanceof GrainNotIndexedError
+            ? `grain.social に gallery が取り込まれていないので Threads に投稿しなかった (pageID=${msg.body.pageID}): ${e.message}`
+            : `Threads の container 作成が retry を使い切った (pageID=${msg.body.pageID}): ${String(e)}`,
         );
       }
-      msg.retry();
+      if (e instanceof GrainNotIndexedError) {
+        msg.retry({ delaySeconds: GRAIN_RETRY_DELAY_SECONDS });
+      } else {
+        msg.retry();
+      }
     }
   }
 }

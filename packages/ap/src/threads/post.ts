@@ -8,6 +8,13 @@ import { publishedKind } from "../published";
 import { notifyDiscord } from "../notify";
 import { buildContainerParams } from "./record";
 import { requestContainer } from "./client";
+import {
+  GrainNotIndexedError,
+  grainGalleryAtUri,
+  grainGalleryUrl,
+  hasGrainGallery,
+  isGrainIndexed,
+} from "./grain";
 import { withToken } from "./token";
 
 // container を作って creation_id を返す。publish は別 queue が受け持つ。
@@ -54,9 +61,22 @@ export async function createContainer(
   }
 
   const html = await resolveContent(page.bodyKey, env.R2, SITE_URL, page.title);
+
+  // 画像だけの zet は本文が空なので、Grain の gallery URL をリンクカードで投稿する。
+  // gallery は zet と同じ rkey で PDS に置かれるので、zet のときだけ PDS で有無を見る
+  // (article / clip は Grain に出ない)。判定に失敗したら throw して retry に乗せる。
+  let grainUrl: string | null = null;
+  if (page.zetRkey && (await hasGrainGallery(page.zetRkey))) {
+    // 取り込み前に出すとリンクカードが汎用になる。待てば直るので投げて遅延 retry させる。
+    const atUri = grainGalleryAtUri(page.zetRkey);
+    if (!(await isGrainIndexed(atUri))) throw new GrainNotIndexedError(atUri);
+    grainUrl = grainGalleryUrl(page.zetRkey);
+  }
+
   const params = buildContainerParams({
     html,
     url: shareURL(page.id),
+    ...(grainUrl ? { grainUrl } : {}),
     ...(page.spoiler ? { spoiler: { title: pageDisplayTitle(page) } } : {}),
   });
 

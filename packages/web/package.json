@@ -11,7 +11,6 @@
   "license": "MIT",
   "dependencies": {
     "@jigsaw/db": "workspace:*",
-    "@jigsaw/theme": "workspace:*",
     "@paralleldrive/cuid2": "^3.3.0",
     "@progfay/scrapbox-parser": "catalog:",
     "@react-three/drei": "^10.7.8",
@@ -20,6 +19,7 @@
     "@vitejs/plugin-react": "^5.2.0",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
+    "laque": "^0.1.0",
     "react": "catalog:",
     "react-dom": "catalog:",
     "three": "^0.185.1",

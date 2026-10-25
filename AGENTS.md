@@ -6,7 +6,7 @@
 
 `jgs.me` は記事・clip・zet を管理・公開する個人サイト。Scrapbox 同期は 2026 年 8 月に廃止され、export archive は凍結済み。新規ページは Micropub (`packages/ingest`) 経由で取り込む。
 
-pnpm workspaces のモノレポで、Cloudflare Workers / D1 / R2 を使用する。Web は Vike + React + Hono、スタイルは Tailwind CSS、DB は Drizzle ORM、テストは Vitest。
+pnpm workspaces のモノレポで、Cloudflare Workers / D1 / R2 を使用する。Web は Vike + React + Hono、スタイルは Tailwind CSS (design token は npm の [`laque`](https://github.com/jgsme/laque))、DB は Drizzle ORM、テストは Vitest。
 
 ## Commands
 
@@ -51,7 +51,6 @@ pnpm clip-margin [--dry-run|--delete] # clip を Margin の at.margin.note と�
 | ----------------- | ----------------------------------------------------------------------------------- |
 | `packages/db`     | 共有 Drizzle スキーマ（`@jigsaw/db` としてインポート）                              |
 | `packages/web`    | メインの Web UI / API（Vike + React + Hono、Cloudflare Workers / Universal Deploy） |
-| `packages/theme`  | design token（Tailwind v4 の `@theme`。`packages/web` が import する）              |
 | `packages/og`     | OG 画像生成 Worker（Satori + Resvg）                                                |
 | `packages/home`   | ホームページ用 Worker                                                               |
 | `packages/cli`    | undo、kind、md-backfill、zet-rehost などの CLI                                      |

@@ -3,7 +3,7 @@ import type { Block as BlockType } from "@progfay/scrapbox-parser";
 import { parseCardBlock } from "./card";
 import { isHorizontalRule } from "./horizontalRule";
 import { ScrapboxNode } from "./ScrapboxNode";
-import { youTubeIdOfNode } from "./youtube";
+import { embedOfNode } from "./embed";
 
 export const ScrapboxBlock: React.FC<{
   block: BlockType;
@@ -24,10 +24,11 @@ export const ScrapboxBlock: React.FC<{
         return <div className="h-4" />;
       }
       const hasQuote = block.nodes.some((n) => n.type === "quote");
-      // YouTube のリンクは div で包んだ iframe になる。p の中に div は置けず、
-      // ブラウザが p を勝手に閉じて DOM が SSR の出力とずれる。
+      // 埋め込みのリンクは div で包んだ iframe になる。p の中に div は置けず、
+      // ブラウザが p を勝手に閉じて DOM が SSR の出力とずれる。oEmbed が取れずに
+      // ただのリンクで出る場合も div にする (見た目は変わらない)。
       const hasBlockElement =
-        hasQuote || block.nodes.some((n) => youTubeIdOfNode(n) !== null);
+        hasQuote || block.nodes.some((n) => embedOfNode(n) !== null);
       const Tag = hasBlockElement ? "div" : "p";
       // 引用は1行ごとに別の blockquote になる。連続する行どうしの間だけ
       // blockquote の上下 padding と親の space-y の margin を消し、1つの引用に見せる。

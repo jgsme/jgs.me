@@ -44,6 +44,7 @@ function pageData(
     zetId: null,
     atUri: null,
     clipKind: null,
+    embeds: {},
     blocks: [],
     description: null,
     related: [],

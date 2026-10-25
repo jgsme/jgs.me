@@ -6,8 +6,9 @@ import {
   QUOTE_CLIP_IMAGE_WIDTH,
 } from "@/utils/bodyImage";
 import { quoteClassName } from "./quote";
-import { getYouTubeVideoId } from "./youtube";
+import { embedOf } from "./embed";
 import { YouTubeEmbed } from "./YouTubeEmbed";
+import { OEmbedLink } from "./OEmbedLink";
 import { pagePath } from "@jigsaw/db/page-path";
 
 export const ScrapboxNode: React.FC<{
@@ -34,15 +35,24 @@ export const ScrapboxNode: React.FC<{
         );
       }
 
-      const youtubeId = getYouTubeVideoId(node.href);
-      if (youtubeId) {
+      const target = embedOf(node.href);
+      if (target?.kind === "youtube") {
         return (
           <div className="my-4">
             <YouTubeEmbed
-              videoId={youtubeId}
+              videoId={target.videoId}
               className="w-full aspect-video rounded"
             />
           </div>
+        );
+      }
+      if (target?.kind === "oembed") {
+        return (
+          <OEmbedLink
+            url={target.url}
+            href={node.href}
+            label={node.content || node.href}
+          />
         );
       }
 

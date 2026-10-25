@@ -28,6 +28,7 @@ function zetData(heading: string, isName: boolean): Data {
     zetId: null,
     atUri: `at://did:web:ds.jgs.me/me.jgs.diary.zet/${RKEY}`,
     clipKind: null,
+    embeds: {},
     blocks: [],
     spoiler: false,
     fromDate: "2026-10-11",

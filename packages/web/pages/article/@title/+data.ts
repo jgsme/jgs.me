@@ -13,6 +13,8 @@ import { pickRandom } from "@/utils/pickRandom";
 import { pageTitleFromUrl } from "@/utils/pageTitle";
 import { buildArticleBody } from "./articleBody";
 import { articleHeading } from "./heading";
+import { collectOEmbedUrls } from "./components/embed";
+import { fetchOEmbeds, type OEmbeds } from "@/server/oembed";
 import { SPOILER_NOTICE } from "@/utils/spoiler";
 
 // bge-m3 の cosine は下駄が高く 0.5 未満がほぼ出ないため、絶対的な意味はない。
@@ -131,6 +133,7 @@ const data = async (c: Context) => {
       atUri,
       clipKind,
       blocks: [],
+      embeds: {} as OEmbeds,
       description: null,
       related: [],
       backlinks,
@@ -149,6 +152,9 @@ const data = async (c: Context) => {
 
   const built = buildArticleBody(body);
   const filteredBlocks = built.blocks;
+  // 埋め込みの HTML は SSR で取っておく。記事ページはエッジに載るので、
+  // oEmbed を叩くのはキャッシュが切れたときだけ。
+  const embeds = await fetchOEmbeds(collectOEmbedUrls(filteredBlocks));
   // og:description は Bluesky / Threads のカードに出るので本文から作らない。
   const description = spoiler ? SPOILER_NOTICE : built.description;
   const fromDate =
@@ -177,6 +183,7 @@ const data = async (c: Context) => {
     atUri,
     clipKind,
     blocks: filteredBlocks,
+    embeds,
     spoiler,
     fromDate,
     description,

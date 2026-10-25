@@ -12,11 +12,11 @@
   "dependencies": {
     "@jigsaw/db": "workspace:*",
     "@jigsaw/media": "workspace:*",
-    "@jigsaw/theme": "workspace:*",
     "@vikejs/hono": "^0.2.1",
     "@vitejs/plugin-react": "^5.2.0",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
+    "laque": "^0.1.0",
     "react": "catalog:",
     "react-dom": "catalog:",
     "vike": "^0.4.262",

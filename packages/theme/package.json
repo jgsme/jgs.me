@@ -1,8 +1,0 @@
-{
-  "name": "@jigsaw/theme",
-  "private": true,
-  "type": "module",
-  "exports": {
-    "./theme.css": "./src/theme.css"
-  }
-}

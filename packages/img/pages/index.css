@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "@jigsaw/theme/theme.css";
+@import "laque/theme.css";
 
 /* packages/web と同じ。指定しないとブラウザ既定に暗黙に乗る。 */
 @layer base {

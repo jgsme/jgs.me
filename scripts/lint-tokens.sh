@@ -8,7 +8,7 @@ set -uo pipefail
 # repo のどこから呼ばれても同じ場所を見る。
 cd "$(git rev-parse --show-toplevel)" || exit 1
 
-# Tailwind と packages/theme を使っているパッケージ。増えたらここに足す。
+# Tailwind と laque を使っているパッケージ。増えたらここに足す。
 # packages/og と packages/home は Tailwind を使っていないので対象外。
 targets=(packages/web packages/img/pages)
 # target が消えたら黙って通すのではなく落とす。壊れた検査は無いのと同じ。
@@ -31,7 +31,7 @@ fi
 
 # 生の色。hex だけでなく rgb / hsl / oklch / color-mix も弾く。
 if grep -rnE "${ex[@]}" '(bg|text|border|ring|divide|fill|stroke|outline|shadow|decoration|placeholder|caret|accent|from|via|to)-\[(#[0-9a-fA-F]{3,8}|(rgb|rgba|hsl|hsla|oklch|oklab|lab|lch|color-mix)\()' "${targets[@]}"; then
-  echo "!! 色を arbitrary value で書かない。packages/theme にトークンを足す"
+  echo "!! 色を arbitrary value で書かない。laque にトークンを足す"
   status=1
 fi
 
@@ -39,7 +39,7 @@ fi
 # 値の側で除外するのは ; だけ。以前は " も除外していて、Prettier が揃える
 # ダブルクォートの JSX (まさに拾いたい形) だけがすり抜けていた。
 if grep -rnE "${ex[@]}" '(color|background|border|fill|stroke)[^:]*:[^;]*#[0-9a-fA-F]{3,8}' "${targets[@]}" --include='*.tsx' --include='*.ts' --include='*.css'; then
-  echo "!! style や CSS に色を直書きしない。packages/theme にトークンを足す"
+  echo "!! style や CSS に色を直書きしない。laque にトークンを足す"
   status=1
 fi
 
@@ -53,7 +53,7 @@ size_prefix='m|mt|mb|ml|mr|mx|my|ms|me|p|pt|pb|pl|pr|px|py|ps|pe|gap|gap-x|gap-y
 # translate は spacing 由来だが 1px 単位の微調整 (-translate-y-[2px]) に使うので対象外。
 # line-height / duration / z-index / font-size / letter-spacing も別の体系なので触らない。
 if grep -rnE "${ex[@]}" "(^|[^a-z0-9])-?(${size_prefix})-\[[0-9]" "${targets[@]}"; then
-  echo "!! 余白と寸法を arbitrary value で書かない。packages/theme の語彙から選ぶ"
+  echo "!! 余白と寸法を arbitrary value で書かない。laque の語彙から選ぶ"
   status=1
 fi
 
@@ -63,7 +63,7 @@ fi
 vocab='0|1|2|3|4|6|8|12|16|24|32|48|64|96|128|192|256'
 if grep -rnoE "${ex[@]}" "(^|[^a-z0-9-])-?(${size_prefix})-[0-9]+(\.[0-9]+)?([^0-9/.]|$)" "${targets[@]}" \
   | grep -vE -- "-(${vocab})([^0-9/.]?)$"; then
-  echo "!! 語彙に無いサイズを書かない。packages/theme の語彙 (0 1 2 3 4 6 8 12 16 24 32 48 64 96 128 192 256) から選ぶ"
+  echo "!! 語彙に無いサイズを書かない。laque の語彙 (0 1 2 3 4 6 8 12 16 24 32 48 64 96 128 192 256) から選ぶ"
   status=1
 fi
 

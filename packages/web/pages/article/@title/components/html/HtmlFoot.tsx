@@ -67,8 +67,8 @@ export const HtmlFoot: React.FC<{ d: HtmlArticleData }> = ({ d }) => {
           </div>
         </article>
 
-        <ReactionsIsland pageId={d.pageId} />
-        <RelatedPages related={d.related} />
+        <ReactionsIsland pageId={d.pageId} tone="onBrand" />
+        <RelatedPages related={d.related} tone="onBrand" />
       </div>
     </div>
   );

@@ -12,7 +12,8 @@ const DEBOUNCE_MS = 150;
 type Suggestion = { title: string };
 
 // onBrand は赤い帯 (bg-brand) の上に置くときの配色。HTML article の下の帯で使う。
-// 候補の一覧は帯の外に重なるので、どちらでも同じ見た目にする。
+// 候補の一覧は白地 (bg-bg) に重なるので、どちらの配色でも同じ見た目にする。
+// 帯の text-paper を継がないよう、一覧の側で text-fg を明示している。
 const TONES = {
   default: {
     row: "my-2",
@@ -205,7 +206,7 @@ export const SearchForm: React.FC<{ tone?: keyof typeof TONES }> = ({
           id={listID}
           role="listbox"
           hidden={!expanded}
-          className="absolute z-10 left-0 right-0 top-full mt-1 max-h-64 overflow-y-auto bg-bg border border-border rounded shadow-lg"
+          className="absolute z-10 left-0 right-0 top-full mt-1 max-h-64 overflow-y-auto bg-bg text-fg border border-border rounded shadow-lg"
         >
           {suggestions.map((suggestion, i) => (
             <li

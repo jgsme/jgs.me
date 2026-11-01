@@ -86,7 +86,7 @@
   background: repeating-linear-gradient(
     to bottom,
     transparent 0 2px,
-    color-mix(in srgb, white 4%, transparent) 2px 3px
+    color-mix(in srgb, var(--color-white) 4%, transparent) 2px 3px
   );
 }
 .jgs-e4-dk.jgs-e4-on {
@@ -130,14 +130,30 @@
 .jgs-e4-k {
   flex: none;
   background: var(--color-brand);
-  color: white;
+  color: var(--color-white);
   padding: 0 5px;
 }
+/* 題の幅は打ち直しの間も変えない。full が全文を見えないまま置いて幅 (と … で
+   切る位置) を決め、見える字は typed として上に重ねる。typed は absolute なので、
+   途中の短い字やカーソルが幅を変えず、日付が横に動かない (CLS 0)。 */
 .jgs-e4-title {
+  position: relative;
   min-width: 0;
+  font-weight: 600;
+}
+.jgs-e4-title-full,
+.jgs-e4-typed {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-weight: 600;
+  white-space: nowrap;
+}
+.jgs-e4-title-full {
+  visibility: hidden;
+}
+.jgs-e4-typed {
+  position: absolute;
+  inset: 0;
   text-shadow:
     1px 0 var(--color-glitch-red),
     -1px 0 var(--color-glitch-cyan);

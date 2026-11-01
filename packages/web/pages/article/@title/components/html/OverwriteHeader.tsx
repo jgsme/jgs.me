@@ -320,8 +320,14 @@ export const OverwriteHeader: React.FC<{
       <div ref={labelRef} className="jgs-e4-label">
         <div className="jgs-e4-gl font-mono">
           <span className="jgs-e4-k">HTML</span>
-          <b ref={titleRef} className="jgs-e4-title">
-            {title}
+          {/* full は幅を取るだけで見えない。見える字は typed (overwrite.css)。 */}
+          <b className="jgs-e4-title">
+            <span className="jgs-e4-title-full" aria-hidden="true">
+              {title}
+            </span>
+            <span ref={titleRef} className="jgs-e4-typed">
+              {title}
+            </span>
           </b>
           {date && (
             <span className="jgs-e4-date">{date.replaceAll("-", "/")}</span>

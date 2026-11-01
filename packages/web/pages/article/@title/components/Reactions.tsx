@@ -6,7 +6,24 @@ import { cardSource, splitReactions } from "./reactionGroups";
 
 type Reaction = ReactionJSON;
 
-export default function Reactions({ pageId }: { pageId: number | null }) {
+// onBrand は赤い帯 (bg-brand) の上に置くとき (HTML article の下の帯)。
+// 既定の枠線は currentColor で、帯の上では紙色の濃い線になるので、白の半透明に揃える。
+const TONES = {
+  default: { section: "", card: "" },
+  onBrand: {
+    section: "border-white/25",
+    card: "border-white/25 bg-white/10",
+  },
+} as const;
+type Tone = keyof typeof TONES;
+
+export default function Reactions({
+  pageId,
+  tone = "default",
+}: {
+  pageId: number | null;
+  tone?: Tone;
+}) {
   const [reactions, setReactions] = useState<Reaction[]>([]);
 
   useEffect(() => {
@@ -39,7 +56,7 @@ export default function Reactions({ pageId }: { pageId: number | null }) {
   const { cards, glyphs } = splitReactions(reactions);
 
   return (
-    <section className="mt-12 border-t pt-6">
+    <section className={`mt-12 border-t pt-6 ${TONES[tone].section}`}>
       <h2 className="text-lg font-bold mb-4">メンション</h2>
 
       {glyphs.length > 0 && (
@@ -64,7 +81,7 @@ export default function Reactions({ pageId }: { pageId: number | null }) {
       {cards.length > 0 && (
         <ul className="list-none p-0 space-y-3">
           {cards.map((r) => (
-            <Card key={r.id} r={r} />
+            <Card key={r.id} r={r} tone={tone} />
           ))}
         </ul>
       )}
@@ -72,12 +89,14 @@ export default function Reactions({ pageId }: { pageId: number | null }) {
   );
 }
 
-function Card({ r }: { r: Reaction }) {
+function Card({ r, tone }: { r: Reaction; tone: Tone }) {
   const text = stripTags(r.content ?? "");
   const source = cardSource(r);
 
   return (
-    <li className="flex items-start gap-3 border rounded-lg p-3">
+    <li
+      className={`flex items-start gap-3 border rounded-lg p-3 ${TONES[tone].card}`}
+    >
       <Avatar icon={r.actorIcon} size={32} />
       <div className="min-w-0 flex-1">
         <p className="text-xs">

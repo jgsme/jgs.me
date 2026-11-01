@@ -17,7 +17,8 @@
     "kind": "pnpm --filter cli kind",
     "md-backfill": "pnpm --filter cli md-backfill",
     "zet-rehost": "pnpm --filter cli zet-rehost",
-    "clip-margin": "pnpm --filter cli clip-margin"
+    "clip-margin": "pnpm --filter cli clip-margin",
+    "standard-publication": "pnpm --filter cli standard-publication"
   },
   "devDependencies": {
     "prettier": "^3.9.6",

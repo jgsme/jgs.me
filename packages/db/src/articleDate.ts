@@ -1,4 +1,4 @@
-import { bodyFormatOf } from "./bodyKey";
+import { isTextBody } from "./bodyKey";
 
 const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
 
@@ -117,7 +117,8 @@ export function resolveArticleDate({
   }
 
   // 規則5: Scrapbox アーカイブ由来の created はインポート時刻なので使わない。
-  if (bodyFormatOf(bodyKey) === "micropub-sb") return jstDate(created);
+  // Micropub と standard-html の created は本物なのでそのまま使う。
+  if (isTextBody(bodyKey)) return jstDate(created);
 
   // 規則6
   return null;

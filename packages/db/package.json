@@ -8,6 +8,8 @@
     "./article-date": "./src/articleDate.ts",
     "./fetch-body": "./src/fetchBody.ts",
     "./zet": "./src/zet.ts",
+    "./standard": "./src/standard.ts",
+    "./html-article": "./src/htmlArticle.ts",
     "./page-path": "./src/pagePath.ts"
   },
   "scripts": {

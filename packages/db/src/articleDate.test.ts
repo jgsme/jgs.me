@@ -238,3 +238,16 @@ describe("resolveArticleDate", () => {
     );
   });
 });
+
+describe("resolveArticleDate (standard-html)", () => {
+  it("standard-html も created をそのまま使う", () => {
+    expect(
+      resolveArticleDate({
+        body: "題\n本文",
+        title: "題",
+        bodyKey: "html-1",
+        created: "2026-10-31T15:30:00.000Z",
+      }),
+    ).toBe("2026-11-01");
+  });
+});

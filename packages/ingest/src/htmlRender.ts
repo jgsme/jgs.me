@@ -53,8 +53,29 @@ function textOf(el: Element): string {
     .join("");
 }
 
-const tagNamed = (name: string) => (n: ChildNode) =>
-  isTag(n) && n.name === name;
+const isNamed =
+  (name: string) =>
+  (e: Element): boolean =>
+    e.name === name;
+
+// noscript / template の中は描画に使われない (または別文書) ので、持ち上げない
+function insideInert(el: Element): boolean {
+  for (let p = el.parent; p; p = p.parent) {
+    if (isTag(p) && (p.name === "noscript" || p.name === "template"))
+      return true;
+  }
+  return false;
+}
+
+function remove(el: Element): void {
+  el.parent?.children.splice(el.parent.children.indexOf(el), 1);
+}
+
+// n の後ろの兄弟。ブラウザは </body> の後ろの内容を body に入れるので、それに倣う
+function siblingsAfter(n: ChildNode): ChildNode[] {
+  const sibs = n.parent?.children ?? [];
+  return sibs.slice(sibs.indexOf(n) + 1);
+}
 
 // style 属性の断片を繋ぐ。前が ; で終わっていなければ ; を挟む
 function joinStyles(parts: string[]): string {
@@ -71,51 +92,52 @@ export function renderHtmlArticle(
   opts: { colorScheme: string | null },
 ): RenderedHtmlArticle {
   const doc = parseDocument(html);
-  const htmlEl = findOne(
-    tagNamed("html") as (e: Element) => boolean,
-    doc.children,
-  ) as Element | null;
-  const headEl = findOne(
-    tagNamed("head") as (e: Element) => boolean,
-    doc.children,
-  ) as Element | null;
-  const bodyEl = findOne(
-    tagNamed("body") as (e: Element) => boolean,
-    doc.children,
-  ) as Element | null;
-
-  const links = headEl
-    ? findAll((e) => e.name === "link", headEl.children).flatMap((l) => {
-        const link = toHeadLink(l);
-        return link ? [link] : [];
-      })
-    : [];
+  const htmlEl = findOne(isNamed("html"), doc.children);
+  const headEl = findOne(isNamed("head"), doc.children);
+  const bodyEl = findOne(isNamed("body"), doc.children);
 
   // head の script は body の先頭へ回す (取り除く前に集める)
-  const headScripts = headEl
-    ? findAll((e) => e.name === "script", headEl.children)
-    : [];
+  const headScripts = headEl ? findAll(isNamed("script"), headEl.children) : [];
 
-  // style は head でも body でも文書順に集め、本文からは取り除く
-  const styles: HeadStyle[] = findAll(
-    (e) => e.name === "style",
-    doc.children,
-  ).map((s) => ({
+  // style / link は head でも body でも文書順に集め、本文からは取り除く。
+  // head が無い文書でも持ち上がるよう、木全体から探す
+  const styleEls = findAll(isNamed("style"), doc.children).filter(
+    (e) => !insideInert(e),
+  );
+  const styles: HeadStyle[] = styleEls.map((s) => ({
     css: scopeCss(textOf(s), SCOPE),
     media: s.attribs.media ?? null,
   }));
-  for (const s of findAll((e) => e.name === "style", doc.children)) {
-    s.parent?.children.splice(s.parent.children.indexOf(s), 1);
+  const linkEls = findAll(isNamed("link"), doc.children).filter(
+    (e) => !insideInert(e),
+  );
+  const links: HeadLink[] = [];
+  const hoisted = [...styleEls];
+  for (const l of linkEls) {
+    const link = toHeadLink(l);
+    if (!link) continue;
+    links.push(link);
+    hoisted.push(l);
   }
+  hoisted.forEach(remove);
 
-  // 本文: body があればその子。無ければ html の head 以外、それも無ければ断片そのもの
+  // 本文: body があればその子と、</body> 以降の内容。
+  // 無ければ html の head 以外、それも無ければ head 以外の断片そのもの
+  const isStructure = (n: ChildNode) =>
+    n.type === "directive" ||
+    n === headEl ||
+    (isTag(n) && (n.name === "html" || n.name === "body"));
   const source = bodyEl
-    ? bodyEl.children
+    ? [
+        ...bodyEl.children,
+        ...siblingsAfter(bodyEl),
+        ...(bodyEl.parent === htmlEl && htmlEl ? siblingsAfter(htmlEl) : []),
+      ]
     : htmlEl
-      ? htmlEl.children.filter((n) => n !== headEl)
+      ? htmlEl.children
       : doc.children;
   const content = source.filter(
-    (n) => n.type !== "directive" && !headScripts.includes(n as Element),
+    (n) => !isStructure(n) && !headScripts.includes(n as Element),
   );
 
   const classes = [
@@ -127,6 +149,8 @@ export function renderHtmlArticle(
   const attribs: Record<string, string> = { class: classes.join(" ") };
   const lang = htmlEl?.attribs.lang;
   if (lang !== undefined) attribs.lang = lang;
+  const dir = bodyEl?.attribs.dir ?? htmlEl?.attribs.dir;
+  if (dir !== undefined) attribs.dir = dir;
   const style = joinStyles([
     opts.colorScheme ? `color-scheme: ${opts.colorScheme};` : "",
     htmlEl?.attribs.style ?? "",

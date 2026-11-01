@@ -1,6 +1,7 @@
 import { drizzle } from "drizzle-orm/d1";
 import { eq, gt } from "drizzle-orm";
 import { pageLinks, pages } from "@jigsaw/db";
+import { bodyFormatOf } from "@jigsaw/db/body-key";
 import { fetchBody } from "@jigsaw/db/fetch-body";
 import { extractLinks } from "./links";
 import { chunk } from "./rows";
@@ -43,6 +44,14 @@ export async function runLinkIndex(
 
   for (const row of rows) {
     try {
+      // HTML article の .sb は検索用の平文で、`[..]` は配列の添字など
+      // ただの文字。Scrapbox 記法として読むと偽のリンクが立つので、
+      // 本文を読まずに links 0 で入れ直す (前回の索引も消える)。
+      if (bodyFormatOf(row.bodyKey) === "standard-html") {
+        await deps.replaceLinks(row.id, []);
+        items.push({ pageId: row.id, title: row.title, links: 0 });
+        continue;
+      }
       const body = await deps.readBody(row.bodyKey, row.title);
       if (body === null) {
         // 本文が引けないページは索引を触らない。消すと、R2 の一時的な

@@ -1,4 +1,4 @@
-import { bodyFormatOf } from "@jigsaw/db/body-key";
+import { isTextBody } from "@jigsaw/db/body-key";
 import { replaceGyazoURLs } from "./gyazo";
 
 // Scrapbox アーカイブの JSON。lines[].text 以外に id / created / userId 等が
@@ -9,9 +9,10 @@ type ScrapboxArchive = {
   [key: string]: unknown;
 };
 
+// isTextBody は micropub の .sb と standard-html の .sb (どちらも生テキスト)。
 // 走査用。R2 の生の中身から本文テキストだけ取り出す。
 export function bodyTextOf(bodyKey: string, raw: string): string {
-  if (bodyFormatOf(bodyKey) === "micropub-sb") return raw;
+  if (isTextBody(bodyKey)) return raw;
   const data = JSON.parse(raw) as ScrapboxArchive;
   return data.lines.map((l) => l.text).join("\n");
 }
@@ -24,7 +25,7 @@ export function rewriteBody(
   raw: string,
   resolve: (hash: string) => string | null,
 ): { raw: string; replaced: number; skipped: number } {
-  if (bodyFormatOf(bodyKey) === "micropub-sb") {
+  if (isTextBody(bodyKey)) {
     const r = replaceGyazoURLs(raw, resolve);
     return { raw: r.text, replaced: r.replaced, skipped: r.skipped };
   }
@@ -43,7 +44,5 @@ export function rewriteBody(
 
 // 書き戻すときの Content-Type。入れ物が違うので揃えない。
 export function bodyContentType(bodyKey: string): string {
-  return bodyFormatOf(bodyKey) === "micropub-sb"
-    ? "text/plain; charset=utf-8"
-    : "application/json";
+  return isTextBody(bodyKey) ? "text/plain; charset=utf-8" : "application/json";
 }

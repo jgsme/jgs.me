@@ -74,4 +74,9 @@ describe("bodyContentType", () => {
   it(".sb は text/plain", () => {
     expect(bodyContentType("sb-uuid")).toBe("text/plain; charset=utf-8");
   });
+
+  it("standard-html の .sb は生テキストとして読む", () => {
+    expect(bodyTextOf("html-1", "題\n本文")).toBe("題\n本文");
+    expect(bodyContentType("html-1")).toBe("text/plain; charset=utf-8");
+  });
 });

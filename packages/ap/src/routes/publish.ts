@@ -4,7 +4,7 @@ import { articles, clips, followers, pages, zets } from "@jigsaw/db";
 import { getDB, type Env } from "../db";
 import { SITE_URL, articleURL, objectURI } from "../config";
 import { publishedKind } from "../published";
-import { resolveContent } from "../content";
+import { resolveContent, resolveOutlinkHtml } from "../content";
 import { toArticle, toNote, type PageRow } from "../as2";
 import {
   wrapActorUpdate,
@@ -88,7 +88,10 @@ publish.post("/internal/publish", async (c) => {
     // ネタバレの page は送らない。受信側は source を読んで本文を抜粋する。
     const outlinks = page.spoiler
       ? []
-      : await extractOutlinks(content, SITE_URL);
+      : await extractOutlinks(
+          await resolveOutlinkHtml(page.bodyKey, c.env.R2, content),
+          SITE_URL,
+        );
     if (outlinks.length > 0) {
       const source = articleURL(page.title);
       await c.env.WM_SEND.sendBatch(

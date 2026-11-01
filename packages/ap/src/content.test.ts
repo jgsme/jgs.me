@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveContent } from "./content";
+import { resolveContent, resolveOutlinkHtml } from "./content";
 
 const SITE = "https://w.jgs.me";
 
@@ -41,5 +41,36 @@ describe("resolveContent", () => {
   it("bodyKey が空なら空文字", async () => {
     const html = await resolveContent("", fakeR2({}), SITE, "題");
     expect(html).toBe("");
+  });
+});
+
+describe("standard-html", () => {
+  it("standard-html の .sb は Scrapbox 記法として読まず、行ごとにエスケープした段落にする", async () => {
+    const r2 = fakeR2({ "html-1.sb": "題\n配列 [a] と #1 <b>\n\n`x` code:y" });
+    expect(await resolveContent("html-1", r2, SITE, "題")).toBe(
+      "<p>配列 [a] と #1 &lt;b&gt;</p><p>`x` code:y</p>",
+    );
+  });
+});
+
+describe("resolveOutlinkHtml", () => {
+  it("Webmention の元は standard-html なら原本 HTML", async () => {
+    expect(
+      await resolveOutlinkHtml(
+        "html-1",
+        fakeR2({ "html-1.html": '<a href="https://ex.com/">x</a>' }),
+        "<p>派生</p>",
+      ),
+    ).toBe('<a href="https://ex.com/">x</a>');
+  });
+  it("原本が無ければ空文字", async () => {
+    expect(await resolveOutlinkHtml("html-1", fakeR2({}), "<p>派生</p>")).toBe(
+      "",
+    );
+  });
+  it("それ以外の形式は描いた本文をそのまま返す", async () => {
+    expect(await resolveOutlinkHtml("sb-1", fakeR2({}), "<p>本文</p>")).toBe(
+      "<p>本文</p>",
+    );
   });
 });

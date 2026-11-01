@@ -41,6 +41,7 @@ pnpm kind --csv <path>         # CSV から一括変更
 pnpm md-backfill               # 検索インデックス用の md (w-md) を既存ページぶん埋める
 pnpm zet-rehost                # 取り込み済み zet の画像を PDS の blob から w-media に写す
 pnpm clip-margin [--dry-run|--delete] # clip を Margin の at.margin.note として PDS に書き、clips コレクションに入れる。--delete は消す
+pnpm standard-publication      # standard.site の publication record (w.jgs.me) を PDS に書く。冪等
 ```
 
 ## Architecture
@@ -101,6 +102,7 @@ npx wrangler d1 migrations apply w --remote  # 適用
 
 1. `pages/index/` — 記事一覧（ページネーション `?p=N`）。
 2. `pages/article/@title/` — 記事詳細（`/pages/@title`）。R2 から本文を取得し、`@progfay/scrapbox-parser` でパースする。本文は Scrapbox archive の `<scrapbox-id>.json` または Micropub (diary) の `<sb-uuid>.sb`。どちらも 1 行目が題。同期廃止で `.json` は増えないが、Micropub 経由でページ自体は増える。
+   HTML article (`html-` 始まりの bodyKey) は `html-<uuid>.render.json` (ingest が組み直したもの) をページの中の `.jgs-html-article` に描く。iframe は使わず、CSS は scope 済み。CSP はこのページにだけ付き、`+data` が `pageContext.headersResponse` に積む (vike は `+headersResponse` を `+data` より先に解決するので、`+headersResponse` では書けない)。HTML article への出入りはページを丸ごと読み込む (`+onPageTransitionStart`)。
 3. `/a/{id}` — `/pages/{title}` への共有 URL リダイレクト。clip は `/c/{id}`、zet は `/z/{zet.id}`。実体は `server/routes/redirects.ts`、形式は `utils/permalink.ts`。7 日 edge cache、ingest が update 時に purge する。
 4. `pages/search/` — 検索。
 5. `pages/clips/` — clip 一覧。
@@ -130,6 +132,29 @@ web の `@/*` は `packages/web/` 基準（`tsconfig.json` と `vite.config.ts`�
 `page.spoiler` は diary が付けるネタバレの印 (article は Micropub の `spoiler` property、zet は record の `spoiler`)。立っている page は Bluesky / Threads / ActivityPub に題と URL だけを出し、Webmention を送らず、`page.image` を持たない。web は記事ページの本文を HTML に描いたまま hidden で隠し、「表示する」を押すと見せる (bot には読ませる)。zets 一覧・検索・RSS・og:description で抜粋を伏せる。
 
 zet の本体は PDS (ds.jgs.me) の `me.jgs.diary.zet` record。`page.title` は内部用の `zet:<rkey>`、公開 URL は `/pages/zet%3A<rkey>`。表示名は `@jigsaw/db/zet` の `pageDisplayTitle` を使う。at-uri と CID は `copy` (protocol = `atproto-zet`) に置く。
+
+HTML article の本体は PDS の `site.standard.document` record (content は `me.jgs.diary.html`、diary がサニタイズ済み)。Micropub に `category: ["document"]` と at-uri を送って取り込む。題が既存 page と衝突したら 409。at-uri と CID は `copy` (protocol = `atproto-document`)。`page_link` は持たず、Micropub の update と `q=source` は受けない。
+
+| bodyKey / R2 object | 中身                                                    |
+| ------------------- | ------------------------------------------------------- |
+| `html-<uuid>`       | bodyKey (standard-html 形式)                            |
+| `<key>.html`        | 原本 (diary がサニタイズ済み)                           |
+| `<key>.render.json` | ingest が表示用に組み直したもの (`RenderedHtmlArticle`) |
+| `<key>.sb`          | 派生テキスト                                            |
+| w-md の `<key>.md`  | 検索インデックス用                                      |
+
+組み直しの規則を変えたら `@jigsaw/db/html-article` の `RENDER_VERSION` を上げ、diary から再 publish する (record を書き直して CID を変える)。同じ CID の再送は何もしない。
+
+publication record は `at://did:web:ds.jgs.me/site.standard.publication/w.jgs.me`。`pnpm standard-publication` で 1 回だけ書き、web が `/.well-known/site.standard.publication` でその at-uri を返す。
+
+#### HTML article を出す順
+
+D1 migration は無い。
+
+1. jgs.me を merge して deploy (Workers Builds が w / w-ingest / w-ap を出す)
+2. `PDS_IDENTIFIER=… PDS_PASSWORD=… pnpm standard-publication` を 1 回打つ
+3. `curl -s https://w.jgs.me/.well-known/site.standard.publication` が同じ at-uri を返すのを確かめる
+4. そのあとで diary 側を出す
 
 ### Environment Variables
 

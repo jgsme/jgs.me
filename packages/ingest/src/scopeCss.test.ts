@@ -87,6 +87,51 @@ describe("scopeCss", () => {
     expect(scopeCss(".a{color:red", S)).toContain("color:red");
   });
 
+  // ブラウザは閉じていないブロックを末尾で閉じて読む。そのまま出すと枠に漏れる
+  it("閉じていない規則も末尾まで閉じ込める", () => {
+    expect(scopeCss("h1{x:y}body{margin:0;background:#000", S)).toBe(
+      `${S} h1{x:y}${S}{margin:0;background:#000`,
+    );
+  });
+
+  it("閉じていない @media の中も閉じ込める", () => {
+    expect(scopeCss("@media (x){.a{b:c}\nbody{background:red}", S)).toBe(
+      `@media (x){${S} .a{b:c}\n${S}{background:red}`,
+    );
+  });
+
+  // 改行で切れた文字列はブラウザがそこで終わらせ、続きを規則として読む
+  it("改行で終わる文字列の後ろの規則も閉じ込める", () => {
+    expect(scopeCss('.a::after{content:"x\n}body{background:red}', S)).toBe(
+      `${S} .a::after{content:"x\n}${S}{background:red}`,
+    );
+  });
+
+  it("エスケープした改行は文字列の続き", () => {
+    expect(scopeCss('.a::after{content:"x\\\n}"}body{}', S)).toBe(
+      `${S} .a::after{content:"x\\\n}"}${S}{}`,
+    );
+  });
+
+  it("@starting-style と知らない at-rule は中を書き換える", () => {
+    expect(
+      scopeCss("@starting-style{.card{opacity:0}}@foo{a{color:red}}", S),
+    ).toBe(`@starting-style{${S} .card{opacity:0}}@foo{${S} a{color:red}}`);
+  });
+
+  it("@scope は前置きの根と境界を閉じ込め、中はそのまま", () => {
+    expect(scopeCss("@scope (.card){img{x:y}}", S)).toBe(
+      `@scope (${S} .card){img{x:y}}`,
+    );
+    expect(scopeCss("@scope (.a) to (.b){p{x:y}}", S)).toBe(
+      `@scope (${S} .a) to (${S} .b){p{x:y}}`,
+    );
+  });
+
+  it("剥がした body の擬似要素は入れ物に付く", () => {
+    expect(scopeCss("body::before{}", S)).toBe(`${S}::before{}`);
+  });
+
   // 整形された CSS の改行と字下げは保つ。差分を読むときに崩れていると追えない。
   it("規則の前後の空白は保つ", () => {
     expect(
@@ -101,7 +146,8 @@ describe("scopeCss", () => {
   });
 
   it("ベンダー接頭辞付きの @keyframes もそのまま", () => {
-    const css = "@-webkit-keyframes f{from{opacity:0}}";
+    const css =
+      "@-webkit-keyframes f{from{opacity:0}}@-moz-keyframes g{to{x:y}}";
     expect(scopeCss(css, S)).toBe(css);
   });
 });

@@ -3,23 +3,30 @@
 // 手書きの字句解析で済ませる (postcss は Node の組み込みを引き、ingest は nodejs_compat を付けていない)。
 // 走査は 1 文字ずつ進める状態機械なので、ループで書く。
 
-// 中の規則を再帰で書き換える at-rule。中に普通の規則が並ぶもの
-const RECURSE_AT_RULES = new Set([
-  "media",
-  "supports",
-  "container",
-  "layer",
-  "scope",
-  "document",
-  "-moz-document",
+// 中を書き換えずに残すブロックの at-rule。中が規則ではなく記述子や枠の並びのもの。
+// 既定は「中を再帰で書き換える」にする。知らない at-rule (@starting-style など) を
+// 素通しすると、中の規則が jgs.me の枠に効いてしまう
+const KEEP_AT_RULES = new Set([
+  "font-face",
+  "keyframes",
+  "counter-style",
+  "font-feature-values",
+  "font-palette-values",
+  "property",
+  "page",
+  "view-transition",
 ]);
+
+// CSS の改行 1 文字。"\n" "\r" "\f" に当たり、" " には当たらない
+const NEWLINE = /[\n\r\f]/;
 
 // エスケープ (\x) とコメントの開き閉じ (/* */) は 2 文字で 1 まとまり
 const PAIR = 2;
 
 // i にコメント・文字列・エスケープが始まっていれば、その直後の位置を返す。
 // 構造の文字 ({ } , ; など) をそこで数えないために、走査はすべてこれを通す。
-// 閉じていなければ末尾まで飛ばす (投げない)
+// 閉じていなければ末尾まで飛ばす (投げない)。文字列はエスケープされていない改行でも終わる。
+// ブラウザはそこで壊れた文字列として切り上げ、続きを CSS として読むので、数え方を揃える
 function skipOpaque(s: string, i: number): number | null {
   const c = s[i];
   if (c === "\\") return Math.min(i + PAIR, s.length);
@@ -30,6 +37,7 @@ function skipOpaque(s: string, i: number): number | null {
   if (c === '"' || c === "'") {
     let j = i + 1;
     while (j < s.length && s[j] !== c) {
+      if (NEWLINE.test(s[j])) return j;
       j += s[j] === "\\" ? PAIR : 1;
     }
     return Math.min(j + 1, s.length);
@@ -56,7 +64,8 @@ function findTopLevel(s: string, from: number, stops: string): number {
   return -1;
 }
 
-// open の { に対応する } の位置を返す。釣り合わなければ -1
+// open の { に対応する } の位置を返す。釣り合わなければ末尾 (s.length)。
+// ブラウザは閉じていないブロックを末尾で閉じたものとして読む
 function matchBrace(s: string, open: number): number {
   let depth = 0;
   let i = open;
@@ -71,7 +80,7 @@ function matchBrace(s: string, open: number): number {
     else if (c === "}" && --depth === 0) return i;
     i++;
   }
-  return -1;
+  return s.length;
 }
 
 // 空白 1 文字。" " や "\n" に当たり、"a" には当たらない
@@ -102,8 +111,43 @@ function splitPadding(prelude: string): [string, string, string] {
 // "@ x" には当たらない
 const AT_RULE_NAME = /^@([-\w]+)/;
 
+// ベンダー接頭辞。"-webkit-keyframes" の "-webkit-" に当たり、"keyframes" には当たらない
+const VENDOR_PREFIX = /^-[a-z]+-/;
+
 function atRuleName(core: string): string {
-  return (AT_RULE_NAME.exec(core)?.[1] ?? "").toLowerCase();
+  return (AT_RULE_NAME.exec(core)?.[1] ?? "")
+    .toLowerCase()
+    .replace(VENDOR_PREFIX, "");
+}
+
+// @scope の前置き "(<root>) to (<limit>)" の括弧の中を閉じ込める。
+// 中の規則は scope の根からの相対で効くので、根さえ入れ物の中なら書き換えなくてよい
+function scopeAtScopePrelude(prelude: string, scope: string): string {
+  let out = "";
+  let i = 0;
+  for (;;) {
+    const open = findTopLevel(prelude, i, "(");
+    if (open < 0) return out + prelude.slice(i);
+    const close = findTopLevel(prelude, open + 1, ")");
+    const end = close < 0 ? prelude.length : close;
+    out += `${prelude.slice(i, open + 1)}${scopeSelectorList(prelude.slice(open + 1, end), scope)}`;
+    if (close < 0) return out;
+    i = close;
+  }
+}
+
+// ブロックの at-rule を書き換える
+function scopeAtRule(
+  prelude: string,
+  core: string,
+  inner: string,
+  scope: string,
+): string {
+  const name = atRuleName(core);
+  if (name === "scope")
+    return `${scopeAtScopePrelude(prelude, scope)}{${inner}`;
+  if (KEEP_AT_RULES.has(name)) return `${prelude}{${inner}`;
+  return `${prelude}{${scopeCss(inner, scope)}`;
 }
 
 export function scopeCss(css: string, scope: string): string {
@@ -122,23 +166,17 @@ export function scopeCss(css: string, scope: string): string {
       i = stop + 1;
       continue;
     }
+    // 閉じていないブロックも末尾で閉じたものとして書き換える。そのまま出すと
+    // ブラウザが同じく末尾で閉じて読み、閉じ込めていない規則が枠に効く。足りない } は足さない
     const close = matchBrace(css, stop);
-    if (close < 0) {
-      // 閉じていないブロックは書き換えずに残りを全部出す。落とすと本文の見た目が消える
-      out += css.slice(i);
-      break;
-    }
+    const closing = close < css.length ? "}" : "";
     const [lead, core, trail] = splitPadding(prelude);
     const inner = css.slice(stop + 1, close);
     if (core.startsWith("@")) {
-      // @font-face / @keyframes / @page などは中が規則ではないので触らない
-      const body = RECURSE_AT_RULES.has(atRuleName(core))
-        ? scopeCss(inner, scope)
-        : inner;
-      out += `${prelude}{${body}}`;
+      out += scopeAtRule(prelude, core, inner, scope) + closing;
     } else {
       // 宣言ブロックは入れ子の & ごとそのまま。親が閉じ込まれていれば & も中に留まる
-      out += `${lead}${scopeSelectorList(core, scope)}${trail}{${inner}}`;
+      out += `${lead}${scopeSelectorList(core, scope)}${trail}{${inner}${closing}`;
     }
     i = close + 1;
   }

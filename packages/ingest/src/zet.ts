@@ -2,6 +2,7 @@ import { zetPageTitle, zetPath } from "@jigsaw/db/zet";
 import { buildSbBody } from "./body";
 import { extractLinks } from "./links";
 import { firstImageURL } from "./firstImage";
+import { bestEffort, fail, message } from "./ingestResponse";
 import { SITE_URL } from "./site";
 import { rehostBlobImages, type RehostBlob } from "./zetBlob";
 import { parseZetAtUri, type FetchZetResult } from "./zetRecord";
@@ -66,35 +67,6 @@ export function zetURL(rkey: string): string {
   return `${SITE_URL}${zetPath(rkey)}`;
 }
 
-function fail(status: number, description: string): Response {
-  return Response.json(
-    {
-      error: status >= 500 ? "server_error" : "invalid_request",
-      error_description: description,
-    },
-    { status },
-  );
-}
-
-function message(e: unknown): string {
-  return e instanceof Error ? e.message : String(e);
-}
-
-// 失敗しても取り込みは成功させる (micropub.ts の create / update と同じ判断)。
-// ただし再送では直せない: 同じ CID の再送は取り込み済みとして publish せずに
-// 返るため、配送・purge に失敗した zet は再送しても配送されない。
-// 復旧は /internal/publish を手で叩く。
-async function bestEffort(
-  label: string,
-  f: () => Promise<void>,
-): Promise<void> {
-  try {
-    await f();
-  } catch (e) {
-    console.error(`[zet] ${label} failed ${message(e)}`);
-  }
-}
-
 export async function ingestZet(
   payload: unknown,
   deps: ZetDeps,
@@ -156,7 +128,7 @@ export async function ingestZet(
     }
     // 一覧・個別 (/pages/zet%3A<rkey>)・share URL。micropub.ts の update と同じく
     // /p/<id> も消す。/z/<id> は zet の permalink。
-    await bestEffort("purge", () =>
+    await bestEffort("[zet] purge", () =>
       deps.purge([
         "/zets",
         zetPath(ref.rkey),
@@ -164,7 +136,9 @@ export async function ingestZet(
         `/z/${existing.zetID}`,
       ]),
     );
-    await bestEffort("publish", () => deps.publish(existing.pageID, "update"));
+    await bestEffort("[zet] publish", () =>
+      deps.publish(existing.pageID, "update"),
+    );
     return new Response(null, { status: 200, headers: { Location: location } });
   }
 
@@ -193,7 +167,7 @@ export async function ingestZet(
     console.error(`[zet] create failed rkey=${ref.rkey} ${message(e)}`);
     return fail(500, "failed to store zet");
   }
-  await bestEffort("purge", () => deps.purge(["/zets"]));
-  await bestEffort("publish", () => deps.publish(pageID, "create"));
+  await bestEffort("[zet] purge", () => deps.purge(["/zets"]));
+  await bestEffort("[zet] publish", () => deps.publish(pageID, "create"));
   return new Response(null, { status: 201, headers: { Location: location } });
 }

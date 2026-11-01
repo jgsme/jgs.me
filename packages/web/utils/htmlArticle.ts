@@ -22,3 +22,25 @@ export const isHtmlArticleData = (data: unknown): boolean =>
   data !== null &&
   (data as { ok?: unknown }).ok === true &&
   (data as { view?: unknown }).view === "html";
+
+// HTML 記事の本文は自分で書いた HTML をそのまま描く。そこから出る通信を
+// 絞るための CSP。script は CDN と GA だけ、frame / form / base は塞ぐ。
+// connect-src の google-analytics / analytics.google.com / googletagmanager は
+// +Head.tsx の GA (gtag) が送信に使う分。
+export const HTML_ARTICLE_CSP = [
+  "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://www.googletagmanager.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:",
+  "img-src 'self' https: data: blob:",
+  "media-src 'self' https:",
+  "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com",
+  "frame-src 'none'",
+  "object-src 'none'",
+  "form-action 'none'",
+  "base-uri 'none'",
+].join("; ");
+
+export const htmlArticleHeaders = (data: unknown): Record<string, string> =>
+  isHtmlArticleData(data)
+    ? { "Content-Security-Policy": HTML_ARTICLE_CSP }
+    : {};

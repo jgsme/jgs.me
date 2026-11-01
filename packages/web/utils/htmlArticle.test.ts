@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  HTML_ARTICLE_CSP,
   htmlArticleDescription,
+  htmlArticleHeaders,
   htmlArticleText,
   isHtmlArticleData,
 } from "./htmlArticle";
@@ -60,5 +62,32 @@ describe("buildHtmlArticleData", () => {
     expect(buildHtmlArticleData({ ...input, spoiler: true }).description).toBe(
       "ネタバレ注意",
     );
+  });
+});
+
+describe("HTML article の CSP", () => {
+  it("html 記事にだけ CSP を付ける", () => {
+    expect(htmlArticleHeaders({ ok: true, view: "html" })).toEqual({
+      "Content-Security-Policy": HTML_ARTICLE_CSP,
+    });
+    expect(htmlArticleHeaders({ ok: true })).toEqual({});
+  });
+
+  it("CSP は spec の指令を全部持つ", () => {
+    for (const d of [
+      "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com https://www.googletagmanager.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net data:",
+      "img-src 'self' https: data: blob:",
+      "media-src 'self' https:",
+      "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com",
+      "frame-src 'none'",
+      "object-src 'none'",
+      "form-action 'none'",
+      "base-uri 'none'",
+    ]) {
+      expect(HTML_ARTICLE_CSP).toContain(d);
+    }
+    expect(HTML_ARTICLE_CSP).not.toContain("\n");
   });
 });

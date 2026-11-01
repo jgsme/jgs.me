@@ -20,14 +20,19 @@ describe("standard.site の定数", () => {
   it("collection / rkey / url / name / content type", () => {
     expect(DOCUMENT_COLLECTION).toBe("site.standard.document");
     expect(PUBLICATION_COLLECTION).toBe("site.standard.publication");
-    expect(PUBLICATION_RKEY).toBe("w.jgs.me");
+    expect(PUBLICATION_RKEY).toBe("3mz7iuy6k2222");
     expect(PUBLICATION_URL).toBe("https://w.jgs.me");
     expect(PUBLICATION_NAME).toBe("I am Electrical machine");
     expect(HTML_CONTENT_TYPE).toBe("me.jgs.diary.html");
   });
+  it("rkey は lexicon の key: tid に合う", () => {
+    expect(PUBLICATION_RKEY).toMatch(
+      /^[234567abcdefghij][234567abcdefghijklmnopqrstuvwxyz]{12}$/,
+    );
+  });
   it("publication の at-uri", () => {
     expect(PUBLICATION_AT_URI).toBe(
-      "at://did:web:ds.jgs.me/site.standard.publication/w.jgs.me",
+      "at://did:web:ds.jgs.me/site.standard.publication/3mz7iuy6k2222",
     );
   });
   it("document の at-uri", () => {

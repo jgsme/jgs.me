@@ -19,10 +19,10 @@ describe("standard.site publication", () => {
     expect(putPublicationBody("did:web:ds.jgs.me")).toEqual({
       repo: "did:web:ds.jgs.me",
       collection: "site.standard.publication",
-      rkey: "w.jgs.me",
+      rkey: "3mz7iuy6k2222",
       record: publicationRecord(),
     });
     expect(PUBLICATION_COLLECTION).toBe("site.standard.publication");
-    expect(PUBLICATION_RKEY).toBe("w.jgs.me");
+    expect(PUBLICATION_RKEY).toBe("3mz7iuy6k2222");
   });
 });

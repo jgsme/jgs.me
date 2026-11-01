@@ -1,7 +1,7 @@
 // standard.site の publication record。cli は @jigsaw/db を import できないので
 // 値はここで持ち、テストで契約に固定する。
 export const PUBLICATION_COLLECTION = "site.standard.publication";
-export const PUBLICATION_RKEY = "w.jgs.me";
+export const PUBLICATION_RKEY = "3mz7iuy6k2222";
 
 export function publicationRecord() {
   return {

@@ -10,7 +10,7 @@ const RKEY = "3m2abcdefghij";
 const AT_URI = `at://did:web:ds.jgs.me/site.standard.document/${RKEY}`;
 const valid = {
   $type: "site.standard.document",
-  site: "at://did:web:ds.jgs.me/site.standard.publication/w.jgs.me",
+  site: "at://did:web:ds.jgs.me/site.standard.publication/3mz7iuy6k2222",
   path: "/pages/%E9%83%A8%E5%B1%8B%E3%81%AE%20CO2",
   title: "部屋の CO2",
   publishedAt: "2026-10-31T03:00:00Z",
@@ -96,7 +96,7 @@ describe("parseDocumentRecordValue", () => {
         ...valid,
         site: "at://did:web:ds.jgs.me/site.standard.publication/other",
       },
-      "record site must be at://did:web:ds.jgs.me/site.standard.publication/w.jgs.me",
+      "record site must be at://did:web:ds.jgs.me/site.standard.publication/3mz7iuy6k2222",
     ],
     [
       "題が空",

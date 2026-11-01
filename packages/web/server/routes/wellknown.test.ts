@@ -9,7 +9,7 @@ describe("GET /.well-known/site.standard.publication", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Type")).toContain("text/plain");
     expect(await res.text()).toBe(
-      "at://did:web:ds.jgs.me/site.standard.publication/w.jgs.me",
+      "at://did:web:ds.jgs.me/site.standard.publication/3mz7iuy6k2222",
     );
   });
 });

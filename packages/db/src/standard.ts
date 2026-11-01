@@ -6,7 +6,7 @@ export const STANDARD_DID = ZET_DID;
 
 export const DOCUMENT_COLLECTION = "site.standard.document";
 export const PUBLICATION_COLLECTION = "site.standard.publication";
-export const PUBLICATION_RKEY = "w.jgs.me";
+export const PUBLICATION_RKEY = "3mz7iuy6k2222";
 export const PUBLICATION_AT_URI = `at://${STANDARD_DID}/${PUBLICATION_COLLECTION}/${PUBLICATION_RKEY}`;
 export const PUBLICATION_URL = "https://w.jgs.me";
 export const PUBLICATION_NAME = "I am Electrical machine";

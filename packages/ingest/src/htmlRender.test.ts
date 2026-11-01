@@ -144,3 +144,22 @@ describe("firstHttpsImage", () => {
     expect(firstHttpsImage("<p>x</p>")).toBeNull();
   });
 });
+
+describe("style の </style 対策", () => {
+  const r = (h: string) => renderHtmlArticle(h, { colorScheme: null });
+
+  it("SVG の style に実体参照で入れた </style> を css に残さない", () => {
+    const { styles } = r(
+      "<svg><style>a{} &lt;/style&gt;&lt;script&gt;alert(1)&lt;/script&gt;</style></svg>",
+    ).head;
+    expect(styles.length).toBe(1);
+    expect(styles[0].css).not.toMatch(/<\/style/i);
+    expect(styles[0].css).toContain("a{}");
+  });
+
+  it("普通の top-level style は変わらない", () => {
+    expect(r("<style>h1{color:red}</style><p>x</p>").head.styles[0].css).toBe(
+      ".jgs-html-article h1{color:red}",
+    );
+  });
+});

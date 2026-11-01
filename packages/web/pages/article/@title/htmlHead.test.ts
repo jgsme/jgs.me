@@ -65,3 +65,14 @@ it("html 記事でなければ組み直しを出さない", () => {
   expect(html).not.toContain("jgs-html-article");
   expect(html).not.toContain("site.standard.document");
 });
+
+it("style の css に </style> があっても head を抜け出さない", () => {
+  const d = htmlData();
+  d.render.head.styles = [
+    { css: "a{}</StYlE><script>alert(1)</script>", media: null },
+  ];
+  vi.mocked(useData).mockReturnValue(d);
+  const html = renderToString(createElement(Head));
+  expect(html).not.toMatch(/<\/style><script>/i);
+  expect(html).toContain("a{}");
+});

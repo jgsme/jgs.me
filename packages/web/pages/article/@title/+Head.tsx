@@ -49,7 +49,9 @@ function HtmlArticleHead({ d }: { d: HtmlArticleData }) {
         <style
           key={`s:${i}`}
           media={media ?? undefined}
-          dangerouslySetInnerHTML={{ __html: css }}
+          dangerouslySetInnerHTML={{
+            __html: css.replace(/<\/style/gi, "<\\/style"),
+          }}
         />
       ))}
     </>

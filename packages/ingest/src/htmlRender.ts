@@ -77,6 +77,13 @@ function siblingsAfter(n: ChildNode): ChildNode[] {
   return sibs.slice(sibs.indexOf(n) + 1);
 }
 
+// <style> を </style で閉じさせない。SVG 内の <style> は外来コンテンツとして
+// 実体参照が展開されるので、css の文字列に </style> が現れうる。
+// <\/style は CSS のエスケープとして同じ意味のまま HTML の終了タグにならない
+function escapeStyleClose(css: string): string {
+  return css.replace(/<\/style/gi, "<\\/style");
+}
+
 // style 属性の断片を繋ぐ。前が ; で終わっていなければ ; を挟む
 function joinStyles(parts: string[]): string {
   let out = "";
@@ -105,7 +112,7 @@ export function renderHtmlArticle(
     (e) => !insideInert(e),
   );
   const styles: HeadStyle[] = styleEls.map((s) => ({
-    css: scopeCss(textOf(s), SCOPE),
+    css: escapeStyleClose(scopeCss(textOf(s), SCOPE)),
     media: s.attribs.media ?? null,
   }));
   const linkEls = findAll(isNamed("link"), doc.children).filter(

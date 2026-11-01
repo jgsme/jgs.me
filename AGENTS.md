@@ -143,9 +143,9 @@ HTML article の本体は PDS の `site.standard.document` record (content は `
 | `<key>.sb`          | 派生テキスト                                            |
 | w-md の `<key>.md`  | 検索インデックス用                                      |
 
-組み直しの規則を変えたら `@jigsaw/db/html-article` の `RENDER_VERSION` を上げ、diary から再 publish する (record を書き直して CID を変える)。同じ CID の再送は何もしない。
+`RENDER_VERSION` (`@jigsaw/db/html-article`) は render.json に残すラベルで、読んで分岐する所は無い。組み直しの規則を変えても、既存の記事には自動で効かない。diary から record を書き直して CID を変えて再 publish した記事だけが新しい規則で組み直される (同じ CID の再送は何もしない)。
 
-publication record は `at://did:web:ds.jgs.me/site.standard.publication/w.jgs.me`。`pnpm standard-publication` で 1 回だけ書き、web が `/.well-known/site.standard.publication` でその at-uri を返す。
+publication record は `at://did:web:ds.jgs.me/site.standard.publication/3mz7iuy6k2222`。`pnpm standard-publication` で 1 回だけ書き、web が `/.well-known/site.standard.publication` でその at-uri を返す。
 
 #### HTML article を出す順
 

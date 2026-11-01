@@ -3,6 +3,8 @@ import { useData } from "vike-react/useData";
 import type data from "./+data";
 import { OG_BASE_URL } from "@/constants/og";
 import { pagePath } from "@jigsaw/db/page-path";
+import { isHtmlArticleData } from "@/utils/htmlArticle";
+import type { HtmlArticleData } from "./htmlArticleData";
 
 type Data = Awaited<ReturnType<typeof data>>;
 
@@ -26,6 +28,30 @@ export function Head() {
       {d.description && (
         <meta property="og:description" content={d.description} />
       )}
+      {isHtmlArticleData(d) && <HtmlArticleHead d={d as HtmlArticleData} />}
+    </>
+  );
+}
+
+// html 記事は組み直した <link> / <style> を文書順に head へ出す。
+function HtmlArticleHead({ d }: { d: HtmlArticleData }) {
+  return (
+    <>
+      {d.atUri && <link rel="site.standard.document" href={d.atUri} />}
+      {d.render.head.links.map((link) => (
+        // 値は組み直しの時点で検証済みの文字列。属性の列挙型には合わせない
+        <link
+          key={`l:${link.href}`}
+          {...(link as React.LinkHTMLAttributes<HTMLLinkElement>)}
+        />
+      ))}
+      {d.render.head.styles.map(({ css, media }, i) => (
+        <style
+          key={`s:${i}`}
+          media={media ?? undefined}
+          dangerouslySetInnerHTML={{ __html: css }}
+        />
+      ))}
     </>
   );
 }

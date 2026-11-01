@@ -1,12 +1,23 @@
 import type { PageContextServer } from "vike/types";
 import type { Bindings } from "@/server/types";
 import { getDB } from "@/db/getDB";
-import { articles, clips, pageSimilarities, pages, zets } from "@jigsaw/db";
+import {
+  articles,
+  clips,
+  copies,
+  objects,
+  pageSimilarities,
+  pages,
+  zets,
+} from "@jigsaw/db";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { BACKLINK_INITIAL, fetchBacklinks } from "@/server/backlinks";
 import { useConfig } from "vike-react/useConfig";
 import { render } from "vike/abort";
-import { fetchBody } from "@jigsaw/db/fetch-body";
+import { fetchBody, fetchRenderedHtml } from "@jigsaw/db/fetch-body";
+import { bodyFormatOf } from "@jigsaw/db/body-key";
+import { DOCUMENT_COPY_PROTOCOL } from "@jigsaw/db/standard";
+import { buildHtmlArticleData } from "./htmlArticleData";
 import { resolveArticleDate } from "@jigsaw/db/article-date";
 import { zetAtUri } from "@jigsaw/db/zet";
 import { pickRandom } from "@/utils/pickRandom";
@@ -100,7 +111,44 @@ const data = async (c: Context) => {
     related = pickRandom(candidates, RELATED_COUNT);
   }
 
-  const body = await fetchBody(c.env.R2, bodyKey, title);
+  // HTML 記事 (standard-html)。派生テキスト (.sb) と組み直し済み HTML の
+  // どちらかが引けなければ、本文なしとして下の body === null 側へ落とす。
+  const isHtml = bodyFormatOf(bodyKey) === "standard-html";
+  if (isHtml) {
+    const sb = await fetchBody(c.env.R2, bodyKey, title);
+    const render = await fetchRenderedHtml(c.env.R2, bodyKey);
+    if (sb !== null && render !== null && pageId !== null) {
+      const copy = await db
+        .select({ uri: copies.uri })
+        .from(objects)
+        .innerJoin(copies, eq(copies.objectID, objects.id))
+        .where(
+          and(
+            eq(objects.pageID, pageId),
+            eq(copies.protocol, DOCUMENT_COPY_PROTOCOL),
+          ),
+        )
+        .limit(1);
+      const built = buildHtmlArticleData({
+        title,
+        pageId,
+        articleId,
+        spoiler,
+        date: storedDate,
+        sbBody: sb,
+        render,
+        atUri: copy[0]?.uri ?? null,
+        related,
+      });
+      config({
+        title: `${built.heading} - I am Electrical machine`,
+        description: built.description,
+      });
+      return built;
+    }
+  }
+
+  const body = isHtml ? null : await fetchBody(c.env.R2, bodyKey, title);
 
   if (body === null) {
     // 記事が無い題でも、そこへリンクしているページはある。行き止まりに

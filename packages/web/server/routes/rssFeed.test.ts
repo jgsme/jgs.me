@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildRssXml, type RssFeedItem } from "./rssFeed";
+import { buildRssXml, rssDescription, type RssFeedItem } from "./rssFeed";
 
 const SITE_URL = "https://w.jgs.me";
 const LAST_BUILD = new Date("2026-08-24T02:00:00Z");
@@ -113,5 +113,15 @@ describe("buildRssXml の feed 指定", () => {
     });
 
     expect(xml).toContain("<link>https://w.jgs.me/c/34</link>");
+  });
+});
+
+describe("rssDescription", () => {
+  it("standard-html の RSS の抜粋は派生テキストそのまま", () => {
+    expect(rssDescription("html-1", "題\n[a] #1")).toBe("[a] #1");
+  });
+
+  it("それ以外は Scrapbox として組む", () => {
+    expect(rssDescription("sb-1", "題\n本文")).toBe("本文");
   });
 });

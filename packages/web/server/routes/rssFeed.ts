@@ -1,3 +1,14 @@
+import { bodyFormatOf } from "@jigsaw/db/body-key";
+import { htmlArticleDescription } from "@/utils/htmlArticle";
+import { buildArticleBody } from "@/pages/article/@title/articleBody";
+
+// 本文の形式で抜粋の作り方が違う。html 記事の派生テキストは Scrapbox 記法
+// ではないので、Scrapbox として組むと [..] や # が消える。
+export const rssDescription = (bodyKey: string, body: string): string =>
+  bodyFormatOf(bodyKey) === "standard-html"
+    ? htmlArticleDescription(body)
+    : buildArticleBody(body).description;
+
 export type RssFeedItem = {
   title: string;
   // item の permalink パス (/a/:id, /c/:id)。title から組むと改題で link が

@@ -4,10 +4,9 @@ import { getDB } from "@/db/getDB";
 import { desc, eq } from "drizzle-orm";
 import { SITE_URL } from "@/constants/site";
 import { fetchBody } from "@jigsaw/db/fetch-body";
-import { buildArticleBody } from "@/pages/article/@title/articleBody";
 import type { Bindings } from "../types";
 import { articlePath, clipPath } from "@/utils/permalink";
-import { buildRssXml, type RssFeedItem } from "./rssFeed";
+import { buildRssXml, rssDescription, type RssFeedItem } from "./rssFeed";
 import { SPOILER_NOTICE } from "@/utils/spoiler";
 
 const rss = new Hono<{ Bindings: Bindings }>();
@@ -43,7 +42,7 @@ async function toFeedItems(
         title: row.title,
         linkPath: linkPath(row.id),
         created: row.created,
-        description: body === null ? null : buildArticleBody(body).description,
+        description: body === null ? null : rssDescription(row.bodyKey, body),
       };
     }),
   );

@@ -44,3 +44,10 @@ export const htmlArticleHeaders = (data: unknown): Record<string, string> =>
   isHtmlArticleData(data)
     ? { "Content-Security-Policy": HTML_ARTICLE_CSP }
     : {};
+
+// vike の headersResponse (評価済みの Headers) に CSP を足す。
+export const applyHtmlArticleCsp = (headers: Headers, data: unknown): void => {
+  for (const [k, v] of Object.entries(htmlArticleHeaders(data))) {
+    headers.set(k, v);
+  }
+};

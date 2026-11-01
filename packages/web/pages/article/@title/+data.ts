@@ -27,6 +27,7 @@ import { articleHeading } from "./heading";
 import { collectOEmbedUrls } from "./components/embed";
 import { fetchOEmbeds, type OEmbeds } from "@/server/oembed";
 import { SPOILER_NOTICE } from "@/utils/spoiler";
+import { applyHtmlArticleCsp } from "@/utils/htmlArticle";
 
 // bge-m3 の cosine は下駄が高く 0.5 未満がほぼ出ないため、絶対的な意味はない。
 // ノイズ切りの調整つまみ。0.60 で全 article の 7% が候補 0 件になる。
@@ -144,6 +145,10 @@ const data = async (c: Context) => {
         title: `${built.heading} - I am Electrical machine`,
         description: built.description,
       });
+      // +headersResponse は +data より前に評価されて data を見られない。
+      // 評価済みの headersResponse (Headers) をここで書き換える。
+      // dev は Vite の HMR が ws: を使うので付けない。
+      if (!import.meta.env.DEV) applyHtmlArticleCsp(c.headersResponse, built);
       return built;
     }
   }

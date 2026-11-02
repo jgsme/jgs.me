@@ -71,6 +71,37 @@ describe("GET /z/:id", () => {
   });
 });
 
+describe("GET /d/:id", () => {
+  it("druck のページへ 302 で飛ばす", async () => {
+    const res = await request("/d/3", dbOf([["HTML の記事"]]));
+
+    expect(res.status).toBe(302);
+    expect(res.headers.get("Location")).toBe(
+      `/pages/${encodeURIComponent("HTML の記事")}`,
+    );
+  });
+
+  it("タイトルを URL エンコードする", async () => {
+    const res = await request("/d/3", dbOf([["a/b?c"]]));
+
+    expect(res.headers.get("Location")).toBe("/pages/a%2Fb%3Fc");
+  });
+
+  it("その id の druck が無ければトップへ 302", async () => {
+    const res = await request("/d/999", dbOf([]));
+
+    expect(res.status).toBe(302);
+    expect(res.headers.get("Location")).toBe("/");
+  });
+
+  it("数値でない id はトップへ 302", async () => {
+    const res = await request("/d/abc", dbOf([["題"]]));
+
+    expect(res.status).toBe(302);
+    expect(res.headers.get("Location")).toBe("/");
+  });
+});
+
 describe("GET /p/:id", () => {
   it("記事のページへ 302", async () => {
     const res = await request("/p/5", dbOf([["題"]]));

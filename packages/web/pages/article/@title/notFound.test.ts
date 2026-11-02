@@ -52,5 +52,6 @@ it("本文が無くても被リンクがあれば題と被リンクのページ�
 
   const d = await data(context("リンクだけある題"));
   expect(d.ok).toBe(false);
+  if (d.ok) return;
   expect(d.backlinks).toEqual([{ title: "リンク元", image: null }]);
 });

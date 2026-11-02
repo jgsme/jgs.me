@@ -121,4 +121,20 @@ describe("runLinkIndex", () => {
     expect(res.items[0]?.error).toBe("boom");
     expect(written).toEqual([{ pageID: 2, toTitles: ["foo"] }]);
   });
+
+  it("standard-html の page は本文に [..] があっても links 0 で入れ直す", async () => {
+    const written: Array<{ pageID: number; toTitles: string[] }> = [];
+    const r = await runLinkIndex(
+      deps(
+        [{ id: 1, title: "題", bodyKey: "html-1" }],
+        { "html-1": "題\n配列 [a] と [b]" },
+        written,
+      ),
+      0,
+      50,
+    );
+
+    expect(written).toEqual([{ pageID: 1, toTitles: [] }]);
+    expect(r.items[0]).toEqual({ pageId: 1, title: "題", links: 0 });
+  });
 });

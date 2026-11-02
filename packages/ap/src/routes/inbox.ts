@@ -1,6 +1,14 @@
 import { Hono } from "hono";
 import { eq } from "drizzle-orm";
-import { articles, clips, followers, pages, reactions, zets } from "@jigsaw/db";
+import {
+  articles,
+  clips,
+  followers,
+  pages,
+  reactions,
+  zets,
+  druck,
+} from "@jigsaw/db";
 import { publishedKind } from "../published";
 import { getDB, type Env } from "../db";
 import { sha256Digest, verifyDigest } from "../sig/digest";
@@ -222,7 +230,7 @@ inbox.post("/ap/inbox", async (c) => {
 
     // reaction.targetPageID は page(id) への FK。存在しない id を insert すると
     // FK 違反で inbox が 500 を返し、相手がリトライを続ける。URI の形だけでは
-    // 実在を保証できないので、公開済み (article / clip / zet のどれかの行がある) かを
+    // 実在を保証できないので、公開済み (article / clip / zet / druck のどれかの行がある) かを
     // ここで確認する。article だけを見ると clip 宛の反応が全部落ちる
     // (canonical id は /o/<pageID> で article/clip 共通なので同様に見る)。
     const published = await db
@@ -230,15 +238,17 @@ inbox.post("/ap/inbox", async (c) => {
         articleID: articles.id,
         clipID: clips.id,
         zetRkey: zets.rkey,
+        druckID: druck.id,
       })
       .from(pages)
       .leftJoin(articles, eq(articles.pageID, pages.id))
       .leftJoin(clips, eq(clips.pageID, pages.id))
       .leftJoin(zets, eq(zets.pageID, pages.id))
+      .leftJoin(druck, eq(druck.pageID, pages.id))
       .where(eq(pages.id, pageID))
       .limit(1);
     // leftJoin だけだと page 単体行でも 1 件返ってしまうので、
-    // article / clip / zet のどれも無いケースを別途弾く。
+    // article / clip / zet / druck のどれも無いケースを別途弾く。
     if (!published[0] || publishedKind(published[0]) === null) {
       console.log(`[inbox] reaction for unpublished page=${pageID}`);
       return c.text("", 202);

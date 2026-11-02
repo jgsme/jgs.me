@@ -1,6 +1,7 @@
 import { drizzle } from "drizzle-orm/d1";
 import { and, eq, gt, isNotNull, or } from "drizzle-orm";
 import { articles, clips, pages } from "@jigsaw/db";
+import { bodyFormatOf } from "@jigsaw/db/body-key";
 import { fetchBody } from "@jigsaw/db/fetch-body";
 import { buildMdPut, type MdPut } from "./mdBody";
 import type { Env } from "./index";
@@ -42,6 +43,12 @@ export async function runMdBackfill(
     let error: string | undefined;
 
     try {
+      // w-md の md は取り込み時に HTML から作ったもの。.sb (検索用の平文)
+      // から作り直すと構造が落ちて劣化するので、触らない。
+      if (bodyFormatOf(row.bodyKey) === "standard-html") {
+        items.push({ pageId: row.id, title: row.title, written: false });
+        continue;
+      }
       const raw = await deps.readBody(row.bodyKey, row.title);
       // 本文が引けない page は実在する (fetchBody も [R2 miss] を吐いて
       // null を返すだけ)。書かずに次へ行く。

@@ -3,9 +3,13 @@ import "./index.css";
 import { usePageContext } from "vike-react/usePageContext";
 import { SearchForm } from "./components/SearchForm";
 import { TodayLink } from "./components/TodayLink";
+import { isHtmlArticleData } from "@/utils/htmlArticle";
 
 export const Layout = ({ children }: React.PropsWithChildren) => {
-  const { urlPathname } = usePageContext();
+  const { urlPathname, data } = usePageContext();
+  // HTML article は赤帯を E4 のヘッダとして自分で描き、検索窓は下の帯に回す。
+  if (isHtmlArticleData(data)) return <>{children}</>;
+
   // 周年日記への導線はトップだけに出す。検索窓と 1 行に並べるので、
   // 出し分けは検索窓を持つこちら側でやる。
   const isTop = urlPathname === "/";

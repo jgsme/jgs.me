@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { articles, clips, pages, reactions, zets } from "@jigsaw/db";
+import { articles, clips, pages, reactions, zets, druck } from "@jigsaw/db";
 import { publishedKind } from "./published";
 import { getDB, type Env, type WebmentionMessage } from "./db";
 import { MAX_BODY_BYTES, MAX_REDIRECTS, guardURL } from "./urlguard";
@@ -114,7 +114,7 @@ export function parseTarget(
   return null;
 }
 
-// 公開済み (article / clip / zet) のものだけ受け付ける。
+// 公開済み (article / clip / zet / druck) のものだけ受け付ける。
 export async function resolveTarget(
   target: string,
   siteUrl: string,
@@ -123,18 +123,20 @@ export async function resolveTarget(
   const parsed = parseTarget(target, siteUrl);
   if (parsed === null) return null;
 
-  // 公開済み (article / clip / zet のどれかの行がある) page だけを target として認める。
+  // 公開済み (article / clip / zet / druck のどれかの行がある) page だけを target として認める。
   const rows = await db
     .select({
       id: pages.id,
       articleID: articles.id,
       clipID: clips.id,
       zetRkey: zets.rkey,
+      druckID: druck.id,
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
     .leftJoin(clips, eq(clips.pageID, pages.id))
     .leftJoin(zets, eq(zets.pageID, pages.id))
+    .leftJoin(druck, eq(druck.pageID, pages.id))
     .where(
       parsed.by === "id"
         ? eq(pages.id, parsed.id)

@@ -14,6 +14,7 @@ import { clientOnly } from "vike-react/clientOnly";
 import { WarpButton } from "../../components/WarpButton";
 import { pagePath } from "@jigsaw/db/page-path";
 import { pdslsUrl } from "@jigsaw/db/zet";
+import { HtmlArticle } from "./components/html/HtmlArticle";
 
 // 反応は SSR に載せない。記事ページは s-maxage=86400 でエッジに載るため、
 // 含めるとキャッシュが切れるまで反応が増えない。島として切り出してクライアントで
@@ -25,6 +26,9 @@ type Data = Awaited<ReturnType<typeof data>>;
 
 const Page = () => {
   const d = useData<Data>();
+
+  // HTML article はヘッダから下の帯まで別の組み立て。
+  if (d.ok && "view" in d) return <HtmlArticle d={d} />;
 
   if (!d.ok) {
     return (
@@ -93,6 +97,7 @@ const Page = () => {
             articleId: d.articleId,
             clipId: d.clipId,
             zetId: d.zetId,
+            druckId: null,
           })}
         />
       </div>

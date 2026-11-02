@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { PUBLICATION_AT_URI } from "@jigsaw/db/standard";
 import type { Bindings } from "../types";
 
 const wellknown = new Hono<{ Bindings: Bindings }>();
@@ -17,6 +18,11 @@ for (const path of [
 ]) {
   wellknown.all(path, (c) => c.env.AP.fetch(c.req.raw));
 }
+
+// standard.site の publication の検証口。AP には転送せず web が答える。
+wellknown.get("/.well-known/site.standard.publication", (c) =>
+  c.text(PUBLICATION_AT_URI),
+);
 
 wellknown.all("/ap/*", (c) => c.env.AP.fetch(c.req.raw));
 

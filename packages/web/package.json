@@ -19,7 +19,7 @@
     "@vitejs/plugin-react": "^5.2.0",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
-    "laque": "^0.1.0",
+    "laque": "^0.2.0",
     "react": "catalog:",
     "react-dom": "catalog:",
     "three": "^0.185.1",

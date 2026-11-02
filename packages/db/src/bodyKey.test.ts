@@ -2,9 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   SB_PREFIX,
   bodyFormatOf,
+  htmlKeyOf,
+  isTextBody,
   mdKeyOf,
+  newHtmlBodyKey,
   newSbBodyKey,
   r2KeyOf,
+  renderKeyOf,
 } from "./bodyKey";
 
 describe("newSbBodyKey", () => {
@@ -61,5 +65,33 @@ describe("mdKeyOf", () => {
 
   it("空文字なら null (本文が存在しない)", () => {
     expect(mdKeyOf("")).toBeNull();
+  });
+});
+
+describe("standard-html 形式", () => {
+  it("html- で始まれば standard-html", () => {
+    expect(bodyFormatOf("html-abc")).toBe("standard-html");
+  });
+  it("standard-html の派生テキストも .sb", () => {
+    expect(r2KeyOf("html-0189")).toBe("html-0189.sb");
+  });
+  it("htmlKeyOf / renderKeyOf は standard-html だけ", () => {
+    expect(htmlKeyOf("html-0189")).toBe("html-0189.html");
+    expect(renderKeyOf("html-0189")).toBe("html-0189.render.json");
+    expect(htmlKeyOf("sb-0189")).toBeNull();
+    expect(renderKeyOf("5f8a1b2c")).toBeNull();
+    expect(htmlKeyOf("")).toBeNull();
+    expect(renderKeyOf("")).toBeNull();
+  });
+  it("newHtmlBodyKey は html-<uuid>", () => {
+    expect(newHtmlBodyKey()).toMatch(/^html-[0-9a-f-]+$/);
+  });
+  it("isTextBody は micropub-sb と standard-html", () => {
+    expect(isTextBody("sb-1")).toBe(true);
+    expect(isTextBody("html-1")).toBe(true);
+    expect(isTextBody("5f8a1b2c")).toBe(false);
+  });
+  it("mdKeyOf は html- も .md", () => {
+    expect(mdKeyOf("html-0189")).toBe("html-0189.md");
   });
 });

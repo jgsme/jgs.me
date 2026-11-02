@@ -3,30 +3,25 @@
 // (本文は送らない)。ここでは payload から at-uri を取り出し、PDS から record を
 // 読み、jgs.me に載せられる形かを確かめる。DB と R2 は触らない。
 
-import { ZET_DID as PDS_DID, ZET_COLLECTION } from "@jigsaw/db/zet";
+import { ZET_COLLECTION } from "@jigsaw/db/zet";
+import {
+  PDS_DID,
+  PDS_URL,
+  TID,
+  fetchPdsRecord,
+  getRecordURL as getPdsRecordURL,
+  propsOf,
+  type FetchFn,
+} from "./pdsRecord";
 
-export const PDS_URL = "https://ds.jgs.me";
-export { PDS_DID, ZET_COLLECTION };
+// 既存の import 元 (zetBlob など) のために再 export する。
+export { PDS_DID, PDS_URL, ZET_COLLECTION };
+export type { FetchFn };
 export const ZET_CATEGORY = "zet";
-
-// Workers の global fetch を引数に渡すときは素の参照を渡さない
-// (this が外れて Illegal invocation になる)。呼び出し側で
-// (input, init) => fetch(input, init) に包んで渡す。
-export type FetchFn = (input: string, init?: RequestInit) => Promise<Response>;
 
 const AT_URI_PREFIX = `at://${PDS_DID}/${ZET_COLLECTION}/`;
 
-// TID (atproto の時刻順 ID)。rkey は page.title (zet:<rkey>)
-// にそのまま入るので、文字種をここで閉じる。
-const TID = /^[234567abcdefghij][234567abcdefghijklmnopqrstuvwxyz]{12}$/;
-
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
-
-function propsOf(payload: unknown): Record<string, unknown> | null {
-  const props = (payload as { properties?: unknown } | null)?.properties;
-  if (!props || typeof props !== "object") return null;
-  return props as Record<string, unknown>;
-}
 
 // zet の通知か。clip と同じく category で見分ける (mf2.ts の isClip と同じ器)。
 export function isZetPayload(payload: unknown): boolean {
@@ -101,11 +96,7 @@ export function parseZetRecordValue(value: unknown): ZetRecord {
 }
 
 export function getRecordURL(rkey: string): string {
-  const u = new URL("/xrpc/com.atproto.repo.getRecord", PDS_URL);
-  u.searchParams.set("repo", PDS_DID);
-  u.searchParams.set("collection", ZET_COLLECTION);
-  u.searchParams.set("rkey", rkey);
-  return u.toString();
+  return getPdsRecordURL(ZET_COLLECTION, rkey);
 }
 
 export type FetchedZet = {
@@ -120,80 +111,17 @@ export type FetchZetResult =
   | { ok: true; zet: FetchedZet }
   | { ok: false; status: 400 | 502; description: string };
 
-// 呼び出し元 (diary) が直せる失敗 (record が無い・壊れている) は 400、
-// PDS 側の不調は 502 にする。diary は 502 なら再送してよい。
 export async function fetchZetRecord(
   rkey: string,
   fetchFn: FetchFn,
 ): Promise<FetchZetResult> {
-  let res: Response;
-  try {
-    res = await fetchFn(getRecordURL(rkey), {
-      headers: { Accept: "application/json" },
-    });
-  } catch (e) {
-    return {
-      ok: false,
-      status: 502,
-      description: `pds unreachable: ${String(e)}`,
-    };
-  }
-
-  // dirig は無い record を 400 RecordNotFound で返す (XRPC の慣例)。
-  if (res.status === 400) {
-    const err = (await res.json().catch(() => null)) as {
-      error?: unknown;
-    } | null;
-    if (err?.error === "RecordNotFound") {
-      return {
-        ok: false,
-        status: 400,
-        description: `record not found: ${rkey}`,
-      };
-    }
-    return { ok: false, status: 502, description: "pds returned 400" };
-  }
-  if (!res.ok) {
-    return {
-      ok: false,
-      status: 502,
-      description: `pds returned ${res.status}`,
-    };
-  }
-
-  let body: unknown;
-  try {
-    body = await res.json();
-  } catch {
-    return { ok: false, status: 502, description: "pds returned invalid json" };
-  }
-  if (typeof body !== "object" || body === null || Array.isArray(body)) {
-    return { ok: false, status: 502, description: "pds returned invalid json" };
-  }
-  const b = body as { uri?: unknown; cid?: unknown; value?: unknown };
-  if (typeof b.uri !== "string" || typeof b.cid !== "string") {
-    return {
-      ok: false,
-      status: 502,
-      description: "pds response lacks uri/cid",
-    };
-  }
-
-  let record: ZetRecord;
-  try {
-    record = parseZetRecordValue(b.value);
-  } catch (e) {
-    return {
-      ok: false,
-      status: 400,
-      description: `invalid record: ${e instanceof Error ? e.message : String(e)}`,
-    };
-  }
-
-  return {
-    ok: true,
-    zet: { uri: b.uri, cid: b.cid, record, raw: JSON.stringify(body) },
-  };
+  const r = await fetchPdsRecord(
+    ZET_COLLECTION,
+    rkey,
+    parseZetRecordValue,
+    fetchFn,
+  );
+  return r.ok ? { ok: true, zet: r.got } : r;
 }
 
 // getBlob の URL には拡張子が無く、scrapbox-parser は [URL] を画像ではなく

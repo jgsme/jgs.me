@@ -2,7 +2,7 @@ import { parse, type Line, type Node } from "@progfay/scrapbox-parser";
 
 // Mastodon v4.2 が通すタグだけを出す。
 // それ以外を出しても配信時に削られるため、最初から作らない。
-function esc(s: string): string {
+export function esc(s: string): string {
   return s
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")

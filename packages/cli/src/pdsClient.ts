@@ -103,3 +103,41 @@ export async function applyWrites(
   const body = (await res.json()) as { results?: readonly WriteResult[] };
   return { session, results: body.results ?? [] };
 }
+
+export type PutRecordBody = {
+  readonly repo: string;
+  readonly collection: string;
+  readonly rkey: string;
+  readonly record: unknown;
+};
+
+function postPutRecord(s: Session, body: PutRecordBody): Promise<Response> {
+  return fetch(`${pdsUrl()}/xrpc/com.atproto.repo.putRecord`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${s.accessJwt}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+/**
+ * record を 1 件 put (同じ rkey なら上書き)。期限切れなら張り直して 1 回だけ再試行する
+ */
+export async function putRecord(
+  s: Session,
+  body: PutRecordBody,
+): Promise<{
+  readonly session: Session;
+  readonly uri: string;
+  readonly cid: string;
+}> {
+  const first = await postPutRecord(s, body);
+  const expired = await isExpired(first);
+  const session = expired ? await createSession() : s;
+  const res = expired ? await postPutRecord(session, body) : first;
+  if (!res.ok) throw new Error(`putRecord ${res.status}: ${await res.text()}`);
+  const { uri, cid } = (await res.json()) as { uri: string; cid: string };
+  return { session, uri, cid };
+}

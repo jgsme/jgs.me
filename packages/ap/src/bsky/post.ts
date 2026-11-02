@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { articles, clips, copies, pages, zets } from "@jigsaw/db";
+import { articles, clips, copies, pages, zets, druck } from "@jigsaw/db";
 import { pageDisplayTitle } from "@jigsaw/db/zet";
 import { getDB, type Env } from "../db";
 import { SITE_URL, USER_AGENT, objectURI, shareURL } from "../config";
@@ -50,6 +50,7 @@ export async function postToBsky(pageID: number, env: Env): Promise<void> {
       articleID: articles.id,
       clipID: clips.id,
       zetRkey: zets.rkey,
+      druckID: druck.id,
       zetTitle: zets.title,
       zetDate: zets.date,
     })
@@ -57,6 +58,7 @@ export async function postToBsky(pageID: number, env: Env): Promise<void> {
     .leftJoin(articles, eq(articles.pageID, pages.id))
     .leftJoin(clips, eq(clips.pageID, pages.id))
     .leftJoin(zets, eq(zets.pageID, pages.id))
+    .leftJoin(druck, eq(druck.pageID, pages.id))
     .where(eq(pages.id, pageID))
     .limit(1);
 

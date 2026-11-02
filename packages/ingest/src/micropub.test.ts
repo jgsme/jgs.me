@@ -71,6 +71,23 @@ describe("handleMicropubPost: zet", () => {
     });
   });
 
+  it("category に document があれば document の取り込みに回す", async () => {
+    const res = await post({
+      type: ["h-entry"],
+      properties: {
+        category: ["document"],
+        "at-uri": ["at://did:web:ds.jgs.me/me.jgs.diary.zet/3m2abcdefghij"],
+      },
+    });
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error_description: string };
+    expect(
+      body.error_description.startsWith(
+        "at-uri must be at://did:web:ds.jgs.me/site.standard.document/<rkey>:",
+      ),
+    ).toBe(true);
+  });
+
   it("zet でなければ従来どおり記事として検証する", async () => {
     const res = await post({ type: ["h-entry"], properties: {} });
     expect(res.status).toBe(400);

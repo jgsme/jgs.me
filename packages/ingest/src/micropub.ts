@@ -26,6 +26,8 @@ import { uniqueTitle } from "./uniqueTitle";
 import { extractLinks } from "./links";
 import { chunk } from "./rows";
 import { purge } from "./purge";
+import { isDocumentPayload } from "./documentRecord";
+import { handleDocumentPost } from "./documentStore";
 import { isZetPayload } from "./zetRecord";
 import { handleZetPost } from "./zetStore";
 import { SITE_URL, objectURI } from "./site";
@@ -147,8 +149,9 @@ export async function handleMicropubPost(
   const action = (payload as { action?: unknown } | null)?.action;
 
   if (action === undefined || action === "create") {
-    // zet は本文を持たず at-uri だけで来る。create / update は at-uri で
+    // zet と document は本文を持たず at-uri だけで来る。create / update は at-uri で
     // 決まる (action は見ない) ので、parseEntry (name / content 必須) より前に分ける。
+    if (isDocumentPayload(payload)) return handleDocumentPost(payload, env);
     if (isZetPayload(payload)) return handleZetPost(payload, env);
     return handleMicropubCreate(payload, env);
   }

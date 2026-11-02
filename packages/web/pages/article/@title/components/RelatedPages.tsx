@@ -1,8 +1,9 @@
 import React from "react";
-import { PageTileGrid } from "./PageTileGrid";
+import { PageTileGrid, type TileTone } from "./PageTileGrid";
 
 export const RelatedPages: React.FC<{
   related: { title: string; image: string | null }[];
-}> = ({ related }) => (
-  <PageTileGrid heading="似てるかもしれんページ" pages={related} />
+  tone?: TileTone;
+}> = ({ related, tone }) => (
+  <PageTileGrid heading="似てるかもしれんページ" pages={related} tone={tone} />
 );

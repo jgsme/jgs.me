@@ -90,4 +90,15 @@ describe("runMdBackfill", () => {
     expect(r.nextCursor).toBeNull();
     expect(r.processed).toBe(0);
   });
+
+  it("standard-html の page は md を書き直さない", async () => {
+    const { deps: d, written } = deps([row({ bodyKey: "html-1" })], {
+      "html-1": "題\n本文",
+    });
+
+    const r = await runMdBackfill(d, 0, 50);
+
+    expect(written).toEqual({});
+    expect(r.items[0]).toEqual({ pageId: 1, title: "題1", written: false });
+  });
 });

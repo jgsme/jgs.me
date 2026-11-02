@@ -2,19 +2,25 @@ import { describe, expect, it } from "vitest";
 import { buildDeleteSql, buildSelectSql, TARGET_TABLES } from "./sql.ts";
 
 describe("TARGET_TABLES", () => {
-  it("削除対象は 3 テーブル", () => {
-    expect(TARGET_TABLES).toEqual(["article", "clip", "excluded_page"]);
+  it("削除対象は 4 テーブル", () => {
+    expect(TARGET_TABLES).toEqual([
+      "article",
+      "clip",
+      "excluded_page",
+      "druck",
+    ]);
   });
 });
 
 describe("buildSelectSql", () => {
-  it("在籍状況を相関サブクエリ 3 本で取る 1 文を返す", () => {
+  it("在籍状況を相関サブクエリ 4 本で取る 1 文を返す", () => {
     expect(buildSelectSql([6216])).toBe(
       [
         "SELECT p.id, p.title, p.sbID AS bodyKey,",
         "  (SELECT COUNT(*) FROM article WHERE pageID = p.id) AS in_article,",
         "  (SELECT COUNT(*) FROM clip WHERE pageID = p.id) AS in_clip,",
-        "  (SELECT COUNT(*) FROM excluded_page WHERE pageID = p.id) AS in_excluded",
+        "  (SELECT COUNT(*) FROM excluded_page WHERE pageID = p.id) AS in_excluded,",
+        "  (SELECT COUNT(*) FROM druck WHERE pageID = p.id) AS in_druck",
         "FROM page p WHERE p.id IN (6216)",
       ].join("\n"),
     );
@@ -26,7 +32,8 @@ describe("buildSelectSql", () => {
         "SELECT p.id, p.title, p.sbID AS bodyKey,",
         "  (SELECT COUNT(*) FROM article WHERE pageID = p.id) AS in_article,",
         "  (SELECT COUNT(*) FROM clip WHERE pageID = p.id) AS in_clip,",
-        "  (SELECT COUNT(*) FROM excluded_page WHERE pageID = p.id) AS in_excluded",
+        "  (SELECT COUNT(*) FROM excluded_page WHERE pageID = p.id) AS in_excluded,",
+        "  (SELECT COUNT(*) FROM druck WHERE pageID = p.id) AS in_druck",
         "FROM page p WHERE p.id IN (6216, 6217)",
       ].join("\n"),
     );
@@ -61,7 +68,14 @@ describe("buildDeleteSql", () => {
       "DELETE FROM article WHERE pageID IN (1)",
       "DELETE FROM clip WHERE pageID IN (1)",
       "DELETE FROM excluded_page WHERE pageID IN (1)",
+      "DELETE FROM druck WHERE pageID IN (1)",
     ]);
+  });
+
+  it("druck も複数 ID で消せる", () => {
+    expect(buildDeleteSql("druck", [1, 2])).toBe(
+      "DELETE FROM druck WHERE pageID IN (1, 2)",
+    );
   });
 
   it("ID が空なら例外を投げる", () => {

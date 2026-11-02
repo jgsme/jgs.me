@@ -11,7 +11,26 @@ const DEBOUNCE_MS = 150;
 
 type Suggestion = { title: string };
 
-export const SearchForm: React.FC = () => {
+// onBrand は赤い帯 (bg-brand) の上に置くときの配色。HTML article の下の帯で使う。
+// 候補の一覧は白地 (bg-bg) に重なるので、どちらの配色でも同じ見た目にする。
+// 帯の text-paper を継がないよう、一覧の側で text-fg を明示している。
+const TONES = {
+  default: {
+    row: "my-2",
+    input: "border-border focus:border-border-strong",
+    button: "border-border-strong hover:bg-surface-strong",
+  },
+  onBrand: {
+    row: "my-0",
+    input: "border-transparent bg-bg text-fg focus:border-paper",
+    button: "border-white/50 text-paper hover:bg-white/12",
+  },
+} as const;
+
+export const SearchForm: React.FC<{ tone?: keyof typeof TONES }> = ({
+  tone = "default",
+}) => {
+  const t = TONES[tone];
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -123,7 +142,7 @@ export const SearchForm: React.FC = () => {
 
   return (
     <form action="/search" method="get" onSubmit={handleSubmit}>
-      <div className="relative flex gap-2 my-2">
+      <div className={`relative flex gap-2 ${t.row}`}>
         <input
           type="text"
           name="q"
@@ -141,7 +160,7 @@ export const SearchForm: React.FC = () => {
           onCompositionStart={() => setComposing(true)}
           onCompositionEnd={() => setComposing(false)}
           placeholder="検索..."
-          className="flex-1 px-4 py-2 border border-border rounded focus:outline-none focus:border-border-strong"
+          className={`flex-1 px-4 py-2 border rounded focus:outline-none ${t.input}`}
           role="combobox"
           aria-expanded={expanded}
           aria-controls={listID}
@@ -151,7 +170,7 @@ export const SearchForm: React.FC = () => {
         />
         <button
           type="submit"
-          className="px-4 py-2 rounded border border-solid border-border-strong hover:bg-surface-strong"
+          className={`px-4 py-2 rounded border border-solid ${t.button}`}
         >
           検索
         </button>
@@ -161,7 +180,7 @@ export const SearchForm: React.FC = () => {
           href="/random"
           aria-label="ランダムな記事"
           title="ランダムな記事"
-          className="inline-flex items-center px-3 py-2 rounded border border-solid border-border-strong hover:bg-surface-strong"
+          className={`inline-flex items-center px-3 py-2 rounded border border-solid ${t.button}`}
         >
           <svg
             viewBox="0 0 24 24"
@@ -187,7 +206,7 @@ export const SearchForm: React.FC = () => {
           id={listID}
           role="listbox"
           hidden={!expanded}
-          className="absolute z-10 left-0 right-0 top-full mt-1 max-h-64 overflow-y-auto bg-bg border border-border rounded shadow-lg"
+          className="absolute z-10 left-0 right-0 top-full mt-1 max-h-64 overflow-y-auto bg-bg text-fg border border-border rounded shadow-lg"
         >
           {suggestions.map((suggestion, i) => (
             <li

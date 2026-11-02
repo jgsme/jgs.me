@@ -1,12 +1,24 @@
 import type { PageContextServer } from "vike/types";
 import type { Bindings } from "@/server/types";
 import { getDB } from "@/db/getDB";
-import { articles, clips, pageSimilarities, pages, zets } from "@jigsaw/db";
+import {
+  articles,
+  clips,
+  copies,
+  druck,
+  objects,
+  pageSimilarities,
+  pages,
+  zets,
+} from "@jigsaw/db";
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { BACKLINK_INITIAL, fetchBacklinks } from "@/server/backlinks";
 import { useConfig } from "vike-react/useConfig";
 import { render } from "vike/abort";
-import { fetchBody } from "@jigsaw/db/fetch-body";
+import { fetchBody, fetchRenderedHtml } from "@jigsaw/db/fetch-body";
+import { bodyFormatOf } from "@jigsaw/db/body-key";
+import { DOCUMENT_COPY_PROTOCOL } from "@jigsaw/db/standard";
+import { buildHtmlArticleData } from "./htmlArticleData";
 import { resolveArticleDate } from "@jigsaw/db/article-date";
 import { zetAtUri } from "@jigsaw/db/zet";
 import { pickRandom } from "@/utils/pickRandom";
@@ -16,6 +28,7 @@ import { articleHeading } from "./heading";
 import { collectOEmbedUrls } from "./components/embed";
 import { fetchOEmbeds, type OEmbeds } from "@/server/oembed";
 import { SPOILER_NOTICE } from "@/utils/spoiler";
+import { applyHtmlArticleCsp } from "@/utils/htmlArticle";
 
 // bge-m3 の cosine は下駄が高く 0.5 未満がほぼ出ないため、絶対的な意味はない。
 // ノイズ切りの調整つまみ。0.60 で全 article の 7% が候補 0 件になる。
@@ -45,11 +58,14 @@ const data = async (c: Context) => {
       zetTitle: zets.title,
       zetDate: zets.date,
       zetRkey: zets.rkey,
+      druckId: druck.id,
+      druckDate: druck.date,
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
     .leftJoin(clips, eq(clips.pageID, pages.id))
     .leftJoin(zets, eq(zets.pageID, pages.id))
+    .leftJoin(druck, eq(druck.pageID, pages.id))
     .where(eq(pages.title, title))
     .limit(1);
 
@@ -58,6 +74,7 @@ const data = async (c: Context) => {
   const articleId = pageInfo[0]?.articleId ?? null;
   const clipId = pageInfo[0]?.clipId ?? null;
   const zetId = pageInfo[0]?.zetId ?? null;
+  const druckId = pageInfo[0]?.druckId ?? null;
   // 引用を大きく出すか、動画を大きく出すかは kind だけで決める (+Page.tsx)。
   // clip でなければ null。
   const clipKind = pageInfo[0]?.clipKind ?? null;
@@ -76,9 +93,11 @@ const data = async (c: Context) => {
     zetDate,
   });
   // zet の日付は zet.date (diary が決めた日)。本文から推さない。
-  const storedDate = pageInfo[0]?.date ?? zetDate;
+  // druck の日付は druck.date (diary が決めた日)。
+  const storedDate =
+    pageInfo[0]?.date ?? zetDate ?? pageInfo[0]?.druckDate ?? null;
 
-  // 関連記事。article と zet のページに出す (clip には出さない)。
+  // 関連記事。article と zet のページに出す (clip と druck には出さない)。
   let related: { title: string; image: string | null }[] = [];
   if (pageId !== null && (articleId !== null || isZet)) {
     const candidates = await db
@@ -100,7 +119,48 @@ const data = async (c: Context) => {
     related = pickRandom(candidates, RELATED_COUNT);
   }
 
-  const body = await fetchBody(c.env.R2, bodyKey, title);
+  // HTML 記事 (standard-html)。派生テキスト (.sb) と組み直し済み HTML の
+  // どちらかが引けなければ、本文なしとして下の body === null 側へ落とす。
+  const isHtml = bodyFormatOf(bodyKey) === "standard-html";
+  if (isHtml) {
+    const sb = await fetchBody(c.env.R2, bodyKey, title);
+    const render = await fetchRenderedHtml(c.env.R2, bodyKey);
+    if (sb !== null && render !== null && pageId !== null) {
+      const copy = await db
+        .select({ uri: copies.uri })
+        .from(objects)
+        .innerJoin(copies, eq(copies.objectID, objects.id))
+        .where(
+          and(
+            eq(objects.pageID, pageId),
+            eq(copies.protocol, DOCUMENT_COPY_PROTOCOL),
+          ),
+        )
+        .limit(1);
+      const built = buildHtmlArticleData({
+        title,
+        pageId,
+        druckId,
+        spoiler,
+        date: storedDate,
+        sbBody: sb,
+        render,
+        atUri: copy[0]?.uri ?? null,
+        related,
+      });
+      config({
+        title: `${built.heading} - I am Electrical machine`,
+        description: built.description,
+      });
+      // +headersResponse は +data より前に評価されて data を見られない。
+      // 評価済みの headersResponse (Headers) をここで書き換える。
+      // dev は Vite の HMR が ws: を使うので付けない。
+      if (!import.meta.env.DEV) applyHtmlArticleCsp(c.headersResponse, built);
+      return built;
+    }
+  }
+
+  const body = isHtml ? null : await fetchBody(c.env.R2, bodyKey, title);
 
   if (body === null) {
     // 記事が無い題でも、そこへリンクしているページはある。行き止まりに

@@ -1,12 +1,27 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 // ネタバレの page は押すまで本文を見せない。本文は HTML に描いたまま
 // hidden で隠すだけなので、bot や mf2 を読む側には本文が渡る。
+//
+// onReveal は本文を見せた後に呼ぶ。HTML article の script は隠れた入れ物の
+// 中でも動き、その間に測った幅や高さは 0 になる。見せた後に resize を投げて
+// 測り直させるのに使う。click handler ではなく revealed が true になった後の
+// effect で呼ぶのは、hidden が外れた DOM が commit されてからでないと測り直しても
+// 0 のままのため。
 export const SpoilerGate: React.FC<{
   spoiler: boolean;
   children: React.ReactNode;
-}> = ({ spoiler, children }) => {
+  onReveal?: () => void;
+}> = ({ spoiler, children, onReveal }) => {
   const [revealed, setRevealed] = useState(false);
+  // onReveal を effect の依存に入れると、親の再描画で関数が変わるたびに
+  // 呼び直してしまう。見せた 1 回だけ呼べばよいので ref で最新を持つ。
+  const onRevealRef = useRef(onReveal);
+  onRevealRef.current = onReveal;
+
+  useEffect(() => {
+    if (revealed) onRevealRef.current?.();
+  }, [revealed]);
 
   if (!spoiler) return <>{children}</>;
 

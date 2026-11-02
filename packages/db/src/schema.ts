@@ -131,6 +131,35 @@ export const zetRelations = relations(zets, ({ one }) => ({
   }),
 }));
 
+// AI が作ったページ。article / clip / zet と同居しない (page 1 つに 1 行)。
+// 記事ページの URL は /pages/<題> のままで、この表は一覧 (/druck) と共有 URL
+// (/d/{id}) の根拠になる。
+export const druck = sqliteTable(
+  "druck",
+  {
+    id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+    pageID: integer("pageID")
+      .notNull()
+      .references(() => pages.id),
+    // 記事の日付 ("YYYY-MM-DD")。一覧はこの降順。
+    date: text("date").notNull(),
+    created: text("created")
+      .notNull()
+      .default(sql`(CURRENT_TIMESTAMP)`),
+  },
+  (t) => [
+    // web / ap / og は pageID で leftJoin して 1:1 を前提にする。
+    uniqueIndex("druck_page_id_unique").on(t.pageID),
+  ],
+);
+
+export const druckRelations = relations(druck, ({ one }) => ({
+  page: one(pages, {
+    fields: [druck.pageID],
+    references: [pages.id],
+  }),
+}));
+
 // 本文中の内部リンク ([foo] / #foo) の索引。逆引きして「この題に言及している
 // ページ」を出すために持つ。
 //

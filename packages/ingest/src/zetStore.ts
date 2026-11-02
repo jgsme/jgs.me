@@ -19,15 +19,15 @@ import {
 import type { Env } from "./index";
 
 export type DB = DrizzleD1Database<Record<string, never>>;
-type Batch = [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]];
+export type Batch = [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]];
 
 // batch の中では page.id がまだ分からない。page.title は UNIQUE なので、
 // 同じ batch の先頭で入れた page を題で引き直す。
-function pageIDOf(pageTitle: string) {
+export function pageIDOf(pageTitle: string) {
   return sql`(SELECT id FROM page WHERE title = ${pageTitle})`;
 }
 
-function objectIDOf(pageTitle: string) {
+export function objectIDOf(pageTitle: string) {
   return sql`${`${SITE_URL}/o/`} || ${pageIDOf(pageTitle)}`;
 }
 

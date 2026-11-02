@@ -47,6 +47,17 @@ const Page = () => {
                   moreLabel="Zettelkasten をもっと見る"
                 />
                 <TileSection
+                  heading="druck"
+                  tiles={d.payload.recentDruck.map((item) => ({
+                    key: item.title,
+                    href: pagePath(item.title),
+                    label: item.title,
+                    image: item.image,
+                  }))}
+                  moreHref="/druck"
+                  moreLabel="druck をもっと見る"
+                />
+                <TileSection
                   heading="クリップ"
                   tiles={d.payload.recentClips.map((clip) => ({
                     key: clip.id,

@@ -1,4 +1,9 @@
-export const TARGET_TABLES = ["article", "clip", "excluded_page"] as const;
+export const TARGET_TABLES = [
+  "article",
+  "clip",
+  "excluded_page",
+  "druck",
+] as const;
 export type TargetTable = (typeof TARGET_TABLES)[number];
 
 /** 集約 SELECT が返す、テーブルごとの在籍数の列名 */
@@ -6,6 +11,7 @@ export const PRESENCE_COLUMN: Record<TargetTable, string> = {
   article: "in_article",
   clip: "in_clip",
   excluded_page: "in_excluded",
+  druck: "in_druck",
 };
 
 function idList(ids: number[]): string {

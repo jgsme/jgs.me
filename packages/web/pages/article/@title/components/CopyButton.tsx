@@ -1,7 +1,16 @@
 import React from "react";
 import { useState } from "react";
 
-export const CopyButton: React.FC<{ path: string | null }> = ({ path }) => {
+// onBrand は赤い帯 (bg-brand) の上に置くときの配色。HTML article の下の帯で使う。
+const TONES = {
+  default: "border-border px-1 rounded",
+  onBrand: "border-white/40 text-paper px-2 rounded-full",
+} as const;
+
+export const CopyButton: React.FC<{
+  path: string | null;
+  tone?: keyof typeof TONES;
+}> = ({ path, tone = "default" }) => {
   const [copied, setCopied] = useState(false);
 
   if (!path) return null;
@@ -16,7 +25,7 @@ export const CopyButton: React.FC<{ path: string | null }> = ({ path }) => {
   return (
     <button
       onClick={handleCopy}
-      className="text-xs border border-solid border-border px-1 rounded cursor-pointer"
+      className={`text-xs border border-solid cursor-pointer ${TONES[tone]}`}
     >
       {copied ? "Copied!" : "Copy Share URL"}
     </button>

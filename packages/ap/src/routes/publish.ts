@@ -1,10 +1,10 @@
 import { Hono } from "hono";
 import { eq } from "drizzle-orm";
-import { articles, clips, followers, pages, zets } from "@jigsaw/db";
+import { articles, clips, followers, pages, zets, druck } from "@jigsaw/db";
 import { getDB, type Env } from "../db";
 import { SITE_URL, articleURL, objectURI } from "../config";
 import { publishedKind } from "../published";
-import { resolveContent } from "../content";
+import { resolveContent, resolveOutlinkHtml } from "../content";
 import { toArticle, toNote, type PageRow } from "../as2";
 import {
   wrapActorUpdate,
@@ -42,12 +42,13 @@ publish.post("/internal/publish", async (c) => {
         articleID: number | null;
         clipID: number | null;
         zetRkey: string | null;
+        druckID: number | null;
       })
     | null = null;
   let content = "";
 
   if (kind !== "delete") {
-    // article / clip / zet を配送対象にする。innerJoin(articles) のままだと
+    // article / clip / zet / druck を配送対象にする。innerJoin(articles) のままだと
     // clip しか持たない page が「not published」で 404 になる。
     // 両方ある page は article として扱う (先に立った方を尊重する)。
     const rows = await db
@@ -61,11 +62,13 @@ publish.post("/internal/publish", async (c) => {
         articleID: articles.id,
         clipID: clips.id,
         zetRkey: zets.rkey,
+        druckID: druck.id,
       })
       .from(pages)
       .leftJoin(articles, eq(articles.pageID, pages.id))
       .leftJoin(clips, eq(clips.pageID, pages.id))
       .leftJoin(zets, eq(zets.pageID, pages.id))
+      .leftJoin(druck, eq(druck.pageID, pages.id))
       .where(eq(pages.id, pageID))
       .limit(1);
 
@@ -88,7 +91,10 @@ publish.post("/internal/publish", async (c) => {
     // ネタバレの page は送らない。受信側は source を読んで本文を抜粋する。
     const outlinks = page.spoiler
       ? []
-      : await extractOutlinks(content, SITE_URL);
+      : await extractOutlinks(
+          await resolveOutlinkHtml(page.bodyKey, c.env.R2, content),
+          SITE_URL,
+        );
     if (outlinks.length > 0) {
       const source = articleURL(page.title);
       await c.env.WM_SEND.sendBatch(
@@ -146,10 +152,11 @@ publish.post("/internal/publish", async (c) => {
   if (kind === "delete") {
     activity = wrapDelete(objectURI(pageID));
   } else {
-    // Article は article だけ。clip と zet は短い投稿として Note で出す
+    // Article は article と druck。clip と zet は短い投稿として Note で出す
     // (zet は name / summary を持たない)。
+    const kindOfPage = publishedKind(page!);
     const object =
-      publishedKind(page!) === "article"
+      kindOfPage === "article" || kindOfPage === "druck"
         ? toArticle(page!, content)
         : toNote(page!, content);
     activity = kind === "create" ? wrapCreate(object) : wrapUpdate(object);

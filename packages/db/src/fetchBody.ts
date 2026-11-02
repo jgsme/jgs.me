@@ -1,4 +1,8 @@
-import { bodyFormatOf, r2KeyOf } from "./bodyKey";
+import { htmlKeyOf, isTextBody, r2KeyOf, renderKeyOf } from "./bodyKey";
+import {
+  parseRenderedHtmlArticle,
+  type RenderedHtmlArticle,
+} from "./htmlArticle";
 
 type R2PageData = {
   id: string;
@@ -25,10 +29,41 @@ export async function fetchBody(
     return null;
   }
 
-  if (bodyFormatOf(bodyKey) === "micropub-sb") {
+  if (isTextBody(bodyKey)) {
     return await obj.text();
   }
 
   const data = await obj.json<R2PageData>();
   return data.lines.map((l) => l.text).join("\n");
+}
+
+// standard-html の原本 HTML。html 形式でなければ R2 を引かずに null。
+export async function fetchHtmlBody(
+  r2: R2Bucket,
+  bodyKey: string,
+): Promise<string | null> {
+  const key = htmlKeyOf(bodyKey);
+  if (!key) return null;
+  const obj = await r2.get(key);
+  if (!obj) {
+    console.error(`[R2 miss] key=${key}`);
+    return null;
+  }
+  return await obj.text();
+}
+
+// standard-html の組み直し済み表示用。形が違えば null (読み側が原本から
+// 組み直せるように、壊れた JSON は無いものとして扱う)。
+export async function fetchRenderedHtml(
+  r2: R2Bucket,
+  bodyKey: string,
+): Promise<RenderedHtmlArticle | null> {
+  const key = renderKeyOf(bodyKey);
+  if (!key) return null;
+  const obj = await r2.get(key);
+  if (!obj) {
+    console.error(`[R2 miss] key=${key}`);
+    return null;
+  }
+  return parseRenderedHtmlArticle(await obj.json<unknown>());
 }

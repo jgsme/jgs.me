@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { pages, articles, clips, zets } from "@jigsaw/db";
+import { pages, articles, clips, zets, druck } from "@jigsaw/db";
 import { getDB } from "@/db/getDB";
 import { eq } from "drizzle-orm";
 import type { Bindings } from "../types";
@@ -85,6 +85,29 @@ redirects.get("/z/:id", async (c) => {
     .from(zets)
     .innerJoin(pages, eq(zets.pageID, pages.id))
     .where(eq(zets.id, id))
+    .limit(1);
+
+  if (result.length === 0 || !result[0].title) {
+    return c.redirect("/");
+  }
+
+  return c.redirect(pagePath(result[0].title));
+});
+
+// druck (AI が作った HTML ページ) の permalink。/a/:id・/c/:id と同型で、
+// 行き先は同じ /pages/<title>。
+redirects.get("/d/:id", async (c) => {
+  const id = Number(c.req.param("id"));
+  if (isNaN(id)) {
+    return c.redirect("/");
+  }
+
+  const db = getDB(c.env.DB);
+  const result = await db
+    .select({ title: pages.title })
+    .from(druck)
+    .innerJoin(pages, eq(druck.pageID, pages.id))
+    .where(eq(druck.id, id))
     .limit(1);
 
   if (result.length === 0 || !result[0].title) {

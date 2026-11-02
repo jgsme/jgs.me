@@ -1,0 +1,138 @@
+/* HTML article のヘッダの演出 (E4 上書き) と下の帯。試作 (artifact「HTML 記事の器」)
+   の .ex / .e4 / .noise / .dk / .gl-label などを写したもの。
+   クラス名に jgs-e4- を前置するのは、HTML 自身の CSS (入れ物の中に閉じ込めてある) と
+   名前がぶつかっても読み違えないようにするため。
+
+   動きは OverwriteHeader.tsx の JS が付け外しするクラスで出す:
+     noise に jgs-e4-full / jgs-e4-settled、dk に jgs-e4-on、label に jgs-e4-dkl。
+   高さは赤帯 (h-header) と題の行で最初から決まっていて、演出の間に変わらない。
+
+   配置や色のように Tailwind の語彙で書けるものは OverwriteHeader.tsx の
+   className に置く。ここに残すのは、語彙に無い寸法 (帯を 5 行で割った 12.8px など)、
+   JS が付け外しする状態、keyframes、疑似要素、reduced-motion の切り替え。 */
+
+/* 文字のマス目。最初は透明で赤帯がそのまま見え、刷り直されたマス (w) だけ
+   黒地に赤い字になる。5 行 × 12.8px で帯の 64px を埋める。
+   マスの span は overwrite.ts が innerHTML で数百個作るので、クラスは短いまま CSS で当てる。 */
+.jgs-e4-noise {
+  font-size: 11px;
+  line-height: 12.8px;
+}
+.jgs-e4-noise .jgs-e4-w,
+.jgs-e4-noise .jgs-e4-u {
+  display: inline-block;
+  height: 12.8px;
+  vertical-align: top;
+}
+.jgs-e4-noise .jgs-e4-w {
+  background: var(--color-abyss);
+}
+.jgs-e4-noise .jgs-e4-n {
+  color: var(--color-abyss-spark);
+}
+.jgs-e4-noise.jgs-e4-full {
+  background: var(--color-abyss);
+}
+/* 止まった後に地に残る字はうっすら */
+.jgs-e4-noise.jgs-e4-settled {
+  color: color-mix(in srgb, var(--color-abyss-mark) 30%, transparent);
+}
+
+/* 闇落ち後のマーク。地は noise が持つので透明。 */
+.jgs-e4-dk {
+  opacity: 0;
+}
+.jgs-e4-dk::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0 2px,
+    color-mix(in srgb, var(--color-white) 4%, transparent) 2px 3px
+  );
+}
+.jgs-e4-dk.jgs-e4-on {
+  opacity: 1;
+  animation: jgs-e4-dk4 0.3s steps(1, end) both;
+}
+@keyframes jgs-e4-dk4 {
+  0% {
+    opacity: 1;
+  }
+  30% {
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+}
+
+/* 題の行。HTML バッジ・題・日付を等幅で 1 行。題は打ち直しの間に空になるので、
+   行の高さは中身に頼らず固定する。長い題は … で切る (帯の h1 に全部出る)。 */
+.jgs-e4-label {
+  padding-block: 10px;
+}
+.jgs-e4-label.jgs-e4-dkl {
+  background: var(--color-abyss);
+  color: var(--color-abyss-fg);
+}
+.jgs-e4-gl {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  line-height: 1.6;
+  height: 1.6em;
+}
+.jgs-e4-k {
+  padding: 0 5px;
+}
+/* 題の幅は打ち直しの間も変えない。full (invisible) が全文を見えないまま置いて幅
+   (と … で切る位置) を決め、見える字は typed として上に重ねる。typed は absolute
+   なので、途中の短い字やカーソルが幅を変えず、日付が横に動かない (CLS 0)。 */
+.jgs-e4-typed {
+  text-shadow:
+    1px 0 var(--color-glitch-red),
+    -1px 0 var(--color-glitch-cyan);
+}
+.jgs-e4-caret {
+  width: 0.6em;
+  animation: jgs-e4-blink 0.5s steps(1, end) infinite;
+}
+@keyframes jgs-e4-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* 動きを減らす設定では、JS を待たずに最初から闇落ち後の姿を出す。
+   地の字は JS が settle で入れる。 */
+@media (prefers-reduced-motion: reduce) {
+  .jgs-e4-base {
+    opacity: 0;
+  }
+  .jgs-e4-noise {
+    background: var(--color-abyss);
+  }
+  .jgs-e4-dk,
+  .jgs-e4-dk.jgs-e4-on {
+    opacity: 1;
+    animation: none;
+  }
+  .jgs-e4-label {
+    background: var(--color-abyss);
+    color: var(--color-abyss-fg);
+  }
+  .jgs-e4-caret {
+    animation: none;
+  }
+}
+
+/* 下の帯。反応と関連の部品は普段の記事ページと共有なので、帯の上での色だけ
+   ここで差し替える (試作の .vb .foot)。 */
+.jgs-e4-foot h2 {
+  color: var(--color-on-brand-heading);
+}
+.jgs-e4-foot .text-fg-subtle {
+  color: var(--color-on-brand-muted);
+}

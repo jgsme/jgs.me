@@ -1,0 +1,27 @@
+/* HTML article の入れ物 (.jgs-html-article) の中だけ Tailwind の preflight を
+   打ち消し、ブラウザの既定のスタイルに戻す。HTML は jgs.me の CSS を知らずに
+   書かれているので、list-style: none や見出しの font-size: inherit が効くと
+   崩れる。
+
+   Tailwind v4 の preflight は @layer base に居る。同じ layer の後ろ
+   (index.css で tailwindcss と laque の後に import する) に、より詳細度の高い
+   セレクタで all: revert-layer を置くと、入れ物の中だけ base layer 以前、
+   つまりブラウザの既定に戻る。
+
+   - HTML 自身の <style> は head に layer 無しで出る。layer 無しの author style は
+     layer 付きの jgs.me の CSS より常に勝つので、ここで戻した後に HTML の
+     スタイルが乗る。
+   - all は custom property を触らないので、HTML が書いた --x は残る。
+   - revert ではなく revert-layer にする。revert は author origin を丸ごと捨てて
+     <img width> や SVG の fill 属性 (presentational hint) まで消すため。 */
+@layer base {
+  .jgs-html-article,
+  .jgs-html-article *,
+  .jgs-html-article ::before,
+  .jgs-html-article ::after,
+  .jgs-html-article ::backdrop,
+  .jgs-html-article ::file-selector-button,
+  .jgs-html-article ::placeholder {
+    all: revert-layer;
+  }
+}

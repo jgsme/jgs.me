@@ -7,11 +7,20 @@ import { pagePath } from "@jigsaw/db/page-path";
 // 見出しだけ差し替えて使い回す。
 // children はグリッドの下、section の中に置く。「もっと見る」のボタンが
 // 見出しごと外に出ないようにするため。
+// onBrand は赤い帯 (bg-brand) の上に置くとき。画像の無いタイルの地が帯と
+// 同じ赤になって縁が消えるので、白の半透明の地と枠にする (HTML article の下の帯)。
+const TILE_TONES = {
+  default: "bg-brand",
+  onBrand: "bg-white/10 border border-solid border-white/25",
+} as const;
+export type TileTone = keyof typeof TILE_TONES;
+
 export const PageTileGrid: React.FC<{
   heading: string;
   pages: { title: string; image: string | null }[];
   children?: React.ReactNode;
-}> = ({ heading, pages, children }) => {
+  tone?: TileTone;
+}> = ({ heading, pages, children, tone = "default" }) => {
   if (pages.length === 0) return null;
 
   return (
@@ -22,7 +31,7 @@ export const PageTileGrid: React.FC<{
           <li key={r.title}>
             <a
               href={pagePath(r.title)}
-              className="relative block aspect-square overflow-hidden rounded bg-brand transition-shadow hover:shadow-md"
+              className={`relative block aspect-square overflow-hidden rounded transition-shadow hover:shadow-md ${TILE_TONES[tone]}`}
             >
               {r.image ? (
                 <img

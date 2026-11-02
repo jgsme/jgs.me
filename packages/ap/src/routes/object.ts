@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { and, eq } from "drizzle-orm";
-import { articles, clips, objects, pages, zets } from "@jigsaw/db";
+import { articles, clips, objects, pages, zets, druck } from "@jigsaw/db";
 import { getDB, type Env } from "../db";
 import { SITE_URL, articleURL, objectURI } from "../config";
 import { toArticle, toNote } from "../as2";
@@ -42,16 +42,18 @@ objectRoute.get("/o/:id", async (c) => {
       articleID: articles.id,
       clipID: clips.id,
       zetRkey: zets.rkey,
+      druckID: druck.id,
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
     .leftJoin(clips, eq(clips.pageID, pages.id))
     .leftJoin(zets, eq(zets.pageID, pages.id))
+    .leftJoin(druck, eq(druck.pageID, pages.id))
     .where(eq(pages.id, id))
     .limit(1);
 
   const page = rows[0];
-  // article / clip / zet のどれにも行が無い = 未公開。federation の対象外。
+  // article / clip / zet / druck のどれにも行が無い = 未公開。federation の対象外。
   if (!page || publishedKind(page) === null) {
     return c.notFound();
   }
@@ -87,8 +89,9 @@ objectRoute.get("/o/:id", async (c) => {
   );
 
   // 配送した型と提供する型を揃える。publish.ts の分岐と同じ条件。
+  const kindOfPage = publishedKind(page);
   const object =
-    publishedKind(page) === "article"
+    kindOfPage === "article" || kindOfPage === "druck"
       ? toArticle(page, contentHtml)
       : toNote(page, contentHtml);
 

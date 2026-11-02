@@ -114,7 +114,7 @@ export function parseTarget(
   return null;
 }
 
-// 公開済み (article / clip / zet) のものだけ受け付ける。
+// 公開済み (article / clip / zet / druck) のものだけ受け付ける。
 export async function resolveTarget(
   target: string,
   siteUrl: string,
@@ -123,7 +123,7 @@ export async function resolveTarget(
   const parsed = parseTarget(target, siteUrl);
   if (parsed === null) return null;
 
-  // 公開済み (article / clip / zet のどれかの行がある) page だけを target として認める。
+  // 公開済み (article / clip / zet / druck のどれかの行がある) page だけを target として認める。
   const rows = await db
     .select({
       id: pages.id,

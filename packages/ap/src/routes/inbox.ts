@@ -230,7 +230,7 @@ inbox.post("/ap/inbox", async (c) => {
 
     // reaction.targetPageID は page(id) への FK。存在しない id を insert すると
     // FK 違反で inbox が 500 を返し、相手がリトライを続ける。URI の形だけでは
-    // 実在を保証できないので、公開済み (article / clip / zet のどれかの行がある) かを
+    // 実在を保証できないので、公開済み (article / clip / zet / druck のどれかの行がある) かを
     // ここで確認する。article だけを見ると clip 宛の反応が全部落ちる
     // (canonical id は /o/<pageID> で article/clip 共通なので同様に見る)。
     const published = await db
@@ -248,7 +248,7 @@ inbox.post("/ap/inbox", async (c) => {
       .where(eq(pages.id, pageID))
       .limit(1);
     // leftJoin だけだと page 単体行でも 1 件返ってしまうので、
-    // article / clip / zet のどれも無いケースを別途弾く。
+    // article / clip / zet / druck のどれも無いケースを別途弾く。
     if (!published[0] || publishedKind(published[0]) === null) {
       console.log(`[inbox] reaction for unpublished page=${pageID}`);
       return c.text("", 202);

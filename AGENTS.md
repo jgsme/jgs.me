@@ -151,7 +151,7 @@ publication record は `at://did:web:ds.jgs.me/site.standard.publication/3mz7iuy
 
 #### HTML article を出す順
 
-1. **merge より前に** `cd packages/ingest && npx wrangler d1 migrations apply w --remote` で druck 表を当てる (merge で deploy された新しいコードが無い表を引いて落ちるため)
+1. **merge より前に**、main ではなくこの branch の worktree の `packages/ingest` から druck 表を当てる (merge で deploy された新しいコードが無い表を引いて落ちるため)。先に `npx wrangler d1 migrations list w --remote` で未適用を確認し、`npx wrangler d1 migrations apply w --remote` で当てる
 2. jgs.me を merge して deploy (Workers Builds が w / w-ingest / w-ap を出す)
 3. `PDS_IDENTIFIER=… PDS_PASSWORD=… pnpm standard-publication` を 1 回打つ
 4. `curl -s https://w.jgs.me/.well-known/site.standard.publication` が同じ at-uri を返すのを確かめる

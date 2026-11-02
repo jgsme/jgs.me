@@ -3,7 +3,7 @@
 // article と clip の両方を持つ page は article として扱う (先に立った方を
 // 尊重する。publish.ts の既存の規則)。zet と druck は他の行と同居しない。
 //
-// 呼び出し側は page を leftJoin(articles / clips / zets / drucks) で引き、
+// 呼び出し側は page を leftJoin(articles / clips / zets / druck) で引き、
 // articleID / clipID / zetRkey / druckID を渡す。leftJoin だけだと page 単体の行も
 // 1 件返るので、null の判定はここに寄せる。
 export type PublishedKind = "article" | "clip" | "zet" | "druck";

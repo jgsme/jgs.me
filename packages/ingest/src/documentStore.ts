@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/d1";
 import { and, eq } from "drizzle-orm";
-import { articles, copies, objects, pages } from "@jigsaw/db";
+import { copies, druck, objects, pages } from "@jigsaw/db";
 import {
   htmlKeyOf,
   mdKeyOf,
@@ -24,7 +24,7 @@ import {
 import { objectIDOf, pageIDOf, type Batch, type DB } from "./zetStore";
 import type { Env } from "./index";
 
-// page + article + object + copy を 1 batch で入れる。batch は 1 回の D1 呼び出し
+// page + druck + object + copy を 1 batch で入れる。batch は 1 回の D1 呼び出し
 // かつトランザクションなので、途中で落ちれば何も残らない (zetStore.ts と同じ)。
 // page_link は入れない。派生テキストは Scrapbox 記法ではない。
 export function documentCreateStatements(
@@ -42,7 +42,7 @@ export function documentCreateStatements(
       image: input.image,
       spoiler: input.spoiler,
     }),
-    db.insert(articles).values({
+    db.insert(druck).values({
       pageID,
       created: input.created,
       date: input.date,
@@ -108,7 +108,7 @@ export async function findDocumentByAtUri(
   const [row] = await db
     .select({
       pageID: pages.id,
-      articleID: articles.id,
+      druckID: druck.id,
       title: pages.title,
       bodyKey: pages.bodyKey,
       cid: copies.cid,
@@ -116,7 +116,7 @@ export async function findDocumentByAtUri(
     .from(copies)
     .innerJoin(objects, eq(objects.id, copies.objectID))
     .innerJoin(pages, eq(pages.id, objects.pageID))
-    .innerJoin(articles, eq(articles.pageID, pages.id))
+    .innerJoin(druck, eq(druck.pageID, pages.id))
     .where(
       and(eq(copies.protocol, DOCUMENT_COPY_PROTOCOL), eq(copies.uri, atUri)),
     )
@@ -175,9 +175,9 @@ export function documentDeps(env: Env): DocumentDeps {
       await db.batch(documentCreateStatements(db, input));
       // batch は入れた行の id を返さないので、題で引き直す。
       const [row] = await db
-        .select({ pageID: pages.id, articleID: articles.id })
+        .select({ pageID: pages.id, druckID: druck.id })
         .from(pages)
-        .innerJoin(articles, eq(articles.pageID, pages.id))
+        .innerJoin(druck, eq(druck.pageID, pages.id))
         .where(eq(pages.title, input.title))
         .limit(1);
       if (!row) throw new Error(`page not found after insert: ${input.title}`);

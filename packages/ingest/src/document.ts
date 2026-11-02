@@ -14,8 +14,8 @@ import { SITE_URL } from "./site";
 
 export type DocumentTarget = {
   pageID: number;
-  // article.id。/a/<id> の purge に使う。
-  articleID: number;
+  // druck.id。/d/<id> の purge に使う。
+  druckID: number;
   // 今の page.title。改題で旧題のパスを purge するのに使う。
   title: string;
   bodyKey: string;
@@ -66,7 +66,7 @@ export type DocumentDeps = {
   putBodies: (bodyKey: string, bodies: DocumentBodies) => Promise<void>;
   create: (
     input: DocumentCreateInput,
-  ) => Promise<{ pageID: number; articleID: number }>;
+  ) => Promise<{ pageID: number; druckID: number }>;
   update: (input: DocumentUpdateInput) => Promise<void>;
   publish: (pageID: number, kind: "create" | "update") => Promise<void>;
   purge: (paths: string[]) => Promise<void>;
@@ -163,13 +163,14 @@ export async function ingestDocument(
       console.error(`[document] update failed rkey=${ref.rkey} ${message(e)}`);
       return fail(500, "failed to store document");
     }
-    // 一覧・個別・share URL。micropub.ts の update と同じく /p/<id> も消す。
+    // トップ・/druck・個別・share URL。micropub.ts の update と同じく /p/<id> も消す。
     // 改題なら旧題の URL も消す (web は無い題を 404 で返す)。
     const paths = [
       "/",
       `/p/${existing.pageID}`,
       pagePath(record.title),
-      `/a/${existing.articleID}`,
+      `/d/${existing.druckID}`,
+      "/druck",
     ];
     if (existing.title !== record.title) paths.push(pagePath(existing.title));
     await bestEffort("[document] purge", () => deps.purge(paths));
@@ -198,7 +199,7 @@ export async function ingestDocument(
     console.error(`[document] create failed rkey=${ref.rkey} ${message(e)}`);
     return fail(500, "failed to store document");
   }
-  await bestEffort("[document] purge", () => deps.purge(["/"]));
+  await bestEffort("[document] purge", () => deps.purge(["/", "/druck"]));
   await bestEffort("[document] publish", () => deps.publish(pageID, "create"));
   return new Response(null, { status: 201, headers: { Location: location } });
 }

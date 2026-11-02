@@ -40,14 +40,14 @@ const updateInput: DocumentUpdateInput = {
 };
 
 describe("documentCreateStatements", () => {
-  it("page / article / object / copy の順に 1 batch", () => {
+  it("page / druck / object / copy の順に 1 batch", () => {
     expect(
       documentCreateStatements(db, createInput)
         .map(sqlOf)
         .map((s) => s.sql.split(" (")[0]),
     ).toEqual([
       'insert into "page"',
-      'insert into "article"',
+      'insert into "druck"',
       'insert into "object"',
       'insert into "copy"',
     ]);
@@ -63,10 +63,10 @@ describe("documentCreateStatements", () => {
     );
   });
 
-  it("article.pageID は同じ batch で入れた page を題で引く", () => {
-    const article = sqlOf(documentCreateStatements(db, createInput)[1]);
-    expect(article.sql).toContain("(SELECT id FROM page WHERE title = ?)");
-    expect(article.params[0]).toBe("部屋の CO2");
+  it("druck.pageID は同じ batch で入れた page を題で引く", () => {
+    const row = sqlOf(documentCreateStatements(db, createInput)[1]);
+    expect(row.sql).toContain("(SELECT id FROM page WHERE title = ?)");
+    expect(row.params[0]).toBe("部屋の CO2");
   });
 
   it("copy は atproto-document", () => {
@@ -79,10 +79,16 @@ describe("documentCreateStatements", () => {
     ]);
   });
 
-  it("article は publishedAt の JST 日付", () => {
+  it("druck は publishedAt の JST 日付", () => {
     expect(
       sqlOf(documentCreateStatements(db, createInput)[1]).params,
     ).toContain("2026-10-31");
+  });
+
+  it("create の SQL に article が現れない", () => {
+    for (const st of documentCreateStatements(db, createInput)) {
+      expect(sqlOf(st).sql).not.toContain('"article"');
+    }
   });
 
   it("object は source_protocol = atproto", () => {

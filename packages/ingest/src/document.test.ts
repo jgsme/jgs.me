@@ -53,7 +53,7 @@ const found = (
 
 const existing: DocumentTarget = {
   pageID: 42,
-  articleID: 9,
+  druckID: 9,
   title: "部屋の CO2",
   bodyKey: "html-old",
   cid: "bafyold",
@@ -84,7 +84,7 @@ function fake(over: Partial<DocumentDeps> = {}) {
     },
     create: async (input) => {
       calls.create.push(input);
-      return { pageID: 42, articleID: 9 };
+      return { pageID: 42, druckID: 9 };
     },
     update: async (input) => {
       calls.update.push(input);
@@ -117,7 +117,7 @@ describe("documentURL", () => {
 });
 
 describe("ingestDocument: create", () => {
-  it("新しい document は R2 に 4 つ書いて page / article を作り 201", async () => {
+  it("新しい document は R2 に 4 つ書いて page / druck を作り 201", async () => {
     const { deps, calls } = fake();
     const res = await ingestDocument(payload, deps);
     expect(res.status).toBe(201);
@@ -147,7 +147,7 @@ describe("ingestDocument: create", () => {
       mf2: JSON.stringify(payload),
     });
     expect(calls.publish).toEqual([[42, "create"]]);
-    expect(calls.purge).toEqual([["/"]]);
+    expect(calls.purge).toEqual([["/", "/druck"]]);
   });
 
   it("派生テキストは前後の空行と CRLF を落として題の下に置く", async () => {
@@ -273,8 +273,20 @@ describe("ingestDocument: update", () => {
     });
     expect(calls.publish).toEqual([[42, "update"]]);
     expect(calls.purge).toEqual([
-      ["/", "/p/42", "/pages/%E9%83%A8%E5%B1%8B%E3%81%AE%20CO2", "/a/9"],
+      [
+        "/",
+        "/p/42",
+        "/pages/%E9%83%A8%E5%B1%8B%E3%81%AE%20CO2",
+        "/d/9",
+        "/druck",
+      ],
     ]);
+  });
+
+  it("update の purge に /a/ で始まるパスを含めない", async () => {
+    const { deps, calls } = fake({ findByAtUri: async () => existing });
+    await ingestDocument(payload, deps);
+    expect(calls.purge[0]!.some((p) => p.startsWith("/a/"))).toBe(false);
   });
 
   it("record に updatedAt があれば page.updated はそれ", async () => {
@@ -298,7 +310,8 @@ describe("ingestDocument: update", () => {
       "/",
       "/p/42",
       TITLE_PATH,
-      "/a/9",
+      "/d/9",
+      "/druck",
       "/pages/%E6%97%A7%E9%A1%8C",
     ]);
   });

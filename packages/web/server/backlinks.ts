@@ -1,5 +1,5 @@
-import { and, desc, eq, exists, ne, or, sql } from "drizzle-orm";
-import { articles, clips, pageLinks, pages } from "@jigsaw/db";
+import { and, desc, eq, exists, inArray, ne, or, sql } from "drizzle-orm";
+import { articles, clips, pageLinks, pages, zets } from "@jigsaw/db";
 import type { getDB } from "@/db/getDB";
 
 export type Backlink = {
@@ -26,6 +26,9 @@ export const BACKLINK_PAGE = 24;
 //
 // 並びは updated の降順。同値がほぼ無いとはいえ (6234 件中 1 組)、offset で
 // ページを繰る以上は順序が確定していないと取りこぼす。id を第 2 キーに置く。
+//
+// zet のページ (title が zet:<rkey>) は、zet の題 (zet.title) 宛てのリンクも拾う。
+// 本文は zet を題で書くので、zet:<rkey> 宛てだけだと被リンクがほぼ出ない。
 export async function fetchBacklinks(
   db: ReturnType<typeof getDB>,
   title: string,
@@ -40,7 +43,17 @@ export async function fetchBacklinks(
     .innerJoin(pages, eq(pages.id, pageLinks.fromPageID))
     .where(
       and(
-        eq(pageLinks.toTitle, title),
+        or(
+          eq(pageLinks.toTitle, title),
+          inArray(
+            pageLinks.toTitle,
+            db
+              .select({ title: zets.title })
+              .from(zets)
+              .innerJoin(pages, eq(pages.id, zets.pageID))
+              .where(eq(pages.title, title)),
+          ),
+        ),
         ne(pages.title, title),
         or(
           exists(

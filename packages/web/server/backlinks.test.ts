@@ -13,6 +13,8 @@ describe("fetchBacklinks", () => {
       updated: string;
       as: "article" | "clip" | "none";
       links: string[];
+      // zet なら record の title (null は題なし)。
+      zetTitle?: string | null;
     }[],
   ): DB => {
     const sqlite = new DatabaseSync(":memory:");
@@ -31,6 +33,11 @@ describe("fetchBacklinks", () => {
         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         pageID INTEGER NOT NULL
       );
+      CREATE TABLE zet (
+        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        pageID INTEGER NOT NULL,
+        title TEXT
+      );
       CREATE TABLE page_link (
         fromPageID INTEGER NOT NULL,
         toTitle TEXT NOT NULL,
@@ -44,6 +51,9 @@ describe("fetchBacklinks", () => {
       `INSERT INTO article (pageID) VALUES (?)`,
     );
     const insertClip = sqlite.prepare(`INSERT INTO clip (pageID) VALUES (?)`);
+    const insertZet = sqlite.prepare(
+      `INSERT INTO zet (pageID, title) VALUES (?, ?)`,
+    );
     const insertLink = sqlite.prepare(
       `INSERT INTO page_link (fromPageID, toTitle) VALUES (?, ?)`,
     );
@@ -51,6 +61,8 @@ describe("fetchBacklinks", () => {
       const { lastInsertRowid } = insertPage.run(row.title, row.updated);
       if (row.as === "article") insertArticle.run(lastInsertRowid);
       if (row.as === "clip") insertClip.run(lastInsertRowid);
+      if (row.zetTitle !== undefined)
+        insertZet.run(lastInsertRowid, row.zetTitle);
       for (const to of row.links) insertLink.run(lastInsertRowid, to);
     }
 
@@ -90,5 +102,57 @@ describe("fetchBacklinks", () => {
       { title: "猫の話", updated: "2026-01-01", as: "article", links: ["猫"] },
     ]);
     expect(titles(await fetchBacklinks(db, "猫", 0, 12))).toEqual(["猫の話"]);
+  });
+
+  // 本文は zet を題 (zet.title) でリンクするが、zet の page.title は
+  // zet:<rkey>。題宛てのリンクも zet の被リンクとして拾う。
+  it("zet のページには zet の題宛てのリンクも返す", async () => {
+    const db = setup([
+      {
+        title: "zet:3abc",
+        updated: "2026-01-01",
+        as: "none",
+        links: [],
+        zetTitle: "断捨離",
+      },
+      {
+        title: "題で書いた",
+        updated: "2026-03-01",
+        as: "article",
+        links: ["断捨離"],
+      },
+      {
+        title: "rkey で書いた",
+        updated: "2026-02-01",
+        as: "clip",
+        links: ["zet:3abc"],
+      },
+      { title: "無関係", updated: "2026-04-01", as: "article", links: ["猫"] },
+    ]);
+    expect(titles(await fetchBacklinks(db, "zet:3abc", 0, 12))).toEqual([
+      "題で書いた",
+      "rkey で書いた",
+    ]);
+  });
+
+  it("題の無い zet は zet:<rkey> 宛てのリンクだけ返す", async () => {
+    const db = setup([
+      {
+        title: "zet:3abc",
+        updated: "2026-01-01",
+        as: "none",
+        links: [],
+        zetTitle: null,
+      },
+      {
+        title: "rkey で書いた",
+        updated: "2026-02-01",
+        as: "clip",
+        links: ["zet:3abc"],
+      },
+    ]);
+    expect(titles(await fetchBacklinks(db, "zet:3abc", 0, 12))).toEqual([
+      "rkey で書いた",
+    ]);
   });
 });

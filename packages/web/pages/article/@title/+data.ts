@@ -14,13 +14,14 @@ import {
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { BACKLINK_INITIAL, fetchBacklinks } from "@/server/backlinks";
 import { useConfig } from "vike-react/useConfig";
-import { render } from "vike/abort";
+import { redirect, render } from "vike/abort";
 import { fetchBody, fetchRenderedHtml } from "@jigsaw/db/fetch-body";
 import { bodyFormatOf } from "@jigsaw/db/body-key";
 import { DOCUMENT_COPY_PROTOCOL } from "@jigsaw/db/standard";
 import { buildHtmlArticleData } from "./htmlArticleData";
 import { resolveArticleDate } from "@jigsaw/db/article-date";
-import { zetAtUri } from "@jigsaw/db/zet";
+import { zetAtUri, zetPath } from "@jigsaw/db/zet";
+import { findZetRkeyByTitle } from "@/server/zetByTitle";
 import { pickRandom } from "@/utils/pickRandom";
 import { pageTitleFromUrl } from "@/utils/pageTitle";
 import { buildArticleBody } from "./articleBody";
@@ -68,6 +69,14 @@ const data = async (c: Context) => {
     .leftJoin(druck, eq(druck.pageID, pages.id))
     .where(eq(pages.title, title))
     .limit(1);
+
+  // page が無い題でも、zet の題ならその zet へ飛ばす。本文は zet を題で
+  // リンクするが、zet の page.title は zet:<rkey> なので上では引けない。
+  // 題は diary 側で変わりうるので 302 (2xx ではないのでエッジにも焼かれない)。
+  if (pageInfo.length === 0) {
+    const rkey = await findZetRkeyByTitle(db, title);
+    if (rkey !== null) throw redirect(zetPath(rkey), 302);
+  }
 
   const pageId = pageInfo[0]?.pageId ?? null;
   const bodyKey = pageInfo[0]?.bodyKey ?? "";

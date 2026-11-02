@@ -1,6 +1,7 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { fetchBody } from "@jigsaw/db/fetch-body";
 import { fetchBacklinks } from "@/server/backlinks";
+import { findZetRkeyByTitle } from "@/server/zetByTitle";
 import data from "./+data";
 
 // page 行の引き当て。leftJoin を何段つないでも最後は limit で空配列を返す。
@@ -16,6 +17,9 @@ vi.mock("@jigsaw/db/fetch-body", () => ({ fetchBody: vi.fn() }));
 vi.mock("@/server/backlinks", () => ({
   BACKLINK_INITIAL: 12,
   fetchBacklinks: vi.fn(),
+}));
+vi.mock("@/server/zetByTitle", () => ({
+  findZetRkeyByTitle: vi.fn(async () => null),
 }));
 vi.mock("vike-react/useConfig", () => ({ useConfig: () => () => {} }));
 
@@ -54,4 +58,17 @@ it("本文が無くても被リンクがあれば題と被リンクのページ�
   expect(d.ok).toBe(false);
   if (d.ok) return;
   expect(d.backlinks).toEqual([{ title: "リンク元", image: null }]);
+});
+
+// 本文は zet を題でリンクするが、zet の page.title は zet:<rkey>。
+// 題で来たら zet のページへ飛ばす。
+it("page が無くても zet の題なら zet のページへ 302 で飛ばす", async () => {
+  vi.mocked(findZetRkeyByTitle).mockResolvedValueOnce("3myzdtex2ik4n");
+
+  await expect(data(context("2026/11 の断捨離"))).rejects.toMatchObject({
+    _pageContextAbort: {
+      _urlRedirect: { url: "/pages/zet%3A3myzdtex2ik4n", statusCode: 302 },
+    },
+  });
+  expect(fetchBody).not.toHaveBeenCalled();
 });

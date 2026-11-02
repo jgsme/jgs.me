@@ -6,7 +6,7 @@
     "strict": true,
     "skipLibCheck": true,
     "lib": ["DOM", "ESNext"],
-    "types": ["@cloudflare/workers-types/2023-07-01", "vite/client"],
+    "types": ["@cloudflare/workers-types", "vite/client"],
     // vike-react は自動ランタイム。react-jsx でないと .tsx で React の
     // import が要るようになり、生成コードも旧ランタイムになる。
     "jsx": "react-jsx",

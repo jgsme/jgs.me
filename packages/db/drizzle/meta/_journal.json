@@ -134,6 +134,13 @@
       "when": 1792724838514,
       "tag": "0018_brown_ultimo",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1793607059653,
+      "tag": "0019_kind_vector",
+      "breakpoints": true
     }
   ]
 }

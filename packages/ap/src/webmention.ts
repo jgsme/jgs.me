@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { articles, clips, pages, reactions, zets } from "@jigsaw/db";
+import { articles, clips, pages, reactions, zets, druck } from "@jigsaw/db";
 import { publishedKind } from "./published";
 import { getDB, type Env, type WebmentionMessage } from "./db";
 import { MAX_BODY_BYTES, MAX_REDIRECTS, guardURL } from "./urlguard";
@@ -130,11 +130,13 @@ export async function resolveTarget(
       articleID: articles.id,
       clipID: clips.id,
       zetRkey: zets.rkey,
+      druckID: druck.id,
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
     .leftJoin(clips, eq(clips.pageID, pages.id))
     .leftJoin(zets, eq(zets.pageID, pages.id))
+    .leftJoin(druck, eq(druck.pageID, pages.id))
     .where(
       parsed.by === "id"
         ? eq(pages.id, parsed.id)

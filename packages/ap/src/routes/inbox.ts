@@ -1,6 +1,14 @@
 import { Hono } from "hono";
 import { eq } from "drizzle-orm";
-import { articles, clips, followers, pages, reactions, zets } from "@jigsaw/db";
+import {
+  articles,
+  clips,
+  followers,
+  pages,
+  reactions,
+  zets,
+  druck,
+} from "@jigsaw/db";
 import { publishedKind } from "../published";
 import { getDB, type Env } from "../db";
 import { sha256Digest, verifyDigest } from "../sig/digest";
@@ -230,11 +238,13 @@ inbox.post("/ap/inbox", async (c) => {
         articleID: articles.id,
         clipID: clips.id,
         zetRkey: zets.rkey,
+        druckID: druck.id,
       })
       .from(pages)
       .leftJoin(articles, eq(articles.pageID, pages.id))
       .leftJoin(clips, eq(clips.pageID, pages.id))
       .leftJoin(zets, eq(zets.pageID, pages.id))
+      .leftJoin(druck, eq(druck.pageID, pages.id))
       .where(eq(pages.id, pageID))
       .limit(1);
     // leftJoin だけだと page 単体行でも 1 件返ってしまうので、

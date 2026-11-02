@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { articles, clips, pages, zets } from "@jigsaw/db";
+import { articles, clips, pages, zets, druck } from "@jigsaw/db";
 import { pageDisplayTitle } from "@jigsaw/db/zet";
 import { getDB, type Env } from "../db";
 import { SITE_URL, shareURL } from "../config";
@@ -44,6 +44,7 @@ export async function createContainer(
       articleID: articles.id,
       clipID: clips.id,
       zetRkey: zets.rkey,
+      druckID: druck.id,
       zetTitle: zets.title,
       zetDate: zets.date,
     })
@@ -51,6 +52,7 @@ export async function createContainer(
     .leftJoin(articles, eq(articles.pageID, pages.id))
     .leftJoin(clips, eq(clips.pageID, pages.id))
     .leftJoin(zets, eq(zets.pageID, pages.id))
+    .leftJoin(druck, eq(druck.pageID, pages.id))
     .where(eq(pages.id, pageID))
     .limit(1);
 

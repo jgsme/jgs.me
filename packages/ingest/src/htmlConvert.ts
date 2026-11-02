@@ -12,16 +12,9 @@ export type HtmlConverter = {
   toMarkdown: (html: string) => Promise<string>;
 };
 
-// インストール済みの @cloudflare/workers-types は conversionOptions.output も
-// format: "text" も型に持たない (機能自体は 2026-07 の changelog で追加済み)。
-// 型が追いつくまでここだけ広げる。
-type ConversionOptionsWithOutput = ConversionOptions & {
-  output?: { format?: "markdown" | "text" };
-};
-
 export function aiHtmlConverter(ai: Ai): HtmlConverter {
   const convert = async (html: string, format?: "text"): Promise<string> => {
-    const conversionOptions: ConversionOptionsWithOutput = {
+    const conversionOptions: ConversionOptions = {
       html: { cssSelector: "body" },
       ...(format ? { output: { format } } : {}),
     };

@@ -31,18 +31,22 @@ export const mergeArticleAndDruck = (
     ...articleRows.map((row) => ({ ...row, linkPath: articlePath(row.id) })),
     ...druckRows.map((row) => ({ ...row, linkPath: druckPath(row.id) })),
   ]
+    // article は "YYYY-MM-DD HH:MM:SS"、druck は UTC ISO と書式が違うので、
+    // 文字列ではなく時刻の数値で比べる。読めない値は一番古い扱い。
     // 同時刻は article を先に (sort は安定)。
-    .sort((a, b) =>
-      a.created < b.created ? 1 : a.created > b.created ? -1 : 0,
-    )
+    .sort((a, b) => createdTime(b.created) - createdTime(a.created))
     .slice(0, limit);
+
+const createdTime = (created: string): number =>
+  parseCreated(created)?.getTime() ?? Number.NEGATIVE_INFINITY;
 
 export type RssFeedItem = {
   title: string;
-  // item の permalink パス (/a/:id, /c/:id)。title から組むと改題で link が
+  // item の permalink パス (/a/:id, /c/:id, /d/:id)。title から組むと改題で link が
   // 変わり、reader 側で同じ item が二度出る。utils/permalink.ts 参照。
   linkPath: string;
-  // SQLite の CURRENT_TIMESTAMP 由来の "YYYY-MM-DD HH:MM:SS" (UTC)。
+  // UTC。"YYYY-MM-DD HH:MM:SS" (SQLite の CURRENT_TIMESTAMP 由来) か
+  // ISO 8601 (druck の page.created)。
   created: string;
   description: string | null;
 };

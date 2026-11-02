@@ -164,4 +164,15 @@ describe("mergeArticleAndDruck", () => {
     );
     expect(merged.map((r) => r.linkPath)).toEqual(["/d/2", "/d/1"]);
   });
+
+  // article は "YYYY-MM-DD HH:MM:SS"、druck は UTC ISO。文字列で比べると
+  // 同じ日なら ' ' < 'T' で druck が常に新しい扱いになる。
+  it("created の書式が混ざっても時刻の数値で比べる", () => {
+    const merged = mergeArticleAndDruck(
+      [row(1, "2026-10-31 23:00:00")],
+      [row(1, "2026-10-31T01:00:00Z")],
+      20,
+    );
+    expect(merged.map((r) => r.linkPath)).toEqual(["/a/1", "/d/1"]);
+  });
 });

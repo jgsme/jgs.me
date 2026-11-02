@@ -5,44 +5,18 @@
 
    動きは OverwriteHeader.tsx の JS が付け外しするクラスで出す:
      noise に jgs-e4-full / jgs-e4-settled、dk に jgs-e4-on、label に jgs-e4-dkl。
-   高さは赤帯 (h-header) と題の行で最初から決まっていて、演出の間に変わらない。 */
+   高さは赤帯 (h-header) と題の行で最初から決まっていて、演出の間に変わらない。
 
-.jgs-e4 {
-  position: relative;
-  overflow: hidden;
-}
-
-/* 赤帯。マークの base、刷り直しの noise、闇落ち後の dk を重ねる。 */
-.jgs-e4-bar {
-  position: relative;
-  display: block;
-  height: var(--spacing-header);
-}
-
-.jgs-e4-base {
-  position: absolute;
-  inset: 0;
-  background: var(--color-brand);
-}
-.jgs-e4-base > img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  padding-block: var(--spacing-2);
-  box-sizing: border-box;
-}
+   配置や色のように Tailwind の語彙で書けるものは OverwriteHeader.tsx の
+   className に置く。ここに残すのは、語彙に無い寸法 (帯を 5 行で割った 12.8px など)、
+   JS が付け外しする状態、keyframes、疑似要素、reduced-motion の切り替え。 */
 
 /* 文字のマス目。最初は透明で赤帯がそのまま見え、刷り直されたマス (w) だけ
-   黒地に赤い字になる。5 行 × 12.8px で帯の 64px を埋める。 */
+   黒地に赤い字になる。5 行 × 12.8px で帯の 64px を埋める。
+   マスの span は overwrite.ts が innerHTML で数百個作るので、クラスは短いまま CSS で当てる。 */
 .jgs-e4-noise {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  color: var(--color-abyss-mark);
   font-size: 11px;
   line-height: 12.8px;
-  white-space: pre;
-  overflow: hidden;
 }
 .jgs-e4-noise .jgs-e4-w,
 .jgs-e4-noise .jgs-e4-u {
@@ -66,17 +40,7 @@
 
 /* 闇落ち後のマーク。地は noise が持つので透明。 */
 .jgs-e4-dk {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  padding-block: var(--spacing-2);
   opacity: 0;
-}
-.jgs-e4-dk svg {
-  display: block;
-  height: 100%;
-  width: 100%;
-  overflow: visible;
 }
 .jgs-e4-dk::after {
   content: "";
@@ -109,65 +73,30 @@
    行の高さは中身に頼らず固定する。長い題は … で切る (帯の h1 に全部出る)。 */
 .jgs-e4-label {
   padding-block: 10px;
-  padding-inline: var(--spacing-4);
 }
 .jgs-e4-label.jgs-e4-dkl {
   background: var(--color-abyss);
   color: var(--color-abyss-fg);
 }
 .jgs-e4-gl {
-  max-width: var(--container-content);
-  margin: 0 auto;
-  display: flex;
-  gap: 12px;
-  align-items: baseline;
   font-size: 12px;
   letter-spacing: 0.06em;
   line-height: 1.6;
   height: 1.6em;
-  white-space: nowrap;
 }
 .jgs-e4-k {
-  flex: none;
-  background: var(--color-brand);
-  color: var(--color-white);
   padding: 0 5px;
 }
-/* 題の幅は打ち直しの間も変えない。full が全文を見えないまま置いて幅 (と … で
-   切る位置) を決め、見える字は typed として上に重ねる。typed は absolute なので、
-   途中の短い字やカーソルが幅を変えず、日付が横に動かない (CLS 0)。 */
-.jgs-e4-title {
-  position: relative;
-  min-width: 0;
-  font-weight: 600;
-}
-.jgs-e4-title-full,
+/* 題の幅は打ち直しの間も変えない。full (invisible) が全文を見えないまま置いて幅
+   (と … で切る位置) を決め、見える字は typed として上に重ねる。typed は absolute
+   なので、途中の短い字やカーソルが幅を変えず、日付が横に動かない (CLS 0)。 */
 .jgs-e4-typed {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.jgs-e4-title-full {
-  visibility: hidden;
-}
-.jgs-e4-typed {
-  position: absolute;
-  inset: 0;
   text-shadow:
     1px 0 var(--color-glitch-red),
     -1px 0 var(--color-glitch-cyan);
 }
-.jgs-e4-date {
-  flex: none;
-  opacity: 0.6;
-}
-
 .jgs-e4-caret {
-  display: inline-block;
   width: 0.6em;
-  background: currentColor;
-  margin-left: 1px;
   animation: jgs-e4-blink 0.5s steps(1, end) infinite;
 }
 @keyframes jgs-e4-blink {

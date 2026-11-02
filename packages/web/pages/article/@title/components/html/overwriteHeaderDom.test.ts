@@ -23,8 +23,9 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const full = () => container.querySelector(".jgs-e4-title-full");
 const typed = () => container.querySelector(".jgs-e4-typed");
+// 幅を取るだけの見えない題は typed の直前にある。
+const full = () => typed()?.previousElementSibling ?? null;
 
 // 打ち直しの途中で題の幅が変わると、横の日付が動く (CLS)。幅を決める全文は
 // 演出の最初から最後まで見えないまま残り、見える字だけが上に重なって変わる。

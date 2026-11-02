@@ -191,7 +191,7 @@ function runOverwrite(p: Parts, title: string): () => void {
         p.title.textContent = chars.slice(0, i).join("");
         if (i < chars.length) {
           const caret = document.createElement("span");
-          caret.className = "jgs-e4-caret";
+          caret.className = "jgs-e4-caret ml-px inline-block bg-current";
           caret.textContent = "\u00a0";
           p.title.appendChild(caret);
         }
@@ -233,6 +233,7 @@ const GlitchMarkSvg: React.FC<{ seed: string }> = ({ seed }) => {
     <svg
       viewBox="0 0 115.17 108.76"
       aria-hidden="true"
+      className="block h-full w-full overflow-visible"
       style={{ fill: "var(--color-abyss-mark)" }}
     >
       <defs>
@@ -303,34 +304,43 @@ export const OverwriteHeader: React.FC<{
   }, [title]);
 
   return (
-    <div ref={rootRef} className="jgs-e4">
-      <a href="/" aria-label="jgs.me" className="jgs-e4-bar">
-        <div ref={baseRef} className="jgs-e4-base">
-          <img src="/mark.svg" alt="" />
+    <div ref={rootRef} className="jgs-e4 relative overflow-hidden">
+      <a href="/" aria-label="jgs.me" className="relative block h-header">
+        <div ref={baseRef} className="jgs-e4-base absolute inset-0 bg-brand">
+          <img
+            src="/mark.svg"
+            alt=""
+            className="block h-full w-full box-border py-2"
+          />
         </div>
         <div
           ref={noiseRef}
-          className="jgs-e4-noise font-mono"
+          className="jgs-e4-noise absolute inset-0 z-1 overflow-hidden whitespace-pre font-mono text-abyss-mark"
           aria-hidden="true"
         />
-        <div ref={dkRef} className="jgs-e4-dk">
+        <div ref={dkRef} className="jgs-e4-dk absolute inset-0 z-2 py-2">
           <GlitchMarkSvg seed={title} />
         </div>
       </a>
-      <div ref={labelRef} className="jgs-e4-label">
-        <div className="jgs-e4-gl font-mono">
-          <span className="jgs-e4-k">HTML</span>
-          {/* full は幅を取るだけで見えない。見える字は typed (overwrite.css)。 */}
-          <b className="jgs-e4-title">
-            <span className="jgs-e4-title-full" aria-hidden="true">
+      <div ref={labelRef} className="jgs-e4-label px-4">
+        <div className="jgs-e4-gl mx-auto flex max-w-content items-baseline gap-3 whitespace-nowrap font-mono">
+          <span className="jgs-e4-k flex-none bg-brand text-white">HTML</span>
+          {/* 1 つ目は幅を取るだけで見えない。見える字は typed (overwrite.css)。 */}
+          <b className="relative min-w-0 font-semibold">
+            <span className="invisible block truncate" aria-hidden="true">
               {title}
             </span>
-            <span ref={titleRef} className="jgs-e4-typed">
+            <span
+              ref={titleRef}
+              className="jgs-e4-typed absolute inset-0 block truncate"
+            >
               {title}
             </span>
           </b>
           {date && (
-            <span className="jgs-e4-date">{date.replaceAll("-", "/")}</span>
+            <span className="flex-none opacity-60">
+              {date.replaceAll("-", "/")}
+            </span>
           )}
         </div>
       </div>

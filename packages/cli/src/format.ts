@@ -56,7 +56,7 @@ function presenceCount(row: Row, table: TargetTable): number {
   return count;
 }
 
-/** filter は全要素を評価するので、3 列すべてが検証される */
+/** filter は全要素を評価するので、4 列すべてが検証される */
 function registeredTables(row: Row): TargetTable[] {
   return TARGET_TABLES.filter((table) => presenceCount(row, table) > 0);
 }
@@ -132,13 +132,13 @@ export function formatResult(
 
 /**
  * 検索インデックス用の md (w-md の <bodyKey>.md) のうち、消すべきキーを返す。
- * w-md には article / clip として登録されているページのぶんしか書いていない
+ * w-md には article / clip / druck として登録されているページのぶんしか書いていない
  * ので、excluded_page だけのページや未登録のページは対象にしない。
  */
 export function mdKeysOf(rows: Row[]): string[] {
   return rows.flatMap((row) => {
     const registered = registeredTables(row).some(
-      (table) => table === "article" || table === "clip",
+      (table) => table === "article" || table === "clip" || table === "druck",
     );
     if (!registered) return [];
     const bodyKey = String(row.bodyKey ?? "");

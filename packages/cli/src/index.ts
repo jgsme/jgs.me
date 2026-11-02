@@ -25,7 +25,7 @@ function usage(): never {
     [
       "usage: pnpm undo <url|id> [<url|id>...]",
       "",
-      "  指定した page を article / clip / excluded_page から削除して",
+      "  指定した page を article / clip / excluded_page / druck から削除して",
       "  未登録状態に戻す。",
       "",
       "  例: pnpm undo https://w.jgsw.workers.dev/p/1613",
@@ -147,6 +147,7 @@ function main(): void {
     article: 0,
     clip: 0,
     excluded_page: 0,
+    druck: 0,
   };
 
   if (needsDelete) {

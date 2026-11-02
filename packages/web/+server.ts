@@ -28,6 +28,8 @@ app.use("/clips*", createCacheMiddleware(86400));
 // zet の一覧。個別の zet は /pages/zet%3A<rkey> (上の /pages/*) に載る。
 // ingest が create / update のたびに /zets を purge する (packages/ingest/src/zet.ts)。
 app.use("/zets*", createCacheMiddleware(86400));
+// druck の一覧。ingest が create / update のたびに /druck を purge する。
+app.use("/druck*", createCacheMiddleware(86400));
 app.use("/on-this-day/*", createCacheMiddleware(86400));
 // 検索サジェストは打鍵ごとに飛ぶ。同じ語は他人の打鍵とも重なるので、
 // 短く焼くだけで D1 を引く回数がまとめて減る。

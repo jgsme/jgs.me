@@ -18,7 +18,7 @@ function htmlData() {
   return buildHtmlArticleData({
     title: "題",
     pageId: 1,
-    articleId: 2,
+    druckId: 2,
     spoiler: false,
     date: "2026-11-01",
     sbBody: "題\n本文",

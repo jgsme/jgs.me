@@ -5,6 +5,7 @@ import {
   articles,
   clips,
   copies,
+  druck,
   objects,
   pageSimilarities,
   pages,
@@ -57,11 +58,14 @@ const data = async (c: Context) => {
       zetTitle: zets.title,
       zetDate: zets.date,
       zetRkey: zets.rkey,
+      druckId: druck.id,
+      druckDate: druck.date,
     })
     .from(pages)
     .leftJoin(articles, eq(articles.pageID, pages.id))
     .leftJoin(clips, eq(clips.pageID, pages.id))
     .leftJoin(zets, eq(zets.pageID, pages.id))
+    .leftJoin(druck, eq(druck.pageID, pages.id))
     .where(eq(pages.title, title))
     .limit(1);
 
@@ -70,6 +74,7 @@ const data = async (c: Context) => {
   const articleId = pageInfo[0]?.articleId ?? null;
   const clipId = pageInfo[0]?.clipId ?? null;
   const zetId = pageInfo[0]?.zetId ?? null;
+  const druckId = pageInfo[0]?.druckId ?? null;
   // 引用を大きく出すか、動画を大きく出すかは kind だけで決める (+Page.tsx)。
   // clip でなければ null。
   const clipKind = pageInfo[0]?.clipKind ?? null;
@@ -88,9 +93,11 @@ const data = async (c: Context) => {
     zetDate,
   });
   // zet の日付は zet.date (diary が決めた日)。本文から推さない。
-  const storedDate = pageInfo[0]?.date ?? zetDate;
+  // druck の日付は druck.date (diary が決めた日)。
+  const storedDate =
+    pageInfo[0]?.date ?? zetDate ?? pageInfo[0]?.druckDate ?? null;
 
-  // 関連記事。article と zet のページに出す (clip には出さない)。
+  // 関連記事。article と zet のページに出す (clip と druck には出さない)。
   let related: { title: string; image: string | null }[] = [];
   if (pageId !== null && (articleId !== null || isZet)) {
     const candidates = await db
@@ -133,7 +140,7 @@ const data = async (c: Context) => {
       const built = buildHtmlArticleData({
         title,
         pageId,
-        articleId,
+        druckId,
         spoiler,
         date: storedDate,
         sbBody: sb,

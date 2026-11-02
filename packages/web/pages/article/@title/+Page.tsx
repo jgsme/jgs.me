@@ -97,6 +97,7 @@ const Page = () => {
             articleId: d.articleId,
             clipId: d.clipId,
             zetId: d.zetId,
+            druckId: null,
           })}
         />
       </div>

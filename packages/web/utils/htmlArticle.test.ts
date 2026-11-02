@@ -40,7 +40,7 @@ describe("buildHtmlArticleData", () => {
   const input = {
     title: "題",
     pageId: 1,
-    articleId: 2,
+    druckId: 2,
     spoiler: false,
     date: "2026-11-01",
     sbBody: "題\n本文 [a]",
@@ -59,6 +59,13 @@ describe("buildHtmlArticleData", () => {
     expect(d.text).toEqual(["本文 [a]"]);
     expect(d.description).toBe("本文 [a]");
     expect(d.fromDate).toBe("2026-11-01");
+  });
+
+  it("druckId をそのまま持つ", () => {
+    expect(buildHtmlArticleData(input).druckId).toBe(2);
+    expect(
+      buildHtmlArticleData({ ...input, druckId: null }).druckId,
+    ).toBeNull();
   });
 
   it("spoiler なら description を伏せる", () => {

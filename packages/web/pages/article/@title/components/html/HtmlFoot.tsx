@@ -38,9 +38,10 @@ export const HtmlFoot: React.FC<{ d: HtmlArticleData }> = ({ d }) => {
             <CopyButton
               tone="onBrand"
               path={shareUrlPath({
-                articleId: d.articleId,
+                articleId: null,
                 clipId: null,
                 zetId: null,
+                druckId: d.druckId,
               })}
             />
           </div>

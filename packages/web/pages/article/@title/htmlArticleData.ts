@@ -8,7 +8,7 @@ export type HtmlArticleData = {
   title: string;
   heading: string;
   pageId: number;
-  articleId: number | null;
+  druckId: number | null;
   render: RenderedHtmlArticle;
   text: string[];
   // spoiler なら SPOILER_NOTICE
@@ -22,7 +22,7 @@ export type HtmlArticleData = {
 export function buildHtmlArticleData(input: {
   title: string;
   pageId: number;
-  articleId: number | null;
+  druckId: number | null;
   spoiler: boolean;
   date: string | null;
   sbBody: string;
@@ -37,7 +37,7 @@ export function buildHtmlArticleData(input: {
     // html 記事は zet ではないので、見出しは題そのまま
     heading: input.title,
     pageId: input.pageId,
-    articleId: input.articleId,
+    druckId: input.druckId,
     render: input.render,
     text: htmlArticleText(input.sbBody),
     description: input.spoiler

@@ -21,7 +21,7 @@ function htmlData(spoiler = false): HtmlArticleData {
     title: "部屋の CO2",
     heading: "部屋の CO2",
     pageId: 5,
-    articleId: 9,
+    druckId: 9,
     render: {
       version: 1,
       head: { links: [], styles: [] },

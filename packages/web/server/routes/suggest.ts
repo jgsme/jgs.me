@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import * as schema from "@jigsaw/db";
-import { excludedPages, pages, zets } from "@jigsaw/db";
+import { druck, excludedPages, pages, zets } from "@jigsaw/db";
 import { and, eq, like, notExists, sql } from "drizzle-orm";
 import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 import { getDB } from "@/db/getDB";
@@ -49,6 +49,13 @@ export const suggestTitles = async (
             .select({ one: sql`1` })
             .from(zets)
             .where(eq(zets.pageID, pages.id)),
+        ),
+        // druck は検索に出さない (あとで整理する)。サジェストも同じ扱い。
+        notExists(
+          db
+            .select({ one: sql`1` })
+            .from(druck)
+            .where(eq(druck.pageID, pages.id)),
         ),
       ),
     )

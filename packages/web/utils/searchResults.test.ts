@@ -92,9 +92,10 @@ describe("maxNumResultsFor", () => {
 });
 
 describe("matchesSearchType", () => {
-  const article = { isArticle: true, isClip: false };
-  const clip = { isArticle: false, isClip: true };
-  const both = { isArticle: true, isClip: true };
+  const article = { isArticle: true, isClip: false, isDruck: false };
+  const clip = { isArticle: false, isClip: true, isDruck: false };
+  const both = { isArticle: true, isClip: true, isDruck: false };
+  const druck = { isArticle: false, isClip: false, isDruck: true };
 
   it("絞らなければ全部通す", () => {
     expect(matchesSearchType(article, null)).toBe(true);
@@ -106,6 +107,13 @@ describe("matchesSearchType", () => {
     expect(matchesSearchType(article, "clip")).toBe(false);
     expect(matchesSearchType(clip, "clip")).toBe(true);
     expect(matchesSearchType(clip, "article")).toBe(false);
+  });
+
+  // druck は検索に出さない (あとで整理する)。
+  it("druck は type に関係なく出さない", () => {
+    expect(matchesSearchType(druck, null)).toBe(false);
+    expect(matchesSearchType(druck, "article")).toBe(false);
+    expect(matchesSearchType(druck, "clip")).toBe(false);
   });
 
   it("両方に登録されているページはどちらでも出す", () => {

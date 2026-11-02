@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildRssXml, rssDescription, type RssFeedItem } from "./rssFeed";
+import {
+  buildRssXml,
+  mergeArticleAndDruck,
+  rssDescription,
+  type RssFeedItem,
+} from "./rssFeed";
 
 const SITE_URL = "https://w.jgs.me";
 const LAST_BUILD = new Date("2026-08-24T02:00:00Z");
@@ -123,5 +128,40 @@ describe("rssDescription", () => {
 
   it("それ以外は Scrapbox として組む", () => {
     expect(rssDescription("sb-1", "題\n本文")).toBe("本文");
+  });
+});
+
+describe("mergeArticleAndDruck", () => {
+  const row = (id: number, created: string) => ({
+    id,
+    title: `t${id}`,
+    bodyKey: `k${id}`,
+    created,
+    spoiler: false,
+  });
+
+  // druck は /d/:id、article は /a/:id。id は表ごとに採番されるので、
+  // 同じ数字でも link で見分けられる必要がある。
+  it("page.created 降順で混ぜ、行ごとに link を決める", () => {
+    const merged = mergeArticleAndDruck(
+      [row(1, "2026-10-01 00:00:00"), row(2, "2026-10-03 00:00:00")],
+      [row(1, "2026-10-02 00:00:00")],
+      20,
+    );
+    expect(merged.map((r) => r.linkPath)).toEqual(["/a/2", "/d/1", "/a/1"]);
+    expect(merged.map((r) => r.created)).toEqual([
+      "2026-10-03 00:00:00",
+      "2026-10-02 00:00:00",
+      "2026-10-01 00:00:00",
+    ]);
+  });
+
+  it("limit 件で切る", () => {
+    const merged = mergeArticleAndDruck(
+      [row(1, "2026-10-01 00:00:00")],
+      [row(1, "2026-10-02 00:00:00"), row(2, "2026-10-03 00:00:00")],
+      2,
+    );
+    expect(merged.map((r) => r.linkPath)).toEqual(["/d/2", "/d/1"]);
   });
 });

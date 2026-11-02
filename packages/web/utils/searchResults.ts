@@ -49,10 +49,12 @@ export function maxNumResultsFor(type: SearchType | null): number {
 }
 
 // article と clip の両方に登録されているページは、どちらで絞っても出す。
+// druck は検索に出さない (あとで整理する)。w-md には書くので、ここで落とす。
 export function matchesSearchType(
-  kinds: { isArticle: boolean; isClip: boolean },
+  kinds: { isArticle: boolean; isClip: boolean; isDruck: boolean },
   type: SearchType | null,
 ): boolean {
+  if (kinds.isDruck) return false;
   if (type === null) return true;
   return type === "article" ? kinds.isArticle : kinds.isClip;
 }

@@ -78,6 +78,7 @@ const data = async (c: Context) => {
       // 修飾されず、サブクエリ内の "id" が article.id に化けるので直書きする。
       isArticle: sql<number>`exists (select 1 from "article" where "article"."pageID" = "page"."id")`,
       isClip: sql<number>`exists (select 1 from "clip" where "clip"."pageID" = "page"."id")`,
+      isDruck: sql<number>`exists (select 1 from "druck" where "druck"."pageID" = "page"."id")`,
     })
     .from(pages)
     .where(
@@ -93,7 +94,11 @@ const data = async (c: Context) => {
   const results: SearchResult[] = hits.flatMap((hit) => {
     const row = rowOf.get(hit.bodyKey);
     if (row === undefined) return [];
-    const kinds = { isArticle: row.isArticle === 1, isClip: row.isClip === 1 };
+    const kinds = {
+      isArticle: row.isArticle === 1,
+      isClip: row.isClip === 1,
+      isDruck: row.isDruck === 1,
+    };
     if (!matchesSearchType(kinds, type)) return [];
     // 本文は検索に掛かるが、ネタバレの抜粋は見せない。
     return [

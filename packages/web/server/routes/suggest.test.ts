@@ -31,7 +31,12 @@ describe("escapeLikePattern", () => {
 
 describe("suggestTitles", () => {
   const setup = (
-    rows: { title: string; excluded?: boolean; zet?: boolean }[],
+    rows: {
+      title: string;
+      excluded?: boolean;
+      zet?: boolean;
+      druck?: boolean;
+    }[],
   ): SuggestDB => {
     const sqlite = new DatabaseSync(":memory:");
     sqlite.exec(
@@ -55,6 +60,12 @@ describe("suggestTitles", () => {
         date TEXT NOT NULL,
         title TEXT,
         created TEXT DEFAULT (CURRENT_TIMESTAMP) NOT NULL
+      );
+      CREATE TABLE druck (
+        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        pageID INTEGER NOT NULL,
+        date TEXT NOT NULL,
+        created TEXT DEFAULT (CURRENT_TIMESTAMP) NOT NULL
       );`,
     );
     const insertPage = sqlite.prepare(
@@ -66,10 +77,14 @@ describe("suggestTitles", () => {
     const insertZet = sqlite.prepare(
       `INSERT INTO zet (pageID, rkey, date) VALUES (?, 'r', '2026-10-11')`,
     );
+    const insertDruck = sqlite.prepare(
+      `INSERT INTO druck (pageID, date) VALUES (?, '2026-10-11')`,
+    );
     for (const row of rows) {
       const { lastInsertRowid } = insertPage.run(row.title);
       if (row.excluded) insertExcluded.run(lastInsertRowid);
       if (row.zet) insertZet.run(lastInsertRowid);
+      if (row.druck) insertDruck.run(lastInsertRowid);
     }
 
     return drizzle(async (query, params, method) => {
@@ -100,6 +115,15 @@ describe("suggestTitles", () => {
       { title: "zet の話" },
     ]);
     expect(await suggestTitles(db, "zet")).toEqual(["zet の話"]);
+  });
+
+  // druck は検索に出さない (あとで整理する)。サジェストも同じ扱い。
+  it("druck のページは出さない", async () => {
+    const db = setup([
+      { title: "猫の図解", druck: true },
+      { title: "猫の写真" },
+    ]);
+    expect(await suggestTitles(db, "猫")).toEqual(["猫の写真"]);
   });
 
   it("前方一致を部分一致より上に出す", async () => {

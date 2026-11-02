@@ -1,5 +1,6 @@
 import { bodyFormatOf } from "@jigsaw/db/body-key";
 import { htmlArticleDescription } from "@/utils/htmlArticle";
+import { articlePath, druckPath } from "@/utils/permalink";
 import { buildArticleBody } from "@/pages/article/@title/articleBody";
 
 // 本文の形式で抜粋の作り方が違う。html 記事の派生テキストは Scrapbox 記法
@@ -8,6 +9,33 @@ export const rssDescription = (bodyKey: string, body: string): string =>
   bodyFormatOf(bodyKey) === "standard-html"
     ? htmlArticleDescription(body)
     : buildArticleBody(body).description;
+
+type FeedRow = {
+  id: number;
+  title: string;
+  bodyKey: string;
+  created: string;
+  spoiler: boolean;
+};
+
+// article と druck は表ごとに id を採番するので、link は行ごとに決める。
+// 並べるのは page.created (article.created だと過去記事の一括登録で古い
+// 記事がフィードを埋める)。表ごとに limit 件ずつ引いた上で混ぜれば、
+// 混ぜたあとの先頭 limit 件はどちらの表でも取りこぼさない。
+export const mergeArticleAndDruck = (
+  articleRows: FeedRow[],
+  druckRows: FeedRow[],
+  limit: number,
+): (FeedRow & { linkPath: string })[] =>
+  [
+    ...articleRows.map((row) => ({ ...row, linkPath: articlePath(row.id) })),
+    ...druckRows.map((row) => ({ ...row, linkPath: druckPath(row.id) })),
+  ]
+    // 同時刻は article を先に (sort は安定)。
+    .sort((a, b) =>
+      a.created < b.created ? 1 : a.created > b.created ? -1 : 0,
+    )
+    .slice(0, limit);
 
 export type RssFeedItem = {
   title: string;

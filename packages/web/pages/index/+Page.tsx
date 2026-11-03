@@ -1,96 +1,80 @@
 import React from "react";
 import { useData } from "vike-react/useData";
-import { cardImageSources } from "@/utils/listImage";
 import type data from "./+data";
-import { TileSection } from "./TileSection";
-import { pagePath } from "@jigsaw/db/page-path";
-import { zetDisplayTitle, zetPath } from "@jigsaw/db/zet";
+import { formatDay } from "./timeline";
+import { TimelineArticle } from "./TimelineArticle";
+import {
+  TimelineDay,
+  contentColumnClass,
+  dateColumnClass,
+} from "./TimelineDay";
+
+const newerHref = (page: number) => (page === 2 ? "/" : `/?p=${page - 1}`);
 
 const Page = () => {
   const d = useData<Awaited<ReturnType<typeof data>>>();
+  const { page, withYear, pinned, pinnedLabel, days, range, hasNext, hasPrev } =
+    d.payload;
 
   return (
-    <main className="max-w-content mx-auto px-4 pb-48">
-      <ul>
-        {d.payload.articles.map((article, i) => (
-          <React.Fragment key={article.id}>
-            <li className="my-8">
-              <a href={pagePath(article.title ?? "")}>
-                {article.image ? (
-                  <img
-                    {...cardImageSources(article.image)}
-                    alt={article.title ?? ""}
-                    className="mb-2 rounded mx-auto h-96 object-contain"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="h-96 text-center mx-auto font-bold flex justify-center items-center bg-black/[0.04] mb-2 rounded text-4xl">
-                    {article.title}
-                  </div>
-                )}
-                <div className="font-bold text-xl">{article.title}</div>
-              </a>
-            </li>
-            {/* 最新記事を 3 件見せてから zet と clip を挟む。先頭に置くと
-                記事より目立ち、末尾だと誰も辿り着かない。 */}
-            {i === 2 && (
-              <li className="my-12 divide-y divide-black/10 border-y border-black/10 empty:hidden">
-                <TileSection
-                  heading="Zettelkasten"
-                  tiles={d.payload.recentZets.map((zet) => ({
-                    key: zet.rkey,
-                    href: zetPath(zet.rkey),
-                    label: zetDisplayTitle(zet),
-                    image: zet.image,
-                  }))}
-                  moreHref="/zets"
-                  moreLabel="Zettelkasten をもっと見る"
-                />
-                <TileSection
-                  heading="druck"
-                  tiles={d.payload.recentDruck.map((item) => ({
-                    key: item.title,
-                    href: pagePath(item.title),
-                    label: item.title,
-                    image: item.image,
-                  }))}
-                  moreHref="/drucks"
-                  moreLabel="druck をもっと見る"
-                />
-                <TileSection
-                  heading="クリップ"
-                  tiles={d.payload.recentClips.map((clip) => ({
-                    key: clip.id,
-                    href: pagePath(clip.title),
-                    label: clip.title,
-                    image: clip.image,
-                  }))}
-                  moreHref="/clips"
-                  moreLabel="クリップをもっと見る"
-                />
-              </li>
+    <main className="px-4 pb-48">
+      <div className="mx-auto sm:w-fit">
+        {hasPrev && (
+          <nav className="flex items-center justify-between gap-4 mb-6">
+            <a href={newerHref(page)} className="block py-3 underline">
+              新しい方へ
+            </a>
+            {range && (
+              <span className="text-sm text-fg-muted">
+                {range.newest}〜{range.oldest}
+              </span>
             )}
-          </React.Fragment>
-        ))}
-      </ul>
+          </nav>
+        )}
 
-      <div className="flex justify-between mt-24">
-        {d.payload.page === 1 && <div />}
-        {d.payload.page === 2 && (
-          <a href="/" className="block underline">
-            前のページ
-          </a>
+        {/* 最新の日に article が無いときだけ、線の外に単体で置く。
+            border-transparent は中身の列と左端を 1px まで揃えるため */}
+        {pinned && (
+          <div className="flex">
+            <div className={dateColumnClass} />
+            <div
+              className={`${contentColumnClass} border-l border-transparent`}
+            >
+              <div>
+                <time
+                  dateTime={pinned.day}
+                  className="block text-xs text-fg-muted"
+                >
+                  {pinnedLabel}
+                </time>
+                <TimelineArticle entry={pinned} />
+              </div>
+            </div>
+          </div>
         )}
-        {d.payload.page > 2 && (
-          <a href={`/?p=${d.payload.page - 1}`} className="block underline">
-            前のページ
-          </a>
-        )}
-        {d.payload.hasNext && (
-          <a href={`/?p=${d.payload.page + 1}`} className="block underline">
-            次のページ
-          </a>
-        )}
+
+        {days.map((day) => (
+          <TimelineDay
+            key={day.day}
+            day={day}
+            label={formatDay(day.day, withYear)}
+          />
+        ))}
+
+        <nav className="flex justify-between gap-4 mt-12">
+          {hasPrev ? (
+            <a href={newerHref(page)} className="block py-3 underline">
+              新しい方へ
+            </a>
+          ) : (
+            <div />
+          )}
+          {hasNext && (
+            <a href={`/?p=${page + 1}`} className="block py-3 underline">
+              もっと前へ
+            </a>
+          )}
+        </nav>
       </div>
     </main>
   );

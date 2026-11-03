@@ -133,6 +133,21 @@
     border-right: 13px solid transparent;
     border-top: 22.52px solid var(--color-brand);
   }
+
+  /* トップのタイムラインの日ごとの印。.article-rule::after を幅 12px に縮めた正三角形
+     (高さ 12 × √3/2 = 10.4)。親は border-l (1px) を持つ中身の列で、absolute の基準は
+     border の内側なので、半幅 6px と線の半分 0.5px を左へ戻して線の中心に載せる。
+     top は日付の 1 行目の高さの中ほどに合わせる。 */
+  .timeline-mark {
+    position: absolute;
+    left: -6.5px;
+    top: 5px;
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 10.4px solid var(--color-brand);
+  }
 }
 
 /* video clip の本文。最初のブロックにある動画だけ本文カラムからはみ出させる。

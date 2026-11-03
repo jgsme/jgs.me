@@ -140,6 +140,7 @@ export async function runZetRehost(
             if (image !== row.image) await deps.setImage(row, image);
           }
           await deps.purge([
+            "/",
             "/zets",
             zetPath(row.rkey),
             `/p/${row.pageID}`,

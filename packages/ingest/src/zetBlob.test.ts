@@ -95,7 +95,7 @@ describe("runZetRehost", () => {
     expect(calls.writeBody).toEqual([["sb-x", `zet:${row.rkey}\n[${R2}]`]]);
     expect(calls.setImage).toEqual([R2]);
     expect(calls.purge).toEqual([
-      ["/zets", `/pages/zet%3A${row.rkey}`, "/p/7", "/z/3"],
+      ["/", "/zets", `/pages/zet%3A${row.rkey}`, "/p/7", "/z/3"],
     ]);
   });
 

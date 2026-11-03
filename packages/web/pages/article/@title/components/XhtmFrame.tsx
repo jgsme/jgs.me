@@ -14,6 +14,8 @@ export function XhtmFrame({ html }: { html: string }) {
       if (h !== null) setHeight(h);
     };
     window.addEventListener("message", onMessage);
+    // hydration 前に届いた通知を取りこぼしたときのため、測り直しを頼む
+    ref.current?.contentWindow?.postMessage({ xhtmMeasure: true }, "*");
     return () => window.removeEventListener("message", onMessage);
   }, []);
 

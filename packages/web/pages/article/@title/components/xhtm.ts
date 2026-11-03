@@ -1,9 +1,11 @@
-// iframe 内の高さを親に知らせる script。内容が変わるたびに送る
-const SHIM = `<script>(function(){var e=document.documentElement;function s(){parent.postMessage({xhtmHeight:Math.ceil(e.getBoundingClientRect().height)},"*")}new ResizeObserver(s).observe(e);addEventListener("load",s);s()})()</script>`;
+// iframe 内の高さを親に知らせる script。内容が変わるたび・親から xhtmMeasure が来たときに送る
+const SHIM = `<script>(function(){var e=document.documentElement;function s(){parent.postMessage({xhtmHeight:Math.ceil(e.getBoundingClientRect().height)},"*")}new ResizeObserver(s).observe(e);addEventListener("load",s);addEventListener("message",function(m){if(m.data&&m.data.xhtmMeasure)s()});s()})()</script>`;
 
 // 最後の </body> の直前に高さ通知を入れる。無ければ末尾
 export function withHeightShim(html: string): string {
-  const i = html.toLowerCase().lastIndexOf("</body>");
+  // 小文字化すると長さが変わる文字があるので、元の文字列で探す
+  let i = -1;
+  for (const m of html.matchAll(/<\/body>/gi)) i = m.index;
   if (i === -1) return html + SHIM;
   return html.slice(0, i) + SHIM + html.slice(i);
 }

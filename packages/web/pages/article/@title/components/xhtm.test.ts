@@ -25,6 +25,21 @@ describe("withHeightShim", () => {
   });
 });
 
+describe("withHeightShim (補足)", () => {
+  it("小文字化で長さが変わる文字があっても </body> の直前に入る", () => {
+    const html = "<body><p>İİİ</p></body>";
+    const out = withHeightShim(html);
+    const i = out.lastIndexOf("</body>");
+    expect(out.slice(i)).toBe("</body>");
+    expect(out.slice(0, out.indexOf("<script"))).toBe("<body><p>İİİ</p>");
+    expect(out.replace(/<script>.*<\/script>/s, "")).toBe(html);
+  });
+
+  it("親からの xhtmMeasure で高さを送り直す", () => {
+    expect(withHeightShim("<p>a</p>")).toContain("xhtmMeasure");
+  });
+});
+
 describe("readXhtmHeight", () => {
   it("有限の正の数だけ通す", () => {
     expect(readXhtmHeight({ xhtmHeight: 321 })).toBe(321);

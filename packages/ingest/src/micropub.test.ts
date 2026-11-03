@@ -145,6 +145,28 @@ describe("handleMicropubMedia", () => {
     expect(res.headers.get("Location")).toMatch(/\.png$/);
   });
 
+  it("charset 付きの JSON は essence で判定し contentType は素の型で置く", async () => {
+    const res = await handleMicropubMedia(
+      upload("application/json;charset=utf-8", '{"body":"y"}'),
+      env,
+    );
+    expect(res.status).toBe(201);
+    expect(res.headers.get("Location")).toMatch(
+      /^https:\/\/r2\.example\/[0-9a-f]{64}\.json$/,
+    );
+    expect(puts.at(-1)?.type).toBe("application/json");
+  });
+
+  it("image/png; foo=bar は png として受ける", async () => {
+    const res = await handleMicropubMedia(
+      upload("Image/PNG; foo=bar", "png2"),
+      env,
+    );
+    expect(res.status).toBe(201);
+    expect(res.headers.get("Location")).toMatch(/\.png$/);
+    expect(puts.at(-1)?.type).toBe("image/png");
+  });
+
   it("未対応の型は 400", async () => {
     const res = await handleMicropubMedia(upload("application/pdf", "x"), env);
     expect(res.status).toBe(400);

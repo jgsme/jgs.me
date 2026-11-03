@@ -23,10 +23,10 @@ export function toDruckList(rows: readonly Row[]): DruckListItem[] {
   }));
 }
 
-// 1 ページ目は ?p=1 を作らず /druck に寄せる (キャッシュキーを 1 つにする)。
+// 1 ページ目は ?p=1 を作らず /drucks に寄せる (キャッシュキーを 1 つにする)。
 export function druckPageLinks(page: number, hasNext: boolean) {
   return {
-    prev: page <= 1 ? null : page === 2 ? "/druck" : `/druck?p=${page - 1}`,
-    next: hasNext ? `/druck?p=${page + 1}` : null,
+    prev: page <= 1 ? null : page === 2 ? "/drucks" : `/drucks?p=${page - 1}`,
+    next: hasNext ? `/drucks?p=${page + 1}` : null,
   };
 }

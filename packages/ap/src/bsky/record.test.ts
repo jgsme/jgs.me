@@ -132,3 +132,26 @@ describe("buildPostRecord: ネタバレ", () => {
     expect(r.facets).toHaveLength(1);
   });
 });
+
+describe("leadTitle", () => {
+  it("本文の前に題を置き、カードの description は本文のまま", () => {
+    const r = buildPostRecord({
+      ...base,
+      html: "<p>飾り</p><p>本文</p>",
+      leadTitle: "題",
+    });
+    expect(r.text).toBe("題\n\n飾り\n\n本文");
+    const ext = (r.embed as { external: { description: string } }).external;
+    expect(ext.description.startsWith("題")).toBe(false);
+  });
+
+  it("ネタバレなら leadTitle があっても題と URL だけ", () => {
+    const r = buildPostRecord({ ...base, spoiler: true, leadTitle: "題" });
+    expect(r.text).not.toContain("あいう");
+  });
+
+  it("本文が空なら題だけ", () => {
+    const r = buildPostRecord({ ...base, html: "", leadTitle: "題" });
+    expect(r.text).toBe("題");
+  });
+});

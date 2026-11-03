@@ -132,7 +132,7 @@ export const zetRelations = relations(zets, ({ one }) => ({
 }));
 
 // AI が作ったページ。article / clip / zet と同居しない (page 1 つに 1 行)。
-// 記事ページの URL は /pages/<題> のままで、この表は一覧 (/druck) と共有 URL
+// 記事ページの URL は /pages/<題> のままで、この表は一覧 (/drucks) と共有 URL
 // (/d/{id}) の根拠になる。
 export const druck = sqliteTable(
   "druck",

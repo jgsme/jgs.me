@@ -147,7 +147,7 @@ describe("ingestDocument: create", () => {
       mf2: JSON.stringify(payload),
     });
     expect(calls.publish).toEqual([[42, "create"]]);
-    expect(calls.purge).toEqual([["/", "/druck"]]);
+    expect(calls.purge).toEqual([["/", "/drucks"]]);
   });
 
   it("派生テキストは前後の空行と CRLF を落として題の下に置く", async () => {
@@ -278,7 +278,7 @@ describe("ingestDocument: update", () => {
         "/p/42",
         "/pages/%E9%83%A8%E5%B1%8B%E3%81%AE%20CO2",
         "/d/9",
-        "/druck",
+        "/drucks",
       ],
     ]);
   });
@@ -311,7 +311,7 @@ describe("ingestDocument: update", () => {
       "/p/42",
       TITLE_PATH,
       "/d/9",
-      "/druck",
+      "/drucks",
       "/pages/%E6%97%A7%E9%A1%8C",
     ]);
   });

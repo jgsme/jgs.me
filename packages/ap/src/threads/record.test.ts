@@ -78,3 +78,14 @@ describe("buildContainerParams: ネタバレ", () => {
     expect(p.linkAttachment).toBe("https://w.jgs.me/p/1");
   });
 });
+
+describe("leadTitle", () => {
+  it("本文の前に題を置く", () => {
+    const p = buildContainerParams({
+      html: "<p>飾り</p><p>本文</p>",
+      url: "https://w.jgs.me/p/1",
+      leadTitle: "題",
+    });
+    expect(p.text).toBe("題\n\n飾り\n\n本文");
+  });
+});

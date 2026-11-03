@@ -28,20 +28,20 @@ describe("druckPageLinks", () => {
   it("1 ページ目は前が無い", () => {
     expect(druckPageLinks(1, true)).toEqual({
       prev: null,
-      next: "/druck?p=2",
+      next: "/drucks?p=2",
     });
   });
 
-  it("2 ページ目の前は /druck (?p=1 を作らない)", () => {
+  it("2 ページ目の前は /drucks (?p=1 を作らない)", () => {
     expect(druckPageLinks(2, true)).toEqual({
-      prev: "/druck",
-      next: "/druck?p=3",
+      prev: "/drucks",
+      next: "/drucks?p=3",
     });
   });
 
   it("3 ページ目以降は前後とも ?p=N", () => {
     expect(druckPageLinks(3, false)).toEqual({
-      prev: "/druck?p=2",
+      prev: "/drucks?p=2",
       next: null,
     });
   });

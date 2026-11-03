@@ -163,14 +163,14 @@ export async function ingestDocument(
       console.error(`[document] update failed rkey=${ref.rkey} ${message(e)}`);
       return fail(500, "failed to store document");
     }
-    // トップ・/druck・個別・share URL。micropub.ts の update と同じく /p/<id> も消す。
+    // トップ・/drucks・個別・share URL。micropub.ts の update と同じく /p/<id> も消す。
     // 改題なら旧題の URL も消す (web は無い題を 404 で返す)。
     const paths = [
       "/",
       `/p/${existing.pageID}`,
       pagePath(record.title),
       `/d/${existing.druckID}`,
-      "/druck",
+      "/drucks",
     ];
     if (existing.title !== record.title) paths.push(pagePath(existing.title));
     await bestEffort("[document] purge", () => deps.purge(paths));
@@ -199,7 +199,7 @@ export async function ingestDocument(
     console.error(`[document] create failed rkey=${ref.rkey} ${message(e)}`);
     return fail(500, "failed to store document");
   }
-  await bestEffort("[document] purge", () => deps.purge(["/", "/druck"]));
+  await bestEffort("[document] purge", () => deps.purge(["/", "/drucks"]));
   await bestEffort("[document] publish", () => deps.publish(pageID, "create"));
   return new Response(null, { status: 201, headers: { Location: location } });
 }

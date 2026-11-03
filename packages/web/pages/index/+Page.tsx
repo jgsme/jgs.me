@@ -54,7 +54,7 @@ const Page = () => {
                     label: item.title,
                     image: item.image,
                   }))}
-                  moreHref="/druck"
+                  moreHref="/drucks"
                   moreLabel="druck をもっと見る"
                 />
                 <TileSection

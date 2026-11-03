@@ -16,6 +16,9 @@ export type ThreadsPostInput = {
   // Grain に出した画像だけの zet。あれば本文の代わりにこの URL だけを出す
   // (link_attachment も同じ URL で、Threads 側がカードを作る)。
   grainUrl?: string | null;
+  // 本文の前に置く題。druck は本文の頭がヘッダの飾りの文字になりがちなため
+  // (bsky/record.ts の leadTitle と同じ)。
+  leadTitle?: string;
 };
 
 export type ContainerParams = {
@@ -41,7 +44,12 @@ export function buildContainerParams(input: ThreadsPostInput): ContainerParams {
       linkAttachment: input.url,
     };
   }
-  const plain = htmlToText(input.html);
+  const body = htmlToText(input.html);
+  const plain = input.leadTitle
+    ? body
+      ? `${input.leadTitle}\n\n${body}`
+      : input.leadTitle
+    : body;
   const capped = truncateGraphemes(plain, MAX_THREADS_GRAPHEMES);
   const text = capped.truncated
     ? `${truncateGraphemes(plain, MAX_THREADS_GRAPHEMES - 1).text}…`

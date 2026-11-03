@@ -108,7 +108,7 @@ npx wrangler d1 migrations apply w --remote  # 適用
 5. `pages/clips/` — clip 一覧。
 6. `pages/zets/` — zet 一覧（`zet.date` 降順、`?p=N`）。個別は専用ページを持たず、記事と同じ `pages/article/@title/` が `/pages/zet%3A<rkey>` で表示する。見出しと `<title>` は `zet.title`、無ければ `zet.date`。`zet:<rkey>` は表示しない。
 7. `pages/on-this-day/@mmdd/` — 周年日記（`/on-this-day/@mmdd`）。`article.date` の月日が一致する記事を年ごとにグルーピングする。
-8. `pages/druck/` — druck 一覧（`druck.date` 降順、`?p=N`）。入口はトップの druck 枠（最近 6 件）の「もっと見る」だけ。共有 URL は `/d/{druck.id}`（`/pages/{title}` へリダイレクト）。
+8. `pages/drucks/` — druck 一覧（`/drucks`、`druck.date` 降順、`?p=N`）。入口はトップの druck 枠（最近 6 件）の「もっと見る」だけ。共有 URL は `/d/{druck.id}`（`/pages/{title}` へリダイレクト）。Bluesky / Threads の投稿文は題を先頭に置く (本文の頭が HTML のヘッダの飾りの文字になりがちなため。`leadTitle`)。
 
 zet 本文も R2 の `.sb`。画像は取り込み時に PDS の blob を w-media に写し、Image Transformations 用に r2.jgs.me の URL に差し替える。写せなかった blob だけ getBlob URL に `#.png` を付けて画像として読み込み、`pnpm zet-rehost` で後から拾う。
 

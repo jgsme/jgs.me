@@ -80,6 +80,7 @@ export async function createContainer(
     url: shareURL(page.id),
     ...(grainUrl ? { grainUrl } : {}),
     ...(page.spoiler ? { spoiler: { title: pageDisplayTitle(page) } } : {}),
+    ...(publishedKind(page) === "druck" ? { leadTitle: page.title } : {}),
   });
 
   // resolveContent は R2 に本文が無いと "" を返す。TEXT 投稿は text 必須なので

@@ -30,6 +30,8 @@ describe("parsePage", () => {
     ["-1", 1],
     ["abc", 1],
     ["2.7", 2],
+    ["1e20", 1],
+    ["100001", 100000],
   ])("%s -> %s", (input, want) => {
     expect(parsePage(input)).toBe(want);
   });

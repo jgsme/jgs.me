@@ -42,7 +42,15 @@ const TextEntry = ({ entry }: { entry: TimelineEntry }) => {
   );
 };
 
-export const TimelineDay = ({ day, label }: { day: Day; label: string }) => (
+export const TimelineDay = ({
+  day,
+  label,
+  eagerFirstArticle = false,
+}: {
+  day: Day;
+  label: string;
+  eagerFirstArticle?: boolean;
+}) => (
   <section className="flex">
     <div className={`${dateColumnClass} ${dateLineClass}`}>
       <time
@@ -56,8 +64,12 @@ export const TimelineDay = ({ day, label }: { day: Day; label: string }) => (
       <span className="timeline-mark" aria-hidden />
       {/* スマホは 1 行目に日付と三角だけを出し、article をその下に端まで広げる */}
       {day.articles.length > 0 && <div className="h-6 sm:hidden" />}
-      {day.articles.map((entry) => (
-        <TimelineArticle key={entry.key} entry={entry} />
+      {day.articles.map((entry, i) => (
+        <TimelineArticle
+          key={entry.key}
+          entry={entry}
+          eager={eagerFirstArticle && i === 0}
+        />
       ))}
       {day.tiles.length > 0 && (
         <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">

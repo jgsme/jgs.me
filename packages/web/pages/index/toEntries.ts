@@ -4,9 +4,12 @@ import type { TimelineEntry } from "./timeline";
 import type { PageRow, ZetRow } from "./timelineQuery";
 
 // ?p= を 1 以上の整数にする。読めない値は 1 ページ目
+const MAX_PAGE = 100000;
+
 export function parsePage(p: unknown): number {
   const n = Math.floor(Number(p));
-  return Number.isFinite(n) && n >= 1 ? n : 1;
+  if (!Number.isSafeInteger(n) || n < 1) return 1;
+  return Math.min(n, MAX_PAGE);
 }
 
 export function toPageEntry(

@@ -6,7 +6,13 @@ import type { TimelineEntry } from "./timeline";
 // main の px-4 (1rem) + 日付の列 w-12 (3rem、線はこの中の border-r) + pl-4 (1rem) = 5rem。
 // 外側の -ml-16 で 4rem、内側の -ml-4 で 1rem 戻して x=0 に付ける (5rem は語彙に無いので 2 段)。
 // 右は外側の -mr-4 で main の px-4 を戻す。縦線を横切るので bg-bg で線を隠す。
-export const TimelineArticle = ({ entry }: { entry: TimelineEntry }) => (
+export const TimelineArticle = ({
+  entry,
+  eager = false,
+}: {
+  entry: TimelineEntry;
+  eager?: boolean;
+}) => (
   <div className="relative bg-bg -ml-16 -mr-4 sm:mx-0">
     <a
       href={entry.href}
@@ -17,7 +23,8 @@ export const TimelineArticle = ({ entry }: { entry: TimelineEntry }) => (
           {...timelineArticleImageSources(entry.image)}
           alt=""
           className="h-64 sm:h-96 w-full object-contain sm:rounded"
-          loading="lazy"
+          loading={eager ? "eager" : "lazy"}
+          fetchPriority={eager ? "high" : undefined}
         />
       ) : (
         <div className="h-64 sm:h-96 flex items-center justify-center bg-surface-strong sm:rounded text-2xl sm:text-3xl font-bold text-center p-4">

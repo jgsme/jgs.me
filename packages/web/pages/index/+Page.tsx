@@ -9,7 +9,8 @@ import {
   dateColumnClass,
 } from "./TimelineDay";
 
-const newerHref = (page: number) => (page === 2 ? "/" : `/?p=${page - 1}`);
+const newerHref = (page: number, empty: boolean) =>
+  empty || page === 2 ? "/" : `/?p=${page - 1}`;
 
 const Page = () => {
   const d = useData<Awaited<ReturnType<typeof data>>>();
@@ -24,7 +25,10 @@ const Page = () => {
             aria-label="ページ送り (上)"
             className="flex items-center justify-between gap-4 mb-6"
           >
-            <a href={newerHref(page)} className="block py-3 underline">
+            <a
+              href={newerHref(page, days.length === 0)}
+              className="block py-3 underline"
+            >
               新しい方へ
             </a>
             {range && (
@@ -51,16 +55,17 @@ const Page = () => {
                 >
                   {pinnedLabel}
                 </time>
-                <TimelineArticle entry={pinned} />
+                <TimelineArticle entry={pinned} eager />
               </div>
             </div>
           </div>
         )}
 
-        {days.map((day) => (
+        {days.map((day, i) => (
           <TimelineDay
             key={day.day}
             day={day}
+            eagerFirstArticle={i === 0}
             label={formatDay(day.day, withYear)}
           />
         ))}
@@ -70,7 +75,10 @@ const Page = () => {
           className="flex justify-between gap-4 mt-12"
         >
           {hasPrev ? (
-            <a href={newerHref(page)} className="block py-3 underline">
+            <a
+              href={newerHref(page, days.length === 0)}
+              className="block py-3 underline"
+            >
               新しい方へ
             </a>
           ) : (

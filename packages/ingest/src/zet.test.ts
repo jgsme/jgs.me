@@ -171,7 +171,7 @@ describe("ingestZet: create", () => {
   it("一覧を purge し、create で publish する", async () => {
     const { deps, calls } = fake();
     await ingestZet(payload, deps);
-    expect(calls.purge).toEqual([["/zets"]]);
+    expect(calls.purge).toEqual([["/", "/zets"]]);
     expect(calls.publish).toEqual([[42, "create"]]);
   });
 
@@ -249,7 +249,7 @@ describe("ingestZet: update", () => {
     const { deps, calls } = fake({ findByAtUri: async () => existing });
     await ingestZet(payload, deps);
     expect(calls.purge).toEqual([
-      ["/zets", `/pages/zet%3A${RKEY}`, "/p/7", "/z/3"],
+      ["/", "/zets", `/pages/zet%3A${RKEY}`, "/p/7", "/z/3"],
     ]);
     expect(calls.publish).toEqual([[7, "update"]]);
   });

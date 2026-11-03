@@ -138,3 +138,21 @@ describe("code:card", () => {
     );
   });
 });
+
+describe("code:xhtm", () => {
+  it("中身を出さず、前後の本文は残す", () => {
+    const out = h(
+      "題\n前の行\ncode:xhtm\n <p>secret</p>\n <script>x()</script>\n後の行",
+    );
+    expect(out).not.toContain("secret");
+    expect(out).not.toContain("<pre>");
+    expect(out).toContain("前の行");
+    expect(out).toContain("後の行");
+  });
+
+  it("code:js のブロックは今まで通り pre code にする", () => {
+    expect(h("題\ncode:js\n let a = 1")).toBe(
+      "<pre><code>let a = 1</code></pre>",
+    );
+  });
+});

@@ -9,33 +9,27 @@ import {
   dateColumnClass,
 } from "./TimelineDay";
 
+// 2 ページ目の前は ?p を付けない / (1 ページ目の URL を 1 つにする)
+const SECOND_PAGE = 2;
 const newerHref = (page: number, empty: boolean) =>
-  empty || page === 2 ? "/" : `/?p=${page - 1}`;
+  empty || page === SECOND_PAGE ? "/" : `/?p=${page - 1}`;
 
 const Page = () => {
   const d = useData<Awaited<ReturnType<typeof data>>>();
-  const { page, withYear, pinned, pinnedLabel, days, range, hasNext, hasPrev } =
+  const { page, withYear, pinned, pinnedLabel, days, hasNext, hasPrev } =
     d.payload;
 
   return (
     <main className="px-4 pb-48">
       <div className="mx-auto sm:w-fit sm:max-w-full">
         {hasPrev && (
-          <nav
-            aria-label="ページ送り (上)"
-            className="flex items-center justify-between gap-4 mb-6"
-          >
+          <nav aria-label="ページ送り (上)" className="flex mb-6">
             <a
               href={newerHref(page, days.length === 0)}
               className="block py-3 underline"
             >
-              新しい方へ
+              前のページ
             </a>
-            {range && (
-              <span className="text-sm text-fg-muted">
-                {range.newest}〜{range.oldest}
-              </span>
-            )}
           </nav>
         )}
 
@@ -79,14 +73,14 @@ const Page = () => {
               href={newerHref(page, days.length === 0)}
               className="block py-3 underline"
             >
-              新しい方へ
+              前のページ
             </a>
           ) : (
             <div />
           )}
           {hasNext && (
             <a href={`/?p=${page + 1}`} className="block py-3 underline">
-              もっと前へ
+              次のページ
             </a>
           )}
         </nav>

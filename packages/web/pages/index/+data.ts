@@ -27,14 +27,14 @@ type Payload = {
   pinned: TimelineEntry | null;
   pinnedLabel: string | null;
   days: TimelineDay[];
-  range: { newest: string; oldest: string } | null;
   hasNext: boolean;
   hasPrev: boolean;
 };
 
 // 「今年」は JST で判定する (Workers は UTC で動くため +9 時間する)
+const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
 const currentYearJst = () =>
-  new Date(Date.now() + 9 * 60 * 60 * 1000).getUTCFullYear();
+  new Date(Date.now() + JST_OFFSET_MS).getUTCFullYear();
 
 const data = async (c: Context): Promise<{ ok: true; payload: Payload }> => {
   const db = getDB(c.env.DB);
@@ -52,7 +52,6 @@ const data = async (c: Context): Promise<{ ok: true; payload: Payload }> => {
         pinned: null,
         pinnedLabel: null,
         days: [],
-        range: null,
         hasNext: false,
         hasPrev,
       },
@@ -104,9 +103,6 @@ const data = async (c: Context): Promise<{ ok: true; payload: Payload }> => {
       pinned,
       pinnedLabel,
       days,
-      range: withYear
-        ? { newest: formatDay(newest, true), oldest: formatDay(oldest, true) }
-        : null,
       hasNext,
       hasPrev,
     },

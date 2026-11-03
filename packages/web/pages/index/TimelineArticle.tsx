@@ -2,9 +2,10 @@ import React from "react";
 import { timelineArticleImageSources } from "@/utils/listImage";
 import type { TimelineEntry } from "./timeline";
 
-// スマホでは画面の左右の端まで広げる。外側の -ml-16 は日付の列 (w-12) と中身の列の pl-4、
-// 内側の -ml-4 と外側の -mr-4 は main の px-4 のぶん。合計 5rem は語彙に無いので 2 段に分けている。
-// 縦線を横切るので bg-bg で線を隠す。
+// スマホでは画面の左右の端まで広げる。中身の列の content box の左端は
+// main の px-4 (1rem) + 日付の列 w-12 (3rem、線はこの中の border-r) + pl-4 (1rem) = 5rem。
+// 外側の -ml-16 で 4rem、内側の -ml-4 で 1rem 戻して x=0 に付ける (5rem は語彙に無いので 2 段)。
+// 右は外側の -mr-4 で main の px-4 を戻す。縦線を横切るので bg-bg で線を隠す。
 export const TimelineArticle = ({ entry }: { entry: TimelineEntry }) => (
   <div className="relative bg-bg -ml-16 -mr-4 sm:mx-0">
     <a
@@ -14,7 +15,7 @@ export const TimelineArticle = ({ entry }: { entry: TimelineEntry }) => (
       {entry.image ? (
         <img
           {...timelineArticleImageSources(entry.image)}
-          alt={entry.title}
+          alt=""
           className="h-64 sm:h-96 w-full object-contain sm:rounded"
           loading="lazy"
         />

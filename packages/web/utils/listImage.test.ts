@@ -83,11 +83,12 @@ describe("tileImageSources", () => {
 });
 
 describe("timelineArticleImageSources", () => {
-  // PC の中身の列は w-content (48rem) から pl-6 を引いた 744px。
-  // スマホは画面の端まで広げるので 100vw。
+  // スマホは画面の端まで広げるので 100vw。640〜896px は中身の列が縮み、
+  // main の px-4 2 つ + 日付の列 6rem + pl-6 = 9.5rem を引いた幅。
+  // 896px 以上は w-content (48rem) から pl-6 を引いた 744px で止まる。
   it("sizes はタイムラインの中身の列の実幅を表す", () => {
     expect(timelineArticleImageSources(R2).sizes).toBe(
-      "(max-width: 640px) 100vw, 744px",
+      "(max-width: 640px) 100vw, (max-width: 896px) calc(100vw - 9.5rem), 744px",
     );
   });
 
@@ -98,10 +99,12 @@ describe("timelineArticleImageSources", () => {
 });
 
 describe("timelineTileImageSources", () => {
-  // スマホは px-4 2 つ + 日付の列 3rem + pl-4 = 6rem を引いて 2 列。PC は 744px を 3 列。
+  // スマホは px-4 2 つ + 日付の列 3rem + pl-4 = 6rem を引いて 2 列。
+  // 640〜896px は中身の列 (100vw - 9.5rem) から gap-3 2 つ (1.5rem) を引いて 3 列。
+  // 896px 以上は 744px を 3 列で 240px。
   it("sizes はタイムラインの 2 列 / 3 列の実幅を表す", () => {
     expect(timelineTileImageSources(R2).sizes).toBe(
-      "(max-width: 640px) calc((100vw - 6rem) / 2), 240px",
+      "(max-width: 640px) calc((100vw - 6rem) / 2), (max-width: 896px) calc((100vw - 11rem) / 3), 240px",
     );
   });
 

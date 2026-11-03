@@ -135,8 +135,9 @@
   }
 
   /* トップのタイムラインの日ごとの印。.article-rule::after を幅 12px に縮めた正三角形
-     (高さ 12 × √3/2 = 10.4)。親は border-l (1px) を持つ中身の列で、absolute の基準は
-     border の内側なので、半幅 6px と線の半分 0.5px を左へ戻して線の中心に載せる。
+     (高さ 12 × √3/2 = 10.4)。親は中身の列。線 (1px) は PC では親の border-l、スマホでは
+     日付の列の border-r で、どちらも absolute の基準 (親の padding box) の左端のすぐ外にある。
+     半幅 6px と線の半分 0.5px を左へ戻して線の中心に載せる。
      top は日付の 1 行目の高さの中ほどに合わせる。 */
   .timeline-mark {
     position: absolute;

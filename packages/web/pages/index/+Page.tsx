@@ -18,9 +18,12 @@ const Page = () => {
 
   return (
     <main className="px-4 pb-48">
-      <div className="mx-auto sm:w-fit">
+      <div className="mx-auto sm:w-fit sm:max-w-full">
         {hasPrev && (
-          <nav className="flex items-center justify-between gap-4 mb-6">
+          <nav
+            aria-label="ページ送り (上)"
+            className="flex items-center justify-between gap-4 mb-6"
+          >
             <a href={newerHref(page)} className="block py-3 underline">
               新しい方へ
             </a>
@@ -33,12 +36,13 @@ const Page = () => {
         )}
 
         {/* 最新の日に article が無いときだけ、線の外に単体で置く。
-            border-transparent は中身の列と左端を 1px まで揃えるため */}
+            PC の線は中身の列の border-l なので、透明の線で左端を 1px まで揃える
+            (スマホの線は日付の列の中にあるので、こちらは何も足さなくても揃う) */}
         {pinned && (
           <div className="flex">
             <div className={dateColumnClass} />
             <div
-              className={`${contentColumnClass} border-l border-transparent`}
+              className={`${contentColumnClass} sm:border-l sm:border-transparent`}
             >
               <div>
                 <time
@@ -61,7 +65,10 @@ const Page = () => {
           />
         ))}
 
-        <nav className="flex justify-between gap-4 mt-12">
+        <nav
+          aria-label="ページ送り"
+          className="flex justify-between gap-4 mt-12"
+        >
           {hasPrev ? (
             <a href={newerHref(page)} className="block py-3 underline">
               新しい方へ

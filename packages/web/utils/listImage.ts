@@ -51,21 +51,28 @@ export function tileImageSources(image: string): Sources {
   );
 }
 
-// トップのタイムラインの article。PC の中身の列は w-content (48rem = 768px) から
-// pl-6 (24px) を引いた 744px。sm (640px) 未満は画面の端まで広げるので 100vw。
+// トップのタイムラインの article。sm (640px) 未満は画面の端まで広げるので 100vw。
+// PC の中身の列は w-content (48rem = 768px) が上限で、pl-6 (24px) を引いた 744px。
+// 列が上限に届くのは main の px-4 2 つ + 日付の列 6rem + 48rem = 56rem (896px) から。
+// それより狭いと列が縮み、100vw から 2rem + 6rem + pl-6 1.5rem = 9.5rem を引いた幅になる。
 // h-64 / h-96 の object-contain なので、横長なら列の幅いっぱいまで伸びる最悪ケースに合わせる。
 export function timelineArticleImageSources(image: string): Sources {
-  return build(image, [744, 1488], "(max-width: 640px) 100vw, 744px");
+  return build(
+    image,
+    [744, 1488],
+    "(max-width: 640px) 100vw, (max-width: 896px) calc(100vw - 9.5rem), 744px",
+  );
 }
 
 // トップのタイムラインの正方形タイル。PC は 744px を grid-cols-3 gap-3 で割って 240px。
+// 640〜896px は中身の列 (100vw - 9.5rem) から gap-3 2 つ (1.5rem) を引いて 3 列。
 // sm 未満は main の px-4 2 つ + 日付の列 w-12 (3rem) + pl-4 = 6rem を引いて 2 列
-// (gap-2 は無視できる誤差なので sizes に入れない)。切り出しは tileImageSources と同じ。
+// (gap-2 は小さく、大きめに見積もる側なので sizes に入れない)。切り出しは tileImageSources と同じ。
 export function timelineTileImageSources(image: string): Sources {
   return build(
     image,
     [240, 480, 720],
-    "(max-width: 640px) calc((100vw - 6rem) / 2), 240px",
+    "(max-width: 640px) calc((100vw - 6rem) / 2), (max-width: 896px) calc((100vw - 11rem) / 3), 240px",
     { square: true },
   );
 }

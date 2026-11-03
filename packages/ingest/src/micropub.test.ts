@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildCreateR2Put, handleMicropubPost } from "./micropub";
+import {
+  buildCreateR2Put,
+  handleMicropubMedia,
+  handleMicropubPost,
+} from "./micropub";
 import type { Env } from "./index";
 
 // handleMicropubCreate が R2 に書く内容 (body.test.ts / bodyKey.test.ts が別々に
@@ -94,5 +98,55 @@ describe("handleMicropubPost: zet", () => {
     expect(await res.json()).toMatchObject({
       error_description: "name is required",
     });
+  });
+});
+
+describe("handleMicropubMedia", () => {
+  const puts: { key: string; type?: string }[] = [];
+  const env = {
+    MICROPUB_TOKEN: "t",
+    MEDIA_BASE_URL: "https://r2.example",
+    MEDIA: {
+      put: async (
+        key: string,
+        _b: ArrayBuffer,
+        o?: { httpMetadata?: { contentType?: string } },
+      ) => {
+        puts.push({ key, type: o?.httpMetadata?.contentType });
+      },
+    },
+  } as unknown as Env;
+
+  function upload(type: string, body: string): Request {
+    const form = new FormData();
+    form.set("file", new File([body], "x", { type }));
+    return new Request("https://w.example/micropub/media", {
+      method: "POST",
+      headers: { Authorization: "Bearer t" },
+      body: form,
+    });
+  }
+
+  it("JSON を上げると 201 と .json の Location", async () => {
+    const res = await handleMicropubMedia(
+      upload("application/json", '{"body":"x"}'),
+      env,
+    );
+    expect(res.status).toBe(201);
+    expect(res.headers.get("Location")).toMatch(
+      /^https:\/\/r2\.example\/[0-9a-f]{64}\.json$/,
+    );
+    expect(puts.at(-1)?.type).toBe("application/json");
+  });
+
+  it("画像は今までどおり", async () => {
+    const res = await handleMicropubMedia(upload("image/png", "png"), env);
+    expect(res.status).toBe(201);
+    expect(res.headers.get("Location")).toMatch(/\.png$/);
+  });
+
+  it("未対応の型は 400", async () => {
+    const res = await handleMicropubMedia(upload("application/pdf", "x"), env);
+    expect(res.status).toBe(400);
   });
 });

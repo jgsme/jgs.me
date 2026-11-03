@@ -783,7 +783,8 @@ export async function handleMicropubMedia(
   }
 
   const bytes = await file.arrayBuffer();
-  const key = await putMedia(env.MEDIA, bytes, file.type);
+  // media endpoint だけが部品の JSON (xhtm) を受ける。
+  const key = await putMedia(env.MEDIA, bytes, file.type, { allowJson: true });
   if (key === null) {
     return Response.json(
       {

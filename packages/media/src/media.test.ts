@@ -74,3 +74,41 @@ describe("mediaKey", () => {
     expect(puts.map((p) => p.key)).toEqual([key]);
   });
 });
+
+// 部品の JSON は micropub の media endpoint からだけ受ける。
+// 他の呼び出し元 (img / ap / Gyazo / zet) は型判定で画像だけ通しているので、
+// 既定では JSON を受けない。
+describe("JSON (allowJson)", () => {
+  const json = new TextEncoder().encode('{"body":"<p>x</p>"}')
+    .buffer as ArrayBuffer;
+
+  it("既定では application/json は null", async () => {
+    expect(await mediaKey(json, "application/json")).toBeNull();
+    const { bucket, puts } = fakeBucket();
+    expect(await putMedia(bucket, json, "application/json")).toBeNull();
+    expect(puts).toHaveLength(0);
+  });
+
+  it("allowJson なら <sha256>.json", async () => {
+    const key = await mediaKey(json, "application/json", { allowJson: true });
+    expect(key).toMatch(/^[0-9a-f]{64}\.json$/);
+  });
+
+  it("allowJson の putMedia が JSON を contentType 付きで置く", async () => {
+    const { bucket, puts } = fakeBucket();
+    const key = await putMedia(bucket, json, "application/json", {
+      allowJson: true,
+    });
+    expect(puts[0]!.key).toBe(key);
+    expect(puts[0]!.options?.httpMetadata).toEqual({
+      contentType: "application/json",
+      cacheControl: "public, max-age=31536000, immutable",
+    });
+  });
+
+  it("allowJson でも画像以外の型は null", async () => {
+    expect(
+      await mediaKey(json, "application/pdf", { allowJson: true }),
+    ).toBeNull();
+  });
+});

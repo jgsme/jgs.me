@@ -7,6 +7,14 @@ const EXT_BY_TYPE: Record<string, string> = {
   "image/avif": "avif",
 };
 
+// 画像以外で受ける型。記事に埋める部品の JSON (diary の xhtm)。
+// extForType / 既定の mediaKey・putMedia は画像だけを通す型判定として
+// 使われている (img・ap・Gyazo・zet) ので、EXT_BY_TYPE には混ぜず、
+// 呼び出し元が allowJson で明示したときだけ通す。
+const JSON_TYPE = "application/json";
+
+export type MediaOptions = { allowJson?: boolean };
+
 export function extForType(contentType: string): string | undefined {
   return EXT_BY_TYPE[contentType];
 }
@@ -18,8 +26,11 @@ export function extForType(contentType: string): string | undefined {
 export async function mediaKey(
   bytes: ArrayBuffer,
   contentType: string,
+  opts: MediaOptions = {},
 ): Promise<string | null> {
-  const ext = EXT_BY_TYPE[contentType];
+  const ext =
+    EXT_BY_TYPE[contentType] ??
+    (opts.allowJson && contentType === JSON_TYPE ? "json" : undefined);
   if (!ext) return null;
 
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -29,7 +40,7 @@ export async function mediaKey(
   return `${hex}.${ext}`;
 }
 
-// 画像を w-media に置いてキーを返す。未対応の Content-Type なら null。
+// 画像 (allowJson なら部品の JSON も) を w-media に置いてキーを返す。未対応の Content-Type なら null。
 // Micropub の media endpoint (ingest)、Gyazo の取り込み (ingest)、Webmention の
 // 画像取り込み (ap)、拡張からの投稿 (img) で共用する。worker をまたぐので
 // 独立したパッケージにある。
@@ -37,8 +48,9 @@ export async function putMedia(
   bucket: R2Bucket,
   bytes: ArrayBuffer,
   contentType: string,
+  opts: MediaOptions = {},
 ): Promise<string | null> {
-  const key = await mediaKey(bytes, contentType);
+  const key = await mediaKey(bytes, contentType, opts);
   if (key === null) return null;
 
   await bucket.put(key, bytes, {

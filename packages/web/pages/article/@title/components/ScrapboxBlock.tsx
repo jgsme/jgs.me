@@ -4,6 +4,7 @@ import { parseCardBlock } from "./card";
 import { isHorizontalRule } from "./horizontalRule";
 import { ScrapboxNode } from "./ScrapboxNode";
 import { embedOfNode } from "./embed";
+import { XhtmFrame } from "./XhtmFrame";
 
 export const ScrapboxBlock: React.FC<{
   block: BlockType;
@@ -59,6 +60,13 @@ export const ScrapboxBlock: React.FC<{
     }
 
     case "codeBlock": {
+      if (block.fileName === "xhtm") {
+        return (
+          <figure className="my-4">
+            <XhtmFrame html={block.content} />
+          </figure>
+        );
+      }
       if (block.fileName === "card") {
         const card = parseCardBlock(block.content);
         if (card) {

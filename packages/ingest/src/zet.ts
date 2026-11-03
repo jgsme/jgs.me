@@ -130,6 +130,7 @@ export async function ingestZet(
     // /p/<id> も消す。/z/<id> は zet の permalink。
     await bestEffort("[zet] purge", () =>
       deps.purge([
+        "/",
         "/zets",
         zetPath(ref.rkey),
         `/p/${existing.pageID}`,
@@ -167,7 +168,7 @@ export async function ingestZet(
     console.error(`[zet] create failed rkey=${ref.rkey} ${message(e)}`);
     return fail(500, "failed to store zet");
   }
-  await bestEffort("[zet] purge", () => deps.purge(["/zets"]));
+  await bestEffort("[zet] purge", () => deps.purge(["/", "/zets"]));
   await bestEffort("[zet] publish", () => deps.publish(pageID, "create"));
   return new Response(null, { status: 201, headers: { Location: location } });
 }

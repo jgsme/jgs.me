@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { cardImageSources, tileImageSources } from "./listImage";
+import {
+  cardImageSources,
+  tileImageSources,
+  timelineArticleImageSources,
+  timelineTileImageSources,
+} from "./listImage";
 
 const R2 = "https://r2.jgs.me/deadbeef.png";
 const CDN = "https://r2.jgs.me/cdn-cgi/image";
@@ -74,5 +79,38 @@ describe("tileImageSources", () => {
   it("r2.jgs.me を名前に含むだけの別ホストは素通しする", () => {
     const evil = "https://r2.jgs.me.evil.example/a.png";
     expect(tileImageSources(evil)).toEqual({ src: evil });
+  });
+});
+
+describe("timelineArticleImageSources", () => {
+  // スマホは画面の端まで広げるので 100vw。640〜896px は中身の列が縮み、
+  // main の px-4 2 つ + 日付の列 6rem + pl-6 = 9.5rem を引いた幅。
+  // 896px 以上は w-content (48rem) から pl-6 を引いた 744px で止まる。
+  it("sizes はタイムラインの中身の列の実幅を表す", () => {
+    expect(timelineArticleImageSources(R2).sizes).toBe(
+      "(max-width: 640px) 100vw, (max-width: 896px) calc(100vw - 9.5rem), 744px",
+    );
+  });
+
+  it("Gyazo の画像は src だけ返す", () => {
+    const gyazo = "https://gyazo.com/abc123/raw";
+    expect(timelineArticleImageSources(gyazo).srcSet).toBeUndefined();
+  });
+});
+
+describe("timelineTileImageSources", () => {
+  // スマホは px-4 2 つ + 日付の列 3rem + pl-4 = 6rem を引いて 2 列。
+  // 640〜896px は中身の列 (100vw - 9.5rem) から gap-3 2 つ (1.5rem) を引いて 3 列。
+  // 896px 以上は 744px を 3 列で 240px。
+  it("sizes はタイムラインの 2 列 / 3 列の実幅を表す", () => {
+    expect(timelineTileImageSources(R2).sizes).toBe(
+      "(max-width: 640px) calc((100vw - 6rem) / 2), (max-width: 896px) calc((100vw - 11rem) / 3), 240px",
+    );
+  });
+
+  it("srcSet は tileImageSources と同じ正方形の切り出し", () => {
+    expect(timelineTileImageSources(R2).srcSet).toBe(
+      tileImageSources(R2).srcSet,
+    );
   });
 });

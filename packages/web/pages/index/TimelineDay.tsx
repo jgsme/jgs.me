@@ -16,26 +16,57 @@ export const contentColumnClass =
 const dateLineClass = "border-r border-border sm:border-r-0";
 const contentLineClass = "sm:border-l sm:border-border";
 
+// 文字だけの zet / clip はカードにして、タイルと同じく押せる塊に見せる。
+// 左の正方形は種別の印 (zet はマーク、clip は鎖)。カード全体が 44px 以上の高さになる。
+const LinkIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden
+    className="w-6 h-6"
+  >
+    <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7" />
+    <path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" />
+  </svg>
+);
+
 const TextEntry = ({ entry }: { entry: TimelineEntry }) => {
-  if (entry.kind !== "zet") {
-    return (
-      <a href={entry.href} className="block py-3 text-sm break-words">
-        {entry.title}
-      </a>
-    );
-  }
-  // 押せる高さを 44px 以上取るため py-3 を付ける (線は内側の div に引いて伸ばさない)。
-  // 題の無い zet は title に抜粋が入っているので、同じ文を 2 回出さない
+  const isZet = entry.kind === "zet";
   return (
-    <a href={entry.href} className="block py-3 break-words">
-      <div className="border-l-2 border-border pl-3">
-        {entry.title !== entry.excerpt && (
-          <div className="font-bold">{entry.title}</div>
+    <a
+      href={entry.href}
+      className="flex gap-3 sm:gap-4 items-start p-3 border border-border-subtle rounded transition-shadow hover:shadow-md"
+    >
+      <div
+        className={`shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded flex items-center justify-center ${
+          isZet ? "bg-brand" : "bg-surface-strong text-fg-muted"
+        }`}
+      >
+        {isZet ? (
+          <img src="/mark.svg" alt="" className="w-6 sm:w-8" />
+        ) : (
+          <LinkIcon />
         )}
-        {entry.excerpt && (
-          <div className="text-sm sm:text-base text-fg-muted line-clamp-3">
-            {entry.excerpt}
-          </div>
+      </div>
+      <div className="min-w-0 flex-1 break-words">
+        {isZet ? (
+          <>
+            {/* 題の無い zet は title に抜粋が入っているので、同じ文を 2 回出さない */}
+            {entry.title !== entry.excerpt && (
+              <div className="font-bold">{entry.title}</div>
+            )}
+            {entry.excerpt && (
+              <div className="text-sm text-fg-muted line-clamp-3">
+                {entry.excerpt}
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="text-sm font-bold">{entry.title}</div>
         )}
       </div>
     </a>
@@ -80,9 +111,8 @@ export const TimelineDay = ({
           ))}
         </ul>
       )}
-      {/* 行どうしは py-3 の上下 12px ずつで 24px 空く。外側の gap-6 と重なるぶんを -my-3 で戻す */}
       {day.texts.length > 0 && (
-        <div className="-my-3 flex flex-col">
+        <div className="flex flex-col gap-3">
           {day.texts.map((entry) => (
             <TextEntry key={entry.key} entry={entry} />
           ))}

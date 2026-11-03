@@ -15,6 +15,10 @@ export type PostInput = {
   url: string;
   thumb: BlobRef | null;
   spoiler?: boolean;
+  // 本文の前に置く題。druck (AI が作った HTML) は本文の頭がヘッダの飾りの
+  // 文字になりがちで、投稿の書き出しが何の記事か分からなくなるため。
+  // カードの description は本文のまま (カードには別に title が出る)。
+  leadTitle?: string;
 };
 
 function fitTitle(title: string, url: string): string {
@@ -27,13 +31,18 @@ function fitTitle(title: string, url: string): string {
 
 // app.bsky.feed.post のレコードを組み立てる。副作用を持たせない。
 export function buildPostRecord(input: PostInput): Record<string, unknown> {
-  const { title, created, html, url, thumb, spoiler } = input;
+  const { title, created, html, url, thumb, spoiler, leadTitle } = input;
 
   // ネタバレは本文を出さず、題と URL だけにする。題が長くても URL が切れない
   // よう、題の側を詰める。
   // 本文を 300 grapheme に収める。切り詰めは grapheme cluster 単位。
   // 上限ちょうどは切らない。超えたときだけ末尾の … の分を1つ空ける。
-  const plain = htmlToText(html);
+  const body = htmlToText(html);
+  const plain = leadTitle
+    ? body
+      ? `${leadTitle}\n\n${body}`
+      : leadTitle
+    : body;
   const capped = truncateGraphemes(plain, MAX_GRAPHEMES);
   const text = spoiler
     ? spoilerText(fitTitle(title, url), url)

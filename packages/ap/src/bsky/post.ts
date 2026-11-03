@@ -82,6 +82,7 @@ export async function postToBsky(pageID: number, env: Env): Promise<void> {
     url,
     thumb,
     spoiler: page.spoiler,
+    ...(publishedKind(page) === "druck" ? { leadTitle: page.title } : {}),
   });
 
   const session = await getSession(env);

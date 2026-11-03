@@ -127,3 +127,18 @@ describe("GET /p/:id", () => {
     expect(res.headers.get("Location")).toBe("/");
   });
 });
+
+describe("GET /druck", () => {
+  it("一覧の旧 URL は /drucks へ 301 で寄せ、?p=N を保つ", async () => {
+    const res = await request("/druck?p=2", dbOf([]));
+
+    expect(res.status).toBe(301);
+    expect(res.headers.get("Location")).toBe("/drucks?p=2");
+  });
+
+  it("/drucks 自体はこのルートに当たらない", async () => {
+    const res = await request("/drucks", dbOf([]));
+
+    expect(res.status).toBe(404);
+  });
+});

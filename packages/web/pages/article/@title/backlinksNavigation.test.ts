@@ -8,6 +8,9 @@ import type data from "./+data";
 import Page from "./+Page";
 
 vi.mock("vike-react/useData", () => ({ useData: vi.fn() }));
+vi.mock("vike-react/usePageContext", () => ({
+  usePageContext: () => ({ isHydration: true }),
+}));
 // Reactions are a separate client-only island, unrelated to backlink navigation.
 vi.mock("vike-react/clientOnly", () => ({ clientOnly: () => () => null }));
 

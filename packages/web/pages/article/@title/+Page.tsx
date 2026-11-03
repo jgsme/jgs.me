@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { usePageContext } from "vike-react/usePageContext";
 import { useData } from "vike-react/useData";
 import type data from "./+data";
 import { ScrapboxBlock } from "./components/ScrapboxBlock";
@@ -14,6 +15,7 @@ import { clientOnly } from "vike-react/clientOnly";
 import { WarpButton } from "../../components/WarpButton";
 import { pagePath } from "@jigsaw/db/page-path";
 import { pdslsUrl } from "@jigsaw/db/zet";
+import { shouldReloadArticleOnArrival } from "@/utils/htmlNavigation";
 import { HtmlArticle } from "./components/html/HtmlArticle";
 
 // 反応は SSR に載せない。記事ページは s-maxage=86400 でエッジに載るため、
@@ -26,6 +28,18 @@ type Data = Awaited<ReturnType<typeof data>>;
 
 const Page = () => {
   const d = useData<Data>();
+  const pageContext = usePageContext();
+
+  // code:xhtm を含む記事にクライアント遷移で来ると、innerHTML で入れた部品の
+  // script が動かない。何も描かずにページを丸ごと読み込み直す (htmlNavigation.ts)。
+  const reload =
+    d.ok &&
+    !("view" in d) &&
+    shouldReloadArticleOnArrival(pageContext, d.blocks);
+  useEffect(() => {
+    if (reload) window.location.reload();
+  }, [reload]);
+  if (reload) return null;
 
   // HTML article はヘッダから下の帯まで別の組み立て。
   if (d.ok && "view" in d) return <HtmlArticle d={d} />;

@@ -7,6 +7,9 @@ import Page from "./+Page";
 import { buildArticleBody } from "./articleBody";
 
 vi.mock("vike-react/useData", () => ({ useData: vi.fn() }));
+vi.mock("vike-react/usePageContext", () => ({
+  usePageContext: () => ({ isHydration: true }),
+}));
 vi.mock("vike-react/clientOnly", () => ({ clientOnly: () => () => null }));
 
 type Data = Awaited<ReturnType<typeof data>>;

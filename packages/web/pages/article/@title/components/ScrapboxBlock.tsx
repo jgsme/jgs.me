@@ -4,7 +4,7 @@ import { parseCardBlock } from "./card";
 import { isHorizontalRule } from "./horizontalRule";
 import { ScrapboxNode } from "./ScrapboxNode";
 import { embedOfNode } from "./embed";
-import { XhtmFrame } from "./XhtmFrame";
+import { XhtmHost } from "./XhtmHost";
 
 export const ScrapboxBlock: React.FC<{
   block: BlockType;
@@ -63,7 +63,7 @@ export const ScrapboxBlock: React.FC<{
       if (block.fileName === "xhtm") {
         return (
           <figure className="my-4">
-            <XhtmFrame html={block.content} />
+            <XhtmHost html={block.content} />
           </figure>
         );
       }

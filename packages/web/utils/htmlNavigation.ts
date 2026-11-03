@@ -6,7 +6,10 @@
 
 import { HTML_ARTICLE_CLASS } from "@jigsaw/db/html-article";
 
-const HTML_ARTICLE_SELECTOR = `.${HTML_ARTICLE_CLASS}`;
+// code:xhtm の部品を描く入れ物。部品の script も innerHTML で入るので HTML article と同じ扱い。
+export const XHTM_HOST_CLASS = "xhtm-host";
+
+const HARD_NAVIGATION_SELECTOR = `.${HTML_ARTICLE_CLASS}, .${XHTM_HOST_CLASS}`;
 
 // assign が効かなかったとき (オフラインなど) に Vike の遷移を返すまでの時間。
 export const HARD_NAVIGATION_FALLBACK_MS = 10_000;
@@ -18,7 +21,15 @@ export const shouldReloadOnArrival = (pageContext: {
   isHydration?: boolean;
 }): boolean => pageContext.isHydration === false;
 
-// 出るとき: HTML article に居る間に Vike の遷移が始まったら、行き先を
+// 通常の記事: 本文に code:xhtm があり、クライアント遷移で来たら読み込み直す。
+export const shouldReloadArticleOnArrival = (
+  pageContext: { isHydration?: boolean },
+  blocks: ReadonlyArray<{ type: string; fileName?: string }>,
+): boolean =>
+  shouldReloadOnArrival(pageContext) &&
+  blocks.some((b) => b.type === "codeBlock" && b.fileName === "xhtm");
+
+// 出るとき: HTML article / xhtm の部品が描かれたページに居る間に Vike の遷移が始まったら、行き先を
 // 丸ごと読み込む。戻る / 進むでは URL がもう行き先なので、同じ URL への
 // assign は履歴を足さずに置き換えになる。
 // Vike は hook を await したあと古い document の中で描画と pushState を
@@ -34,7 +45,7 @@ export const hardNavigateIfLeavingHtmlArticle = (
   setTimer: (fn: () => void, ms: number) => unknown = setTimeout,
   fallbackMs: number = HARD_NAVIGATION_FALLBACK_MS,
 ): Promise<void> | undefined => {
-  if (!doc.querySelector(HTML_ARTICLE_SELECTOR)) return undefined;
+  if (!doc.querySelector(HARD_NAVIGATION_SELECTOR)) return undefined;
   loc.assign(urlOriginal);
   return new Promise<void>((resolve) => {
     setTimer(resolve, fallbackMs);

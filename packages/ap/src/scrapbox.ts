@@ -144,7 +144,7 @@ export function scrapboxToHtml(text: string, siteUrl: string): string {
 
     if (block.type === "codeBlock") {
       flushList();
-      // xhtm は web 側で iframe に描く生 HTML。配信する本文には入れない。
+      // xhtm は web 側で記事ページに直に描く生 HTML。配信する本文には入れない。
       if (block.fileName === "xhtm") continue;
       if (block.fileName === "card") {
         const card = parseCardBlock(block.content);

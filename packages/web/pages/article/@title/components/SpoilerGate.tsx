@@ -8,6 +8,10 @@ import React, { useEffect, useRef, useState } from "react";
 // 測り直させるのに使う。click handler ではなく revealed が true になった後の
 // effect で呼ぶのは、hidden が外れた DOM が commit されてからでないと測り直しても
 // 0 のままのため。
+// 本文を見せた後に resize を投げ、隠れている間に幅や高さを 0 と測った
+// script (HTML article、xhtm の部品) に測り直させる。
+export const remeasure = () => window.dispatchEvent(new Event("resize"));
+
 export const SpoilerGate: React.FC<{
   spoiler: boolean;
   children: React.ReactNode;

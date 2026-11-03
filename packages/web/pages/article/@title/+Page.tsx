@@ -6,7 +6,7 @@ import { ScrapboxBlock } from "./components/ScrapboxBlock";
 import { QuoteRun } from "./components/QuoteRun";
 import { groupQuoteRuns } from "./components/quote";
 import { CopyButton } from "./components/CopyButton";
-import { SpoilerGate } from "./components/SpoilerGate";
+import { SpoilerGate, remeasure } from "./components/SpoilerGate";
 import { shareUrlPath } from "./components/shareUrl";
 import { RelatedPages } from "./components/RelatedPages";
 import { Backlinks } from "./components/Backlinks";
@@ -149,7 +149,7 @@ const Page = () => {
           className={`e-content space-y-1 ${videoClip ? "clip-video-body" : ""}`}
         >
           <OEmbedsContext value={d.embeds}>
-            <SpoilerGate spoiler={d.spoiler}>
+            <SpoilerGate spoiler={d.spoiler} onReveal={remeasure}>
               {quoteClip
                 ? // 引用が主役のページでは、連続する引用行を 1 つの引用として出す。
                   groupQuoteRuns(d.blocks).map((item, i) =>

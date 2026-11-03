@@ -93,7 +93,7 @@ describe("hardNavigateIfLeavingHtmlArticle", () => {
     );
   });
 
-  it("入れ物は .jgs-html-article で探す", () => {
+  it("入れ物は .jgs-html-article と .xhtm-host で探す", () => {
     const querySelector = vi.fn(() => null);
     hardNavigateIfLeavingHtmlArticle(
       { querySelector },

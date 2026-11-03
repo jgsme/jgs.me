@@ -4,7 +4,7 @@ import { act, createElement, type ReactElement } from "react";
 import { hydrateRoot, type Root } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { HtmlBody } from "./HtmlBody";
-import { SpoilerGate } from "../SpoilerGate";
+import { SpoilerGate, remeasure } from "../SpoilerGate";
 
 let container: HTMLDivElement;
 let root: Root | null;
@@ -82,5 +82,15 @@ describe("SpoilerGate の onReveal", () => {
     expect(onReveal).toHaveBeenCalledTimes(1);
     expect(seen).toEqual([true]);
     expect(container.querySelector("canvas")).not.toBeNull();
+  });
+});
+
+describe("remeasure", () => {
+  it("window に resize を投げる", () => {
+    const onResize = vi.fn();
+    window.addEventListener("resize", onResize);
+    remeasure();
+    window.removeEventListener("resize", onResize);
+    expect(onResize).toHaveBeenCalledTimes(1);
   });
 });

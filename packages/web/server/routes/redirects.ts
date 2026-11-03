@@ -117,11 +117,4 @@ redirects.get("/d/:id", async (c) => {
   return c.redirect(pagePath(result[0].title));
 });
 
-// 一覧は最初 /druck で出していた (2026-11)。他の一覧 (/zets・/clips) に揃えて
-// /drucks に移したので、古い URL は 301 で寄せる。?p=N もそのまま渡す。
-redirects.get("/druck", (c) => {
-  const q = new URL(c.req.url).search;
-  return c.redirect(`/drucks${q}`, 301);
-});
-
 export { redirects };

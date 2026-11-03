@@ -31,9 +31,7 @@ export const TimelineArticle = ({
           {entry.title}
         </div>
       )}
-      <div className="text-2xl sm:text-3xl font-bold px-4 sm:px-0">
-        {entry.title}
-      </div>
+      <div className="text-xl font-bold px-4 sm:px-0">{entry.title}</div>
     </a>
   </div>
 );

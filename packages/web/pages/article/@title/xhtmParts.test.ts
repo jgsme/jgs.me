@@ -50,6 +50,16 @@ describe("loadXhtmParts", () => {
     expect(parts).toEqual({});
   });
 
+  it("xhtm があるのに bucket が無ければ 1 回 warn して空を返す", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const parts = await loadXhtmParts(undefined, [
+      xhtm(key("a")),
+      xhtm(key("b")),
+    ]);
+    expect(parts).toEqual({});
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
   it("キーの無いブロック・R2 に無い・壊れた JSON・形の違う部品は載せずに落ちない", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const b = bucket({

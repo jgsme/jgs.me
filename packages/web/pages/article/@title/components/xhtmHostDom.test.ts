@@ -48,7 +48,7 @@ const flush = () => act(async () => {});
 
 describe("XhtmHost", () => {
   it("SSR で styles と body を入れ物に描き、hydrate 後に scripts を 1 回走らせる", async () => {
-    const el = createElement(XhtmHost, { part: PART });
+    const el = createElement(XhtmHost, { partKey: "k", part: PART });
     container.innerHTML = renderToString(el);
     const host = container.querySelector(".xhtm-host");
     expect(host?.querySelector("style")).not.toBeNull();
@@ -60,7 +60,7 @@ describe("XhtmHost", () => {
     await flush();
     // 再描画でも走り直さない
     await act(async () =>
-      root?.render(createElement(XhtmHost, { part: PART })),
+      root?.render(createElement(XhtmHost, { partKey: "k", part: PART })),
     );
     await flush();
 
@@ -68,10 +68,26 @@ describe("XhtmHost", () => {
     expect(container.querySelectorAll(".mark")).toHaveLength(1);
   });
 
+  it("同じ中身の別 object に変わっても走り直さない", async () => {
+    await act(async () => {
+      root = createRoot(container);
+      root.render(createElement(XhtmHost, { partKey: "k", part: PART }));
+    });
+    await flush();
+    await act(async () =>
+      root?.render(
+        createElement(XhtmHost, { partKey: "k", part: { ...PART } }),
+      ),
+    );
+    await flush();
+    expect(window.__host).toEqual(["start"]);
+    expect(container.querySelectorAll(".mark")).toHaveLength(1);
+  });
+
   it("unmount で片付ける", async () => {
     await act(async () => {
       root = createRoot(container);
-      root.render(createElement(XhtmHost, { part: PART }));
+      root.render(createElement(XhtmHost, { partKey: "k", part: PART }));
     });
     await flush();
     await act(async () => root?.unmount());
@@ -87,7 +103,7 @@ describe("XhtmHost", () => {
         createElement(
           StrictMode,
           null,
-          createElement(XhtmHost, { part: PART }),
+          createElement(XhtmHost, { partKey: "k", part: PART }),
         ),
       );
     });

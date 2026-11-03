@@ -42,7 +42,11 @@ export const loadXhtmParts = async (
   blocks: ReadonlyArray<Block>,
 ): Promise<XhtmParts> => {
   const keys = xhtmKeys(blocks);
-  if (keys.length === 0 || bucket === undefined) return {};
+  if (keys.length === 0) return {};
+  if (bucket === undefined) {
+    console.warn("xhtm: MEDIA binding is missing", keys);
+    return {};
+  }
   const loaded = await Promise.all(
     keys.map(async (k) => [k, await loadOne(bucket, k)] as const),
   );

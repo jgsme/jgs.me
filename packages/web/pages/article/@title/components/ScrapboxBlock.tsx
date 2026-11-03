@@ -147,11 +147,12 @@ export const ScrapboxBlock: React.FC<{
 const XhtmBlock: React.FC<{ content: string }> = ({ content }) => {
   const parts = useContext(XhtmPartsContext);
   const key = parseXhtmBlock(content);
-  const part = key === null ? undefined : parts[key];
+  if (key === null) return null;
+  const part = parts[key];
   if (part === undefined) return null;
   return (
     <figure className="my-4">
-      <XhtmHost key={key} part={part} />
+      <XhtmHost key={key} partKey={key} part={part} />
     </figure>
   );
 };

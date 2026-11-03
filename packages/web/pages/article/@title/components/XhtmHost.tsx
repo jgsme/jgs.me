@@ -14,11 +14,18 @@ export const XhtmPartsContext = createContext<XhtmParts>({});
 // effect で走らせて cleanup で片付ける (xhtmPart.ts の runXhtmPart)。
 // __html を渡す object を useMemo で固定する理由は HtmlBody.tsx と同じ
 // (再描画で入れ直すと script が組んだ DOM が消える)。
-export const XhtmHost: React.FC<{ part: XhtmPart }> = ({ part }) => {
+// memo と effect は partKey だけに依存させる。部品の中身はキーで決まり、
+// part の object が変わっても同じ中身なら React は innerHTML を入れ直さないので、
+// object で走らせ直すと script が組んだ DOM の上でもう一度走る。
+// キーが変わったら呼ぶ側 (ScrapboxBlock) が key で作り直す。
+export const XhtmHost: React.FC<{ partKey: string; part: XhtmPart }> = ({
+  partKey,
+  part,
+}) => {
   const ref = useRef<HTMLDivElement>(null);
   const inner = useMemo(
     () => ({ __html: part.styles.join("") + part.body }),
-    [part],
+    [partKey],
   );
 
   useEffect(() => {
@@ -31,7 +38,7 @@ export const XhtmHost: React.FC<{ part: XhtmPart }> = ({ part }) => {
       ac.abort();
       void (async () => (await running)())();
     };
-  }, [part]);
+  }, [partKey]);
 
   return (
     <div

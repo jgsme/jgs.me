@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   HARD_NAVIGATION_FALLBACK_MS,
   hardNavigateIfLeavingHtmlArticle,
-  shouldReloadArticleOnArrival,
   shouldReloadOnArrival,
 } from "./htmlNavigation";
 
@@ -11,30 +10,6 @@ describe("shouldReloadOnArrival", () => {
     expect(shouldReloadOnArrival({ isHydration: false })).toBe(true);
     expect(shouldReloadOnArrival({ isHydration: true })).toBe(false);
     expect(shouldReloadOnArrival({})).toBe(false);
-  });
-});
-
-describe("shouldReloadArticleOnArrival", () => {
-  const xhtm = { type: "codeBlock", fileName: "xhtm" };
-  const other = { type: "codeBlock", fileName: "ts" };
-  const para = { type: "line" };
-
-  it("xhtm を含む記事にクライアント遷移で来たら読み込み直す", () => {
-    expect(
-      shouldReloadArticleOnArrival({ isHydration: false }, [para, xhtm]),
-    ).toBe(true);
-  });
-
-  it("xhtm を含まない記事は読み込み直さない", () => {
-    expect(
-      shouldReloadArticleOnArrival({ isHydration: false }, [para, other]),
-    ).toBe(false);
-  });
-
-  it("最初の読み込み (hydration) では読み込み直さない", () => {
-    expect(shouldReloadArticleOnArrival({ isHydration: true }, [xhtm])).toBe(
-      false,
-    );
   });
 });
 
@@ -93,31 +68,14 @@ describe("hardNavigateIfLeavingHtmlArticle", () => {
     );
   });
 
-  it("入れ物は .jgs-html-article と .xhtm-host で探す", () => {
+  it("入れ物は .jgs-html-article で探す", () => {
     const querySelector = vi.fn(() => null);
     hardNavigateIfLeavingHtmlArticle(
       { querySelector },
       { assign: vi.fn() },
       "/",
     );
-    expect(querySelector).toHaveBeenCalledWith(".jgs-html-article, .xhtm-host");
-  });
-
-  it("xhtm の入れ物 (.xhtm-host) があっても丸ごと読み込む", () => {
-    const assign = vi.fn();
-    const querySelector = vi.fn((sel: string) =>
-      sel.split(",").some((s) => s.trim() === ".xhtm-host")
-        ? ({} as Element)
-        : null,
-    );
-    const result = hardNavigateIfLeavingHtmlArticle(
-      { querySelector },
-      { assign },
-      "/",
-      vi.fn(),
-    );
-    expect(result).toBeInstanceOf(Promise);
-    expect(assign).toHaveBeenCalledWith("/");
+    expect(querySelector).toHaveBeenCalledWith(".jgs-html-article");
   });
 
   it("それ以外のページからの遷移は Vike に任せる", () => {

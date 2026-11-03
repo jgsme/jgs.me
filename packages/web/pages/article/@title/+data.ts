@@ -28,6 +28,7 @@ import { buildArticleBody } from "./articleBody";
 import { articleHeading } from "./heading";
 import { collectOEmbedUrls } from "./components/embed";
 import { fetchOEmbeds, type OEmbeds } from "@/server/oembed";
+import { loadXhtmParts, type XhtmParts } from "./xhtmParts";
 import { SPOILER_NOTICE } from "@/utils/spoiler";
 import { applyHtmlArticleCsp } from "@/utils/htmlArticle";
 
@@ -203,6 +204,7 @@ const data = async (c: Context) => {
       clipKind,
       blocks: [],
       embeds: {} as OEmbeds,
+      xhtm: {} as XhtmParts,
       description: null,
       related: [],
       backlinks,
@@ -223,7 +225,11 @@ const data = async (c: Context) => {
   const filteredBlocks = built.blocks;
   // 埋め込みの HTML は SSR で取っておく。記事ページはエッジに載るので、
   // oEmbed を叩くのはキャッシュが切れたときだけ。
-  const embeds = await fetchOEmbeds(collectOEmbedUrls(filteredBlocks));
+  // code:xhtm の部品も SSR で読む。読めないものはその部品だけ描かれない。
+  const [embeds, xhtm] = await Promise.all([
+    fetchOEmbeds(collectOEmbedUrls(filteredBlocks)),
+    loadXhtmParts(c.env.MEDIA, filteredBlocks),
+  ]);
   // og:description は Bluesky / Threads のカードに出るので本文から作らない。
   const description = spoiler ? SPOILER_NOTICE : built.description;
   const fromDate =
@@ -253,6 +259,7 @@ const data = async (c: Context) => {
     clipKind,
     blocks: filteredBlocks,
     embeds,
+    xhtm,
     spoiler,
     fromDate,
     description,

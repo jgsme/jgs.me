@@ -7,9 +7,6 @@ import Page from "./+Page";
 import { buildArticleBody } from "./articleBody";
 
 vi.mock("vike-react/useData", () => ({ useData: vi.fn() }));
-vi.mock("vike-react/usePageContext", () => ({
-  usePageContext: () => ({ isHydration: true }),
-}));
 vi.mock("vike-react/clientOnly", () => ({ clientOnly: () => () => null }));
 
 type Data = Awaited<ReturnType<typeof data>>;
@@ -31,6 +28,7 @@ function articleData(spoiler: boolean): Data {
     atUri: null,
     clipKind: null,
     embeds: {},
+    xhtm: {},
     blocks: buildArticleBody("ミステリの感想\n犯人は執事").blocks,
     spoiler,
     fromDate: "2026-10-23",

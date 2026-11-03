@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useContext } from "react";
 import type { Block as BlockType } from "@progfay/scrapbox-parser";
 import { parseCardBlock } from "./card";
 import { isHorizontalRule } from "./horizontalRule";
 import { ScrapboxNode } from "./ScrapboxNode";
 import { embedOfNode } from "./embed";
-import { XhtmHost } from "./XhtmHost";
+import { XhtmHost, XhtmPartsContext } from "./XhtmHost";
+import { parseXhtmBlock } from "./xhtmPart";
 
 export const ScrapboxBlock: React.FC<{
   block: BlockType;
@@ -61,11 +62,7 @@ export const ScrapboxBlock: React.FC<{
 
     case "codeBlock": {
       if (block.fileName === "xhtm") {
-        return (
-          <figure className="my-4">
-            <XhtmHost html={block.content} />
-          </figure>
-        );
+        return <XhtmBlock content={block.content} />;
       }
       if (block.fileName === "card") {
         const card = parseCardBlock(block.content);
@@ -143,4 +140,18 @@ export const ScrapboxBlock: React.FC<{
     default:
       return null;
   }
+};
+
+// 中身は {"key":"<sha256>.json"}。部品が読めなかったら何も描かない。
+// key で入れ物を作り直す — 別の部品に変わったら古い DOM の上で走らせない。
+const XhtmBlock: React.FC<{ content: string }> = ({ content }) => {
+  const parts = useContext(XhtmPartsContext);
+  const key = parseXhtmBlock(content);
+  const part = key === null ? undefined : parts[key];
+  if (part === undefined) return null;
+  return (
+    <figure className="my-4">
+      <XhtmHost key={key} part={part} />
+    </figure>
+  );
 };

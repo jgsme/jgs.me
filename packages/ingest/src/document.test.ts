@@ -170,12 +170,12 @@ describe("ingestDocument: create", () => {
     expect(calls.create[0]!.updated).toBe("2026-11-01T09:00:00.000Z");
   });
 
-  it("spoiler の document は image を持たない", async () => {
+  it("spoiler の document も先頭画像を image に持つ", async () => {
     const { deps, calls } = fake({
       getRecord: async () => found({ content: { spoiler: true } }),
     });
     expect((await ingestDocument(payload, deps)).status).toBe(201);
-    expect(calls.create[0]!.image).toBeNull();
+    expect(calls.create[0]!.image).toBe("https://a.example/1.png");
     expect(calls.create[0]!.spoiler).toBe(true);
   });
 

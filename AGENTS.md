@@ -131,7 +131,7 @@ web の `@/*` は `packages/web/` 基準（`tsconfig.json` と `vite.config.ts`�
 | `zet`           | diary の日々の断片 (id, pageID, rkey, date, title, created)                    |
 | `druck`         | HTML 記事 (AI が作ったもの) (id, pageID, date, created)                        |
 
-`page.spoiler` は diary が付けるネタバレの印 (article は Micropub の `spoiler` property、zet は record の `spoiler`)。立っている page は Bluesky / Threads / ActivityPub に題と URL だけを出し、Webmention を送らず、`page.image` を持たない。web は記事ページの本文を HTML に描いたまま hidden で隠し、「表示する」を押すと見せる (bot には読ませる)。zets 一覧・検索・RSS・og:description で抜粋を伏せる。
+`page.spoiler` は diary が付けるネタバレの印 (article は Micropub の `spoiler` property、zet は record の `spoiler`)。立っている page は Bluesky / Threads / ActivityPub に題と URL だけを出し、Webmention を送らない。`page.image` (一覧のサムネと OG 画像) は伏せず、普段どおり本文の先頭画像を持つ (アイキャッチにネタバレになる画像を置かない運用)。web は記事ページの本文を HTML に描いたまま hidden で隠し、「表示する」を押すと見せる (bot には読ませる)。zets 一覧・検索・RSS・og:description で抜粋を伏せる。
 
 zet の本体は PDS (ds.jgs.me) の `me.jgs.diary.zet` record。`page.title` は内部用の `zet:<rkey>`、公開 URL は `/pages/zet%3A<rkey>`。表示名は `@jigsaw/db/zet` の `pageDisplayTitle` を使う。at-uri と CID は `copy` (protocol = `atproto-zet`) に置く。
 

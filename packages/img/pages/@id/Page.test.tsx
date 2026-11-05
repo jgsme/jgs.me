@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { ImageData } from "./+data";
+import { ogVideoFrameURL } from "../../src/page";
 
 const ID = "a".repeat(64);
 
@@ -45,6 +46,62 @@ describe("+Page", () => {
   it("外部へのリンクを一つも出さない", () => {
     const html = render(data(), () => <Page />);
     expect(html).not.toContain("<a ");
+  });
+});
+
+const video = (over: Partial<ImageData> = {}) =>
+  data({
+    ext: "mp4",
+    direct: `https://r2.jgs.me/${ID}.mp4`,
+    width: 1280,
+    height: 720,
+    ...over,
+  });
+
+describe("+Page (mp4)", () => {
+  it("<video> で出す", () => {
+    const html = render(video(), () => <Page />);
+    expect(html).toContain("<video");
+    expect(html).toContain(`src="https://r2.jgs.me/${ID}.mp4"`);
+    expect(html).toContain("controls");
+    // この React は playsInline="" と出す。HTML 属性は大文字小文字を区別しない。
+    expect(html.toLowerCase()).toContain("playsinline");
+    expect(html).toContain('preload="metadata"');
+    expect(html).toContain('width="1280"');
+    expect(html).toContain('height="720"');
+    expect(html).not.toContain("<img");
+    expect(html).not.toContain("autoplay");
+    expect(html).not.toContain("loop");
+  });
+
+  it("寸法が無ければ width/height 属性を出さない", () => {
+    const html = render(video({ width: null, height: null }), () => <Page />);
+    expect(html).not.toContain("width=");
+    expect(html).not.toContain("height=");
+  });
+});
+
+describe("+Head (mp4)", () => {
+  it("og:video 系と、フレーム経由の og:image を出す", () => {
+    const html = render(video(), () => <Head />);
+    const url = `https://r2.jgs.me/${ID}.mp4`;
+    expect(html).toContain('content="video.other"');
+    expect(html).toContain(`property="og:video" content="${url}"`);
+    expect(html).toContain(`property="og:video:secure_url" content="${url}"`);
+    expect(html).toContain('property="og:video:type" content="video/mp4"');
+    expect(html).toContain('property="og:video:width" content="1280"');
+    expect(html).toContain('property="og:video:height" content="720"');
+    expect(html).toContain(
+      `property="og:image" content="${ogVideoFrameURL(ID, "mp4")}"`,
+    );
+    expect(html).not.toContain("og:image:width");
+    expect(html).toContain('content="summary_large_image"');
+  });
+
+  it("寸法が無ければ og:video:width / height を出さない", () => {
+    const html = render(video({ width: null, height: null }), () => <Head />);
+    expect(html).not.toContain("og:video:width");
+    expect(html).not.toContain("og:video:height");
   });
 });
 

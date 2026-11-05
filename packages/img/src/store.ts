@@ -32,13 +32,15 @@ export interface StoreResult {
 // (micropub 由来 / Gyazo 取り込み由来) 行が無ければ新規として扱う。
 // put は同じ内容の上書きになるので無害。
 //
-// ページを消した画像の再投稿は復活させる。消す前の出典には戻さず、
+// ページを消した画像・動画の再投稿は復活させる。消す前の出典には戻さず、
 // 新しく投稿したものとして今回の出典で上書きする。
 export async function storeUpload(
   input: ParsedUpload,
   deps: StoreDeps,
 ): Promise<StoreResult | null> {
-  const key = await mediaKey(input.bytes, input.contentType);
+  const key = await mediaKey(input.bytes, input.contentType, {
+    video: true,
+  });
   if (key === null) return null;
 
   const [id, ext] = splitKey(key);

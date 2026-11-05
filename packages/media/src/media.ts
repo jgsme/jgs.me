@@ -7,8 +7,26 @@ const EXT_BY_TYPE: Record<string, string> = {
   "image/avif": "avif",
 };
 
-export function extForType(contentType: string): string | undefined {
-  return EXT_BY_TYPE[contentType];
+// 動画は img の上げ口だけが opt-in する。既定を変えると ap / ingest が
+// 動画を受けるようになる。
+const VIDEO_EXT_BY_TYPE: Record<string, string> = {
+  "video/mp4": "mp4",
+};
+
+export type MediaOptions = { video?: boolean };
+
+export function extForType(
+  contentType: string,
+  opts?: MediaOptions,
+): string | undefined {
+  return (
+    EXT_BY_TYPE[contentType] ??
+    (opts?.video ? VIDEO_EXT_BY_TYPE[contentType] : undefined)
+  );
+}
+
+export function isVideoExt(ext: string): boolean {
+  return Object.values(VIDEO_EXT_BY_TYPE).includes(ext);
 }
 
 // 内容から鍵を作る。同じ画像を二度上げても 1 つにまとまる。
@@ -18,8 +36,9 @@ export function extForType(contentType: string): string | undefined {
 export async function mediaKey(
   bytes: ArrayBuffer,
   contentType: string,
+  opts?: MediaOptions,
 ): Promise<string | null> {
-  const ext = EXT_BY_TYPE[contentType];
+  const ext = extForType(contentType, opts);
   if (!ext) return null;
 
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -37,8 +56,9 @@ export async function putMedia(
   bucket: R2Bucket,
   bytes: ArrayBuffer,
   contentType: string,
+  opts?: MediaOptions,
 ): Promise<string | null> {
-  const key = await mediaKey(bytes, contentType);
+  const key = await mediaKey(bytes, contentType, opts);
   if (key === null) return null;
 
   await bucket.put(key, bytes, {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mediaKey, putMedia } from "./media";
+import { extForType, isVideoExt, mediaKey, putMedia } from "./media";
 
 type Put = {
   key: string;
@@ -72,5 +72,50 @@ describe("mediaKey", () => {
 
     expect(key).toBe(await mediaKey(bytes, "image/jpeg"));
     expect(puts.map((p) => p.key)).toEqual([key]);
+  });
+});
+
+describe("動画 (opt-in)", () => {
+  it("opt-in 無しの putMedia は video/mp4 を受けない", async () => {
+    const { bucket, puts } = fakeBucket();
+    expect(await putMedia(bucket, bytes, "video/mp4")).toBeNull();
+    expect(puts).toHaveLength(0);
+  });
+
+  it("opt-in すると putMedia は mp4 を置く", async () => {
+    const { bucket, puts } = fakeBucket();
+    const key = await putMedia(bucket, bytes, "video/mp4", { video: true });
+    expect(key).toBe(`${HELLO_SHA256}.mp4`);
+    expect(puts[0]!.options?.httpMetadata).toEqual({
+      contentType: "video/mp4",
+      cacheControl: "public, max-age=31536000, immutable",
+    });
+  });
+
+  it("mediaKey は opt-in で mp4 を通し、無しなら null", async () => {
+    expect(await mediaKey(bytes, "video/mp4", { video: true })).toBe(
+      `${HELLO_SHA256}.mp4`,
+    );
+    expect(await mediaKey(bytes, "video/mp4")).toBeNull();
+  });
+
+  it("opt-in しても画像は通る", async () => {
+    expect(await mediaKey(bytes, "image/png", { video: true })).toBe(
+      `${HELLO_SHA256}.png`,
+    );
+  });
+
+  it("opt-in しても mp4 以外の動画は null", async () => {
+    expect(await mediaKey(bytes, "video/webm", { video: true })).toBeNull();
+  });
+
+  it("extForType", () => {
+    expect(extForType("video/mp4")).toBeUndefined();
+    expect(extForType("video/mp4", { video: true })).toBe("mp4");
+  });
+
+  it("isVideoExt", () => {
+    expect(isVideoExt("mp4")).toBe(true);
+    expect(isVideoExt("png")).toBe(false);
   });
 });

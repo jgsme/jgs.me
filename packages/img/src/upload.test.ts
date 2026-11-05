@@ -109,4 +109,30 @@ describe("parseUpload", () => {
     if (isUploadError(r)) return;
     expect(r.srcURL).toBeNull();
   });
+
+  const MP4 = (type = "video/mp4") =>
+    new Blob([new Uint8Array([1, 2, 3])], { type });
+
+  it("mp4 を受ける", async () => {
+    const r = await parseUpload(form(MP4(), { width: "1280", height: "720" }));
+    expect(isUploadError(r)).toBe(false);
+    if (isUploadError(r)) return;
+    expect(r.contentType).toBe("video/mp4");
+    expect(r.width).toBe(1280);
+    expect(r.height).toBe(720);
+  });
+
+  it("パラメータ付きの video/mp4 も受ける", async () => {
+    const r = await parseUpload(form(MP4('video/mp4; codecs="avc1"')));
+    expect(isUploadError(r)).toBe(false);
+    if (isUploadError(r)) return;
+    expect(r.contentType).toBe("video/mp4");
+  });
+
+  it("webm は 415", async () => {
+    const r = await parseUpload(form(MP4("video/webm")));
+    expect(isUploadError(r)).toBe(true);
+    if (!isUploadError(r)) return;
+    expect(r.status).toBe(415);
+  });
 });

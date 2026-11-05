@@ -32,7 +32,7 @@ function deps(state: RowState = "none") {
   const d: StoreDeps = {
     state: async () => state,
     put: async (bytes, contentType) => {
-      const key = await mediaKey(bytes, contentType);
+      const key = await mediaKey(bytes, contentType, { video: true });
       if (key !== null) puts.push(key);
       return key;
     },
@@ -106,5 +106,19 @@ describe("storeUpload", () => {
     const { deps: d, rows } = deps();
     await storeUpload(upload({ contentType: "image/jpeg" }), d);
     expect(rows[0]?.ext).toBe("jpg");
+  });
+
+  it("mp4 は ext mp4 で put して 1 行入れる", async () => {
+    const { deps: d, puts, rows } = deps();
+    await storeUpload(upload({ contentType: "video/mp4" }), d);
+    expect(rows[0]?.ext).toBe("mp4");
+    expect(puts).toEqual([`${HELLO_SHA256}.mp4`]);
+  });
+
+  it("同じ mp4 の行があれば duplicate", async () => {
+    const { deps: d, puts } = deps("live");
+    const r = await storeUpload(upload({ contentType: "video/mp4" }), d);
+    expect(r).toEqual({ id: HELLO_SHA256, duplicate: true });
+    expect(puts).toEqual([]);
   });
 });

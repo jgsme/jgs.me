@@ -45,6 +45,7 @@ function pageData(
     atUri: null,
     clipKind: null,
     embeds: {},
+    xhtm: {},
     blocks: [],
     description: null,
     related: [],

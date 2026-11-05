@@ -1,6 +1,8 @@
 export type Bindings = {
   DB: D1Database;
   R2: R2Bucket;
+  // w-media。code:xhtm の部品の JSON を読むだけ (書くのは ingest)。
+  MEDIA: R2Bucket;
   AI: Ai;
   AP: Fetcher;
   // デプロイごとに変わる id を持つ。HTML のキャッシュキーに混ぜて、

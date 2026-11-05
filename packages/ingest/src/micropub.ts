@@ -783,12 +783,16 @@ export async function handleMicropubMedia(
   }
 
   const bytes = await file.arrayBuffer();
-  const key = await putMedia(env.MEDIA, bytes, file.type);
+  // media endpoint だけが部品の JSON (xhtm) を受ける。
+  // "application/json;charset=utf-8" のようにパラメータが付いて届く
+  // (Bun の Blob は付ける)。型の本体 (essence) だけで判定して置く。
+  const type = file.type.split(";")[0]!.trim().toLowerCase();
+  const key = await putMedia(env.MEDIA, bytes, type, { allowJson: true });
   if (key === null) {
     return Response.json(
       {
         error: "invalid_request",
-        error_description: `unsupported content type: ${file.type}`,
+        error_description: `unsupported content type: ${type}`,
       },
       { status: 400 },
     );

@@ -28,6 +28,7 @@ function articleData(spoiler: boolean): Data {
     atUri: null,
     clipKind: null,
     embeds: {},
+    xhtm: {},
     blocks: buildArticleBody("ミステリの感想\n犯人は執事").blocks,
     spoiler,
     fromDate: "2026-10-23",

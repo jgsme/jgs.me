@@ -13,7 +13,13 @@ const VIDEO_EXT_BY_TYPE: Record<string, string> = {
   "video/mp4": "mp4",
 };
 
-export type MediaOptions = { video?: boolean };
+// 画像以外で受ける型。記事に埋める部品の JSON (diary の xhtm)。
+// extForType は画像 (と opt-in の動画) の型判定として使われている
+// (img・ap・Gyazo・zet) ので混ぜず、mediaKey / putMedia で
+// 呼び出し元が allowJson を明示したときだけ通す。
+const JSON_TYPE = "application/json";
+
+export type MediaOptions = { video?: boolean; allowJson?: boolean };
 
 export function extForType(
   contentType: string,
@@ -38,7 +44,9 @@ export async function mediaKey(
   contentType: string,
   opts?: MediaOptions,
 ): Promise<string | null> {
-  const ext = extForType(contentType, opts);
+  const ext =
+    extForType(contentType, opts) ??
+    (opts?.allowJson && contentType === JSON_TYPE ? "json" : undefined);
   if (!ext) return null;
 
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -48,7 +56,7 @@ export async function mediaKey(
   return `${hex}.${ext}`;
 }
 
-// 画像を w-media に置いてキーを返す。未対応の Content-Type なら null。
+// 画像 (allowJson なら部品の JSON も) を w-media に置いてキーを返す。未対応の Content-Type なら null。
 // Micropub の media endpoint (ingest)、Gyazo の取り込み (ingest)、Webmention の
 // 画像取り込み (ap)、拡張からの投稿 (img) で共用する。worker をまたぐので
 // 独立したパッケージにある。

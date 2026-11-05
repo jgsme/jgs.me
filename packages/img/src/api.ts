@@ -78,7 +78,8 @@ app.post("/api/images", async (c) => {
       if (!row) return "none";
       return row.deletedAt === null ? "live" : "deleted";
     },
-    put: (bytes, contentType) => putMedia(c.env.MEDIA, bytes, contentType),
+    put: (bytes, contentType) =>
+      putMedia(c.env.MEDIA, bytes, contentType, { video: true }),
     insert: async (row) => {
       // state → insert は check-then-act なので、同じ画像の POST が重なると
       // 2 本目が PK 衝突する。行が既にあるなら何もしないのが正しい

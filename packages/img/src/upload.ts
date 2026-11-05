@@ -59,7 +59,7 @@ export async function parseUpload(
 
   // Content-Type のパラメータ (charset 等) を落として判定する。
   const contentType = file.type.split(";")[0]!.trim();
-  if (!extForType(contentType)) {
+  if (!extForType(contentType, { video: true })) {
     return {
       status: 415,
       error: "unsupported_media_type",

@@ -218,8 +218,8 @@ async function handleMicropubCreate(
       created,
       updated: created,
       // 一覧のサムネと OG 画像。photo が無ければ本文の先頭画像を使う。
-      // ネタバレの page は画像もネタバレになりうるので持たせない。
-      image: entry.spoiler ? null : pageImage(entry),
+      // ネタバレでも画像は伏せない (伏せるのは本文)。
+      image: pageImage(entry),
       spoiler: entry.spoiler,
     })
     .returning({ id: pages.id });
@@ -551,7 +551,7 @@ async function handleMicropubUpdate(
     // 変換時は bodyKey が新しい sb- キーになる。変換しない update では同じ値。
     .set({
       title: entry.name,
-      image: entry.spoiler ? null : pageImage(entry),
+      image: pageImage(entry),
       spoiler: entry.spoiler,
       updated: action.silent ? target.updated : now,
       bodyKey,

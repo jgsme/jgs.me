@@ -101,8 +101,8 @@ export async function ingestZet(
   // 1 行目が題 (body.ts)。読み側は先頭を題として捨てる。
   const body = buildSbBody(pageTitle, text);
   const links = extractLinks(body);
-  // ネタバレの zet は画像もネタバレになりうるので、サムネと OG 画像に使わない。
-  const image = record.spoiler ? null : firstImageURL(text);
+  // サムネと OG 画像。ネタバレでも画像は伏せない (伏せるのは本文)。
+  const image = firstImageURL(text);
   const spoiler = record.spoiler;
   const mf2 = JSON.stringify(payload);
   const location = zetURL(ref.rkey);

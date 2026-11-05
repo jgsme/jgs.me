@@ -151,13 +151,13 @@ describe("ingestZet: create", () => {
     expect(calls.update).toEqual([]);
   });
 
-  it("ネタバレの zet は spoiler を立て、画像をサムネに使わない", async () => {
+  it("ネタバレの zet は spoiler を立て、画像はサムネに使う", async () => {
     const { deps, calls } = fake({
       getRecord: async () => found({ spoiler: true }),
     });
     await ingestZet(payload, deps);
     expect(calls.create[0]!.spoiler).toBe(true);
-    expect(calls.create[0]!.image).toBeNull();
+    expect(calls.create[0]!.image).toBe(R2);
   });
 
   it("題があれば zetTitle に入れる", async () => {

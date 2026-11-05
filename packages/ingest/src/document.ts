@@ -138,8 +138,8 @@ export async function ingestDocument(
   const sb = buildSbBody(record.title, normalizeDerivedText(text));
   const bodies: DocumentBodies = { html, render, sb, md };
   const spoiler = record.content.spoiler;
-  // ネタバレの記事は画像もネタバレになりうるので、サムネと OG 画像に使わない。
-  const image = spoiler ? null : firstHttpsImage(html);
+  // サムネと OG 画像。ネタバレでも画像は伏せない (伏せるのは本文)。
+  const image = firstHttpsImage(html);
   const write: DocumentWrite = {
     title: record.title,
     image,

@@ -45,14 +45,9 @@
       "binding": "MD",
       "bucket_name": "w-md",
     },
-    {
-      // /internal/crawl が取ったページの原本と md。
-      "binding": "CRAWL",
-      "bucket_name": "archive",
-    },
   ],
   "ai": {
-    // crawl の toMarkdown と、news の clef 中継 (POST /internal/clef) が使う。
+    // HTML 記事の toMarkdown (documentStore の aiHtmlConverter) が使う。
     "binding": "AI",
   },
   "services": [

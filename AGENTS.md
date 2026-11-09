@@ -48,14 +48,14 @@ pnpm standard-publication      # standard.site の publication record (w.jgs.me)
 
 ### Packages
 
-| Package           | Description                                                                         |
-| ----------------- | ----------------------------------------------------------------------------------- |
-| `packages/db`     | 共有 Drizzle スキーマ（`@jigsaw/db` としてインポート）                              |
-| `packages/web`    | メインの Web UI / API（Vike + React + Hono、Cloudflare Workers / Universal Deploy） |
-| `packages/og`     | OG 画像生成 Worker（Satori + Resvg）                                                |
-| `packages/home`   | ホームページ用 Worker                                                               |
-| `packages/cli`    | undo、kind、md-backfill、zet-rehost などの CLI                                      |
-| `packages/ingest` | Micropub 経由の取り込み、D1 migration の実行元                                      |
+| Package           | Description                                                                                                        |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `packages/db`     | 共有 Drizzle スキーマ（`@jigsaw/db` としてインポート）                                                             |
+| `packages/web`    | メインの Web UI / API（Vike + React + Hono、Cloudflare Workers / Universal Deploy）                                |
+| `packages/og`     | OG 画像生成 Worker（Satori + Resvg）                                                                               |
+| `packages/home`   | ホームページ用 Worker                                                                                              |
+| `packages/cli`    | undo、kind、md-backfill、zet-rehost などの CLI                                                                     |
+| `packages/ingest` | Micropub 経由の取り込み、D1 migration の実行元。news 用の crawl と clef の中継は 2026-11-09 に別の Worker に移した |
 
 ### Web App (packages/web)
 

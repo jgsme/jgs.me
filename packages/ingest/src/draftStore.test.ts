@@ -30,9 +30,10 @@ describe("draftPublishStatements", () => {
   });
 
   it("本文のリンクを page_link に入れる (16 行ずつ)", () => {
-    const body = ["題", ...Array.from({ length: 17 }, (_, i) => `[l${i}]`)].join(
-      "\n",
-    );
+    const body = [
+      "題",
+      ...Array.from({ length: 17 }, (_, i) => `[l${i}]`),
+    ].join("\n");
     const sqls = draftPublishStatements(db, input(body)).map((s) => sqlOf(s));
     const links = sqls.filter((s) => s.sql.includes('insert into "page_link"'));
     expect(links).toHaveLength(2);

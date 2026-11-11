@@ -150,7 +150,11 @@ describe("handleMicropubPost: draft", () => {
   it("post-status が読めない値の create は 400", async () => {
     const res = await post({
       type: ["h-entry"],
-      properties: { name: ["題"], content: ["本文"], "post-status": ["private"] },
+      properties: {
+        name: ["題"],
+        content: ["本文"],
+        "post-status": ["private"],
+      },
     });
     expect(res.status).toBe(400);
     expect(await desc(res)).toContain("post-status must be draft or published");

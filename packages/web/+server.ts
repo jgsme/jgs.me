@@ -13,7 +13,7 @@ import { reactions } from "./server/routes/reactions";
 import { backlinks } from "./server/routes/backlinks";
 import { internal } from "./server/routes/internal";
 import { suggest } from "./server/routes/suggest";
-import { DRAFT_HEADERS } from "./pages/draft/@key/draftHeaders";
+import { draftHeadersMiddleware } from "./pages/draft/@key/draftHeaders";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -36,15 +36,8 @@ app.use("/on-this-day/*", createCacheMiddleware(86400));
 // 短く焼くだけで D1 を引く回数がまとめて減る。
 app.use("/api/search/suggest", createCacheMiddleware(300));
 
-// 下書きの 404 にも同じヘッダを付ける。+data の abort 後は vike が別の
-// pageContext でエラーページを描き、+data で積んだ headersResponse が落ちるため、
-// 応答の出口でも付ける。キャッシュ (createCacheMiddleware) は通さない。
-app.use("/drafts/*", async (c, next) => {
-  await next();
-  for (const [name, value] of Object.entries(DRAFT_HEADERS)) {
-    c.header(name, value);
-  }
-});
+// 下書きの 404 / 500 にもヘッダを付ける (+data だけでは落ちる。draftHeaders.ts)。
+app.use("/drafts/*", draftHeadersMiddleware);
 
 app.route("/", redirects);
 app.route("/", rss);

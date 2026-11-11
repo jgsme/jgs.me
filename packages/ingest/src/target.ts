@@ -4,10 +4,13 @@
 //   /p/<pageID>     共有用の短い URL
 //   /o/<pageID>     ActivityPub の正準 id
 //   /a/<articleID>  公開登録順の連番。pageID とはズレる
+import { isDraftKey } from "@jigsaw/db/draft";
+
 export type Target =
   | { kind: "page"; pageID: number }
   | { kind: "article"; articleID: number }
-  | { kind: "title"; title: string };
+  | { kind: "title"; title: string }
+  | { kind: "draft"; key: string };
 
 function positiveInt(raw: string): number | null {
   if (!/^\d+$/.test(raw)) return null;
@@ -47,6 +50,13 @@ export function parseTargetURL(raw: string, siteURL: string): Target {
     const title = decodeURIComponent(segments[1]!);
     if (title === "") throw new Error(`url has no title: ${raw}`);
     return { kind: "title", title };
+  }
+
+  if (segments.length === 2 && segments[0] === "drafts") {
+    if (!isDraftKey(segments[1]!)) {
+      throw new Error(`url has no valid draft key: ${raw}`);
+    }
+    return { kind: "draft", key: segments[1]! };
   }
 
   throw new Error(`url is not an article URL: ${raw}`);

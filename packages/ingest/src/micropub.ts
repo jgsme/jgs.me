@@ -318,6 +318,15 @@ async function resolveTarget(
     };
   }
 
+  // draft の URL は題検索の枝に落とさない。ここでは扱わない。
+  if (target.kind === "draft") {
+    return {
+      ok: false,
+      status: 400,
+      description: `draft url is not supported here: ${url}`,
+    };
+  }
+
   const db = drizzle(env.DB);
   const columns = {
     id: pages.id,

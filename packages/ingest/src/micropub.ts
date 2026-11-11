@@ -20,6 +20,8 @@ import { applyUpdate, parseUpdateAction } from "./mf2update";
 import { buildSbBody } from "./body";
 import { buildMdPut } from "./mdBody";
 import { parseTargetURL } from "./target";
+import { assertNotDraft, payloadPostStatus } from "./postStatus";
+import { handleDraftCreate, handleDraftUpdate } from "./draftStore";
 import { putMedia } from "@jigsaw/media";
 import { pageImage } from "./firstImage";
 import { uniqueTitle } from "./uniqueTitle";
@@ -149,6 +151,31 @@ export async function handleMicropubPost(
   const action = (payload as { action?: unknown } | null)?.action;
 
   if (action === undefined || action === "create") {
+    // post-status は他の分岐より前に読む。読めない値を黙って公開に倒さない。
+    let status;
+    try {
+      status = payloadPostStatus(payload);
+    } catch (e) {
+      return Response.json(
+        {
+          error: "invalid_request",
+          error_description: e instanceof Error ? e.message : String(e),
+        },
+        { status: 400 },
+      );
+    }
+    if (status === "draft") {
+      if (isDocumentPayload(payload) || isZetPayload(payload)) {
+        return Response.json(
+          {
+            error: "invalid_request",
+            error_description: "only an article can be a draft",
+          },
+          { status: 400 },
+        );
+      }
+      return handleDraftCreate(payload, env);
+    }
     // zet と document は本文を持たず at-uri だけで来る。create / update は at-uri で
     // 決まる (action は見ない) ので、parseEntry (name / content 必須) より前に分ける。
     if (isDocumentPayload(payload)) return handleDocumentPost(payload, env);
@@ -318,6 +345,15 @@ async function resolveTarget(
     };
   }
 
+  // draft の URL は題検索の枝に落とさない。ここでは扱わない。
+  if (target.kind === "draft") {
+    return {
+      ok: false,
+      status: 400,
+      description: `draft url is not supported here: ${url}`,
+    };
+  }
+
   const db = drizzle(env.DB);
   const columns = {
     id: pages.id,
@@ -386,6 +422,17 @@ async function handleMicropubUpdate(
     );
   }
 
+  // 下書きへの update は draft 表を更新する。URL が読めない場合はここで
+  // 握って、既存の resolveTarget に同じエラー応答を作らせる。
+  try {
+    const draftTarget = parseTargetURL(action.url, SITE_URL);
+    if (draftTarget.kind === "draft") {
+      return handleDraftUpdate(action, draftTarget.key, env);
+    }
+  } catch {
+    // resolveTarget に任せる
+  }
+
   const target = await resolveTarget(env, action.url);
   if (!target.ok) {
     return Response.json(
@@ -449,6 +496,19 @@ async function handleMicropubUpdate(
     type: ["h-entry"],
     properties: applyUpdate(props, action),
   };
+
+  // 公開済みのページを下書きに戻す経路は無い。R2 / D1 に触る前に弾く。
+  try {
+    assertNotDraft(nextPayload.properties);
+  } catch (e) {
+    return Response.json(
+      {
+        error: "invalid_request",
+        error_description: e instanceof Error ? e.message : String(e),
+      },
+      { status: 400 },
+    );
+  }
 
   // 適用後がまだ記事として成立しているかを create と同じ関数で確かめる。
   // 題や本文を消す update をここで弾く。

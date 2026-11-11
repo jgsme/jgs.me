@@ -13,6 +13,7 @@ import { reactions } from "./server/routes/reactions";
 import { backlinks } from "./server/routes/backlinks";
 import { internal } from "./server/routes/internal";
 import { suggest } from "./server/routes/suggest";
+import { draftHeadersMiddleware } from "./pages/draft/@key/draftHeaders";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -34,6 +35,9 @@ app.use("/on-this-day/*", createCacheMiddleware(86400));
 // 検索サジェストは打鍵ごとに飛ぶ。同じ語は他人の打鍵とも重なるので、
 // 短く焼くだけで D1 を引く回数がまとめて減る。
 app.use("/api/search/suggest", createCacheMiddleware(300));
+
+// 下書きの 404 / 500 にもヘッダを付ける (+data だけでは落ちる。draftHeaders.ts)。
+app.use("/drafts/*", draftHeadersMiddleware);
 
 app.route("/", redirects);
 app.route("/", rss);

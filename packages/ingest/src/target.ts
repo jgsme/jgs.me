@@ -1,13 +1,17 @@
 // Micropub の update / delete は対象を URL で指す。
-// 自サイトが同じ記事に対して出している URL は 4 種類ある。
+// 自サイトが同じ記事に対して出している URL は 5 種類ある。
 //   /pages/<title>  人間向け (create の Location もこれ)
 //   /p/<pageID>     共有用の短い URL
 //   /o/<pageID>     ActivityPub の正準 id
 //   /a/<articleID>  公開登録順の連番。pageID とはズレる
+//   /drafts/<鍵>    公開前の下書き (page を持たない)
+import { isDraftKey } from "@jigsaw/db/draft";
+
 export type Target =
   | { kind: "page"; pageID: number }
   | { kind: "article"; articleID: number }
-  | { kind: "title"; title: string };
+  | { kind: "title"; title: string }
+  | { kind: "draft"; key: string };
 
 function positiveInt(raw: string): number | null {
   if (!/^\d+$/.test(raw)) return null;
@@ -47,6 +51,13 @@ export function parseTargetURL(raw: string, siteURL: string): Target {
     const title = decodeURIComponent(segments[1]!);
     if (title === "") throw new Error(`url has no title: ${raw}`);
     return { kind: "title", title };
+  }
+
+  if (segments.length === 2 && segments[0] === "drafts") {
+    if (!isDraftKey(segments[1]!)) {
+      throw new Error(`url has no valid draft key: ${raw}`);
+    }
+    return { kind: "draft", key: segments[1]! };
   }
 
   throw new Error(`url is not an article URL: ${raw}`);

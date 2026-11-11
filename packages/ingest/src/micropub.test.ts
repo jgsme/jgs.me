@@ -101,6 +101,76 @@ describe("handleMicropubPost: zet", () => {
   });
 });
 
+describe("handleMicropubPost: draft", () => {
+  // D1 に届く前に落ちる経路だけ。
+  const env = { MICROPUB_TOKEN: "t", DB: {} } as unknown as Env;
+  const post = (body: unknown) =>
+    handleMicropubPost(
+      new Request("https://ingest.example/micropub", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer t",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      }),
+      env,
+    );
+  const desc = async (res: Response) =>
+    ((await res.json()) as { error_description: string }).error_description;
+
+  it("post-status: draft の zet は 400", async () => {
+    const res = await post({
+      type: ["h-entry"],
+      properties: {
+        category: ["zet"],
+        "at-uri": ["at://did:web:ds.jgs.me/me.jgs.diary.zet/3m2abcdefghij"],
+        "post-status": ["draft"],
+      },
+    });
+    expect(res.status).toBe(400);
+    expect(await desc(res)).toContain("only an article can be a draft");
+  });
+
+  it("post-status: draft の document は 400", async () => {
+    const res = await post({
+      type: ["h-entry"],
+      properties: {
+        category: ["document"],
+        "at-uri": [
+          "at://did:web:ds.jgs.me/site.standard.document/3m2abcdefghij",
+        ],
+        "post-status": ["draft"],
+      },
+    });
+    expect(res.status).toBe(400);
+    expect(await desc(res)).toContain("only an article can be a draft");
+  });
+
+  it("post-status が読めない値の create は 400", async () => {
+    const res = await post({
+      type: ["h-entry"],
+      properties: {
+        name: ["題"],
+        content: ["本文"],
+        "post-status": ["private"],
+      },
+    });
+    expect(res.status).toBe(400);
+    expect(await desc(res)).toContain("post-status must be draft or published");
+  });
+
+  it("形の崩れた draft URL への update は 400", async () => {
+    const res = await post({
+      action: "update",
+      url: "https://w.jgs.me/drafts/abc",
+      replace: { name: ["改題"] },
+    });
+    expect(res.status).toBe(400);
+    expect(await desc(res)).toContain("no valid draft key");
+  });
+});
+
 describe("handleMicropubMedia", () => {
   const puts: { key: string; type?: string }[] = [];
   const env = {

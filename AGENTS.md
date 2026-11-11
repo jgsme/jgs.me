@@ -110,6 +110,7 @@ npx wrangler d1 migrations apply w --remote  # 適用
 6. `pages/zets/` — zet 一覧（`zet.date` 降順、`?p=N`）。個別は専用ページを持たず、記事と同じ `pages/article/@title/` が `/pages/zet%3A<rkey>` で表示する。見出しと `<title>` は `zet.title`、無ければ `zet.date`。`zet:<rkey>` は表示しない。
 7. `pages/on-this-day/@mmdd/` — 周年日記（`/on-this-day/@mmdd`）。`article.date` の月日が一致する記事を年ごとにグルーピングする。
 8. `pages/drucks/` — druck 一覧（`/drucks`、`druck.date` 降順、`?p=N`）。入口はトップの druck 枠（最近 6 件）の「もっと見る」だけ。共有 URL は `/d/{druck.id}`（`/pages/{title}` へリダイレクト）。Bluesky / Threads の投稿文は題を先頭に置く (本文の頭が HTML のヘッダの飾りの文字になりがちなため。`leadTitle`)。
+9. `pages/draft/@key/` — 公開前の article（`/drafts/<鍵>`）。page を引かず `draft` 表だけを読む。edge cache に載せず（`createCacheMiddleware` を通さない）、`Cache-Control: no-store` / `X-Robots-Tag: noindex` / `Referrer-Policy: no-referrer` を返す。このヘッダは `+data`（`applyDraftHeaders`）と `draftHeaders.ts` の `draftHeadersMiddleware`（`+server.ts` が `/drafts/*` に mount する）の 2 箇所で積む。`+data` が `render(404)` を投げると vike は新しい pageContext でエラーページを描き、`+data` で積んだ分が落ちるため、404 にも middleware で付ける。`<title>` と `og:title` は固定の `下書き - I am Electrical machine`（`+title.ts`。vike-react は `title` から `og:title` も出すので題を入れない）で、description・OG 画像・OG の題と抜粋は出さない。gtag は `pages/+Head.tsx` が `isDraftPath` で外す（鍵入りの URL を Google に渡さない）。`+Head` は最初の document にしか描かれないので、draft への出入りは `+onPageTransitionStart`（`hardNavigateIfDraftTransition`）でページを丸ごと読み込み、普通のページから始めたセッションに gtag が残らないようにする。詳細は「draft (公開前の確認)」。
 
 zet 本文も R2 の `.sb`。画像は取り込み時に PDS の blob を w-media に写し、Image Transformations 用に r2.jgs.me の URL に差し替える。写せなかった blob だけ getBlob URL に `#.png` を付けて画像として読み込み、`pnpm zet-rehost` で後から拾う。
 
@@ -123,14 +124,15 @@ web の `@/*` は `packages/web/` 基準（`tsconfig.json` と `vite.config.ts`�
 
 ### Database Schema
 
-| Table           | Fields / purpose                                                               |
-| --------------- | ------------------------------------------------------------------------------ |
-| `page`          | Scrapbox / Micropub ページ (id, title, created, updated, image, sbID, spoiler) |
-| `article`       | 登録済み記事 (id, pageID, created, date)                                       |
-| `excluded_page` | 除外ページ (id, pageID, created)                                               |
-| `clip`          | clip (id, pageID, created, kind)                                               |
-| `zet`           | diary の日々の断片 (id, pageID, rkey, date, title, created)                    |
-| `druck`         | HTML 記事 (AI が作ったもの) (id, pageID, date, created)                        |
+| Table           | Fields / purpose                                                                          |
+| --------------- | ----------------------------------------------------------------------------------------- |
+| `page`          | Scrapbox / Micropub ページ (id, title, created, updated, image, sbID, spoiler)            |
+| `article`       | 登録済み記事 (id, pageID, created, date)                                                  |
+| `excluded_page` | 除外ページ (id, pageID, created)                                                          |
+| `clip`          | clip (id, pageID, created, kind)                                                          |
+| `zet`           | diary の日々の断片 (id, pageID, rkey, date, title, created)                               |
+| `druck`         | HTML 記事 (AI が作ったもの) (id, pageID, date, created)                                   |
+| `draft`         | 公開前の article (id, key, title, bodyKey, spoiler, mf2, created, updated)。page と無関係 |
 
 `page.spoiler` は diary が付けるネタバレの印 (article は Micropub の `spoiler` property、zet は record の `spoiler`)。立っている page は Bluesky / Threads / ActivityPub に題と URL だけを出し、Webmention を送らない。`page.image` (一覧のサムネと OG 画像) は伏せず、普段どおり本文の先頭画像を持つ (アイキャッチにネタバレになる画像を置かない運用)。web は記事ページの本文を HTML に描いたまま hidden で隠し、「表示する」を押すと見せる (bot には読ませる)。zets 一覧・検索・RSS・og:description で抜粋を伏せる。
 
@@ -157,6 +159,43 @@ publication record は `at://did:web:ds.jgs.me/site.standard.publication/3mz7iuy
 3. `PDS_IDENTIFIER=… PDS_PASSWORD=… pnpm standard-publication` を 1 回打つ
 4. `curl -s https://w.jgs.me/.well-known/site.standard.publication` が同じ at-uri を返すのを確かめる
 5. そのあとで diary 側を出す
+
+### draft (公開前の確認)
+
+外部のメディアチェックなど、公開前に実際の見た目で読んでもらうための仕組み。URL (`https://w.jgs.me/drafts/<鍵>`) を知っている人だけが読める。対象は Micropub の article だけ (clip / zet / document は 400)。
+
+**draft は `page` 行も `article` 行も持たない。** `/pages/<title>`・suggest・`/p/:id`・OG 画像・検索・RSS・トップ・ActivityPub などの既存の読み出しに「draft を除く」条件を足さない。draft に flag を付けて `page` に入れる変更もしない（条件の足し忘れがそのまま公開事故になるため）。
+
+`draft.key` は `newDraftKey` (`@jigsaw/db/draft`) が作る 256 bit の乱数 (base64url 43 文字) で、平文で持つ。`title` に unique は無い。本文は 1 行目が題の `.sb` を R2 に置き、w-md・`page_link`・`object` は作らない。実装は `packages/ingest/src/draft.ts` (手順) と `draftStore.ts` (D1 / R2 / 配信)。`post-status` の読み取りは `postStatus.ts`、`/drafts/<鍵>` の URL は `target.ts` の `parseTargetURL` が `kind: "draft"` で返す。
+
+#### Micropub の契約 (`post-status`)
+
+| 操作         | リクエスト                                                                             | 応答                                          |
+| ------------ | -------------------------------------------------------------------------------------- | --------------------------------------------- |
+| draft を作る | 普段の create の `properties` に `post-status: ["draft"]`                              | 201、`Location: https://w.jgs.me/drafts/<鍵>` |
+| draft を直す | `action: "update"`、`url` は `/drafts/<鍵>`、`replace` などは普段の update と同じ      | 204。鍵も URL も変わらない                    |
+| 公開する     | `action: "update"`、`url` は `/drafts/<鍵>`、`replace: {"post-status": ["published"]}` | 201、`Location: https://w.jgs.me/pages/<題>`  |
+
+- `post-status` が無い create / update は今までどおり。`published` の create は普段の create。`draft` / `published` 以外の値は 400（黙って公開に倒さない）
+- draft の create / update は AP / Bluesky / Threads / Webmention・w-md・purge を呼ばない。`mp-silent` は無視する
+- 公開する update に `mp-silent` が付いていたら、公開（page / article / object / page_link / w-md、201 + Location）は通常どおり行い、AP publish（`notify`）だけ呼ばない
+- update は保存してある `mf2` に `applyUpdate` を当て、`parseEntry` で検証し直す。鍵に合う行が無ければ 404（公開済みかもしれない）
+- 公開は draft 行の内容をそのまま公開する。題が既存の page と衝突したら **409 で何も変えない**（create の `uniqueTitle` のように ` (1)` は付けない。チェック済みの題と違う題で出さないため）
+- 公開で `page` / `article` / `object` (`mf2` から `post-status` を落とす) / `page_link` を 1 つの D1 batch で入れて draft 行を消す。途中で落ちても「page ができて draft も残る」状態にならない。そのあと w-md と AP publish (`kind: "create"`) を呼ぶ。この 2 つは best-effort で、落ちても 201 を返す
+- `page.created` と `article.date` (`jstDate`) は**公開した時刻**。draft を作った時刻ではない
+- 公開でも `purge` は呼ばない（普段の create と同じ）
+- 公開済みの page を draft に戻せない。page への update に `post-status: draft` を付けると 400
+- `/drafts/<鍵>` の URL は `q=source` で受けない
+
+#### 守れないもの
+
+本文に貼った画像と xhtm の部品は w-media に入り、URL を知っていれば誰でも読める。URL は推測できない形 (ハッシュ) だが、鍵では守られない。draft を消す・鍵を作り直す・期限を付ける機能は無く、出さない draft は残ったままになる。
+
+#### draft の機能を出す順
+
+1. **merge より前に**、この branch の worktree の `packages/ingest` から `draft` 表の migration (0020) を当てる (merge で deploy された新しいコードが無い表を引いて落ちるため)。先に `npx wrangler d1 migrations list w --remote` で未適用を確認し、`npx wrangler d1 migrations apply w --remote` で当てる
+2. jgs.me を merge して deploy
+3. そのあとで diary 側を出す
 
 ### Environment Variables
 

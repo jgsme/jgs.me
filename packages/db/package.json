@@ -10,7 +10,8 @@
     "./zet": "./src/zet.ts",
     "./standard": "./src/standard.ts",
     "./html-article": "./src/htmlArticle.ts",
-    "./page-path": "./src/pagePath.ts"
+    "./page-path": "./src/pagePath.ts",
+    "./draft": "./src/draft.ts"
   },
   "scripts": {
     "gen": "drizzle-kit generate",

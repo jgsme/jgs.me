@@ -5,6 +5,7 @@
 // 付ける方式は、本文の [題] リンクやブラウザの戻る / 進むを拾えないので採らない。
 
 import { HTML_ARTICLE_CLASS } from "@jigsaw/db/html-article";
+import { isDraftPath } from "@jigsaw/db/draft";
 
 const HTML_ARTICLE_SELECTOR = `.${HTML_ARTICLE_CLASS}`;
 
@@ -35,6 +36,33 @@ export const hardNavigateIfLeavingHtmlArticle = (
   fallbackMs: number = HARD_NAVIGATION_FALLBACK_MS,
 ): Promise<void> | undefined => {
   if (!doc.querySelector(HTML_ARTICLE_SELECTOR)) return undefined;
+  return holdForHardNavigation(loc, urlOriginal, setTimer, fallbackMs);
+};
+
+// draft への出入りもページを丸ごと読み込む。+Head は最初の document にしか
+// 描かれないので、普通のページから始めたセッションでは gtag がもう読み込み済みで、
+// クライアント遷移で draft に入ると鍵入りの URL が Google に渡る。
+// 出るときは読み込み直しで gtag が戻る。戻る / 進むで出る場合は location が
+// すでに行き先なので検知できないが、その場合は鍵入りの URL が行き先側に残らない。
+export const hardNavigateIfDraftTransition = (
+  loc: Pick<Location, "assign" | "pathname">,
+  urlOriginal: string,
+  setTimer: (fn: () => void, ms: number) => unknown = setTimeout,
+  fallbackMs: number = HARD_NAVIGATION_FALLBACK_MS,
+): Promise<void> | undefined => {
+  const destination = new URL(urlOriginal, "http://localhost").pathname;
+  if (!isDraftPath(destination) && !isDraftPath(loc.pathname)) {
+    return undefined;
+  }
+  return holdForHardNavigation(loc, urlOriginal, setTimer, fallbackMs);
+};
+
+const holdForHardNavigation = (
+  loc: Pick<Location, "assign">,
+  urlOriginal: string,
+  setTimer: (fn: () => void, ms: number) => unknown,
+  fallbackMs: number,
+): Promise<void> => {
   loc.assign(urlOriginal);
   return new Promise<void>((resolve) => {
     setTimer(resolve, fallbackMs);

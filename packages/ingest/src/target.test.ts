@@ -69,4 +69,27 @@ describe("parseTargetURL", () => {
     expect(() => parseTargetURL(`${SITE}/p/0`, SITE)).toThrow();
     expect(() => parseTargetURL(`${SITE}/p/1.5`, SITE)).toThrow();
   });
+
+  describe("/drafts/<key>", () => {
+    const KEY = "A".repeat(43);
+
+    it("鍵は draft", () => {
+      expect(parseTargetURL(`${SITE}/drafts/${KEY}`, SITE)).toEqual({
+        kind: "draft",
+        key: KEY,
+      });
+    });
+
+    it("鍵の形でなければ投げる", () => {
+      expect(() => parseTargetURL(`${SITE}/drafts/abc`, SITE)).toThrow(
+        "no valid draft key",
+      );
+    });
+
+    it("余分な segment は記事 URL ではない", () => {
+      expect(() => parseTargetURL(`${SITE}/drafts/${KEY}/x`, SITE)).toThrow(
+        "not an article URL",
+      );
+    });
+  });
 });

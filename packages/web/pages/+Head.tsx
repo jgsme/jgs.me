@@ -1,7 +1,14 @@
 import React from "react";
+import { usePageContext } from "vike-react/usePageContext";
+import { isDraftPath } from "@jigsaw/db/draft";
 const GA_ID = "G-SJB62M7N1F";
 
 export function Head() {
+  // gtag はページの URL を Google に送る。draft の URL は鍵そのものなので、
+  // 鍵入りの URL を渡さないよう draft のパスでは読み込まない。
+  // Head は vike で積み上がるため、ページ側ではなくここで外す。
+  const { urlPathname } = usePageContext();
+  const analytics = !isDraftPath(urlPathname);
   return (
     <>
       {/* 全ページで宣言する。記事以外の URL に送られた Webmention も、
@@ -27,20 +34,24 @@ export function Head() {
         href="/clips.xml"
       />
 
-      <script
-        async
-        src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
-      />
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
+      {analytics && (
+        <>
+          <script
+            async
+            src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+          />
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
             gtag('config', '${GA_ID}');
           `,
-        }}
-      />
+            }}
+          />
+        </>
+      )}
     </>
   );
 }

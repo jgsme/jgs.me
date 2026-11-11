@@ -34,7 +34,7 @@ export type DraftPublishInput = {
   // 公開した時刻 (ISO)
   created: string;
   // jstDate(created)
-  date: string;
+  date: string | null;
 };
 
 export type DraftDeps = {

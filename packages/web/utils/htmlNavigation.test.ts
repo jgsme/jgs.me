@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   HARD_NAVIGATION_FALLBACK_MS,
+  hardNavigateIfDraftTransition,
   hardNavigateIfLeavingHtmlArticle,
   shouldReloadOnArrival,
 } from "./htmlNavigation";
@@ -86,6 +87,64 @@ describe("hardNavigateIfLeavingHtmlArticle", () => {
         { assign },
         "/",
       ),
+    ).toBeUndefined();
+    expect(assign).not.toHaveBeenCalled();
+  });
+});
+
+describe("hardNavigateIfDraftTransition", () => {
+  const KEY = "A".repeat(43);
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("draft へ入る遷移は丸ごと読み込む (gtag を先に読んだ document に鍵入りの URL を載せない)", () => {
+    const assign = vi.fn();
+    const result = hardNavigateIfDraftTransition(
+      { assign, pathname: "/" },
+      `/drafts/${KEY}`,
+    );
+    expect(result).toBeInstanceOf(Promise);
+    expect(assign).toHaveBeenCalledWith(`/drafts/${KEY}`);
+  });
+
+  it("draft から出る遷移も丸ごと読み込む", () => {
+    const assign = vi.fn();
+    const result = hardNavigateIfDraftTransition(
+      { assign, pathname: `/drafts/${KEY}` },
+      "/pages/%E9%A1%8C",
+    );
+    expect(result).toBeInstanceOf(Promise);
+    expect(assign).toHaveBeenCalledWith("/pages/%E9%A1%8C");
+  });
+
+  it("クエリ付きの urlOriginal でも draft と判る", () => {
+    const assign = vi.fn();
+    hardNavigateIfDraftTransition(
+      { assign, pathname: "/" },
+      `/drafts/${KEY}?x=1`,
+    );
+    expect(assign).toHaveBeenCalledTimes(1);
+  });
+
+  it("10 秒経っても document が残っていたら Vike に返す", async () => {
+    vi.useFakeTimers();
+    const result = hardNavigateIfDraftTransition(
+      { assign: vi.fn(), pathname: "/" },
+      `/drafts/${KEY}`,
+    );
+    vi.advanceTimersByTime(HARD_NAVIGATION_FALLBACK_MS);
+    await expect(result).resolves.toBeUndefined();
+  });
+
+  it("draft と関係ない遷移は Vike に任せる (/draftsx も draft ではない)", () => {
+    const assign = vi.fn();
+    expect(
+      hardNavigateIfDraftTransition({ assign, pathname: "/" }, "/pages/x"),
+    ).toBeUndefined();
+    expect(
+      hardNavigateIfDraftTransition({ assign, pathname: "/" }, "/draftsx"),
     ).toBeUndefined();
     expect(assign).not.toHaveBeenCalled();
   });

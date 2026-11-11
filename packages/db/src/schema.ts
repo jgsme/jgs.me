@@ -160,6 +160,24 @@ export const druckRelations = relations(druck, ({ one }) => ({
   }),
 }));
 
+// page から分離した公開前の記事。既存の読み出しから届かないよう page 行を持たない。
+export const drafts = sqliteTable(
+  "draft",
+  {
+    id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+    // 閲覧用の秘密の鍵 (/drafts/<key>)。
+    key: text("key").notNull(),
+    // 公開前なので page.title と違って一意にしない。
+    title: text("title").notNull(),
+    bodyKey: text("bodyKey").notNull(),
+    spoiler: integer("spoiler", { mode: "boolean" }).notNull().default(false),
+    mf2: text("mf2").notNull(),
+    created: text("created").notNull(),
+    updated: text("updated").notNull(),
+  },
+  (t) => [uniqueIndex("draft_key_unique").on(t.key)],
+);
+
 // 本文中の内部リンク ([foo] / #foo) の索引。逆引きして「この題に言及している
 // ページ」を出すために持つ。
 //

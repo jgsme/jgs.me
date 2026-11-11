@@ -141,6 +141,13 @@
       "when": 1793607059653,
       "tag": "0019_kind_vector",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1794368141596,
+      "tag": "0020_cloudy_namor",
+      "breakpoints": true
     }
   ]
 }

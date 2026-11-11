@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   createDraft,
   draftURL,
@@ -273,5 +273,143 @@ describe("updateDraft", () => {
     const { deps, calls } = fakeDeps();
     await updateDraft(action({ replace: { content: ["新"] } }), KEY, deps);
     expect(published(calls)).toEqual([]);
+  });
+
+  describe("公開", () => {
+    const publishAction = action({ replace: { "post-status": ["published"] } });
+
+    function publishDeps(over: Partial<DraftDeps> = {}) {
+      const rec: { input?: Parameters<DraftDeps["publish"]>[0] } = {};
+      const f = fakeDeps({
+        publish: async (input) => {
+          f.calls.push("publish");
+          rec.input = input;
+          return 42;
+        },
+        ...over,
+      });
+      return { ...f, rec };
+    }
+
+    it("公開: 保存してある内容で publish し、201 と /pages/<題> を返す", async () => {
+      const { deps, calls, rec } = publishDeps();
+      const res = await updateDraft(publishAction, KEY, deps);
+      expect(res.status).toBe(201);
+      expect(res.headers.get("Location")).toBe(
+        "https://w.jgs.me/pages/%E9%A1%8C",
+      );
+      expect(calls).toEqual([
+        "findByKey",
+        "titleTaken",
+        "putBody",
+        "publish",
+        "putMd",
+        "notify",
+      ]);
+      expect(rec.input).toMatchObject({
+        draftID: row.id,
+        title: "題",
+        bodyKey: row.bodyKey,
+        body: "題\n本文",
+        spoiler: false,
+        created: "2026-11-10T00:00:00.000Z",
+        date: "2026-11-10",
+      });
+    });
+
+    it("公開: object に残す mf2 から post-status を落とす", async () => {
+      const { deps, rec } = publishDeps();
+      await updateDraft(publishAction, KEY, deps);
+      const props = JSON.parse(rec.input!.mf2).properties;
+      expect(props).not.toHaveProperty("post-status");
+      expect(props.name).toEqual(["題"]);
+      expect(props.content).toEqual(["本文"]);
+    });
+
+    it("公開: 日付は公開した時刻の JST の暦日", async () => {
+      const { deps, rec } = publishDeps({
+        now: () => "2026-11-10T16:00:00.000Z",
+      });
+      await updateDraft(publishAction, KEY, deps);
+      expect(rec.input).toMatchObject({
+        created: "2026-11-10T16:00:00.000Z",
+        date: "2026-11-11",
+      });
+    });
+
+    it("公開: 題が衝突したら 409 で、putBody も publish も呼ばない", async () => {
+      const { deps, calls } = publishDeps({
+        titleTaken: async () => {
+          calls.push("titleTaken");
+          return true;
+        },
+      });
+      const res = await updateDraft(publishAction, KEY, deps);
+      expect(res.status).toBe(409);
+      expect(await res.json()).toMatchObject({
+        error_description: "title already in use: 題",
+      });
+      expect(calls).toEqual(["findByKey", "titleTaken"]);
+    });
+
+    it("公開: notify に publish が返した pageID を渡す", async () => {
+      const ids: number[] = [];
+      const { deps } = publishDeps({
+        notify: async (id) => {
+          ids.push(id);
+        },
+      });
+      await updateDraft(publishAction, KEY, deps);
+      expect(ids).toEqual([42]);
+    });
+
+    it("公開: putMd が落ちても 201 (ログだけ残す)", async () => {
+      const err = vi.spyOn(console, "error").mockImplementation(() => {});
+      const { deps, calls } = publishDeps({
+        putMd: async () => {
+          calls.push("putMd");
+          throw new Error("r2 down");
+        },
+      });
+      const res = await updateDraft(publishAction, KEY, deps);
+      expect(res.status).toBe(201);
+      expect(calls).toContain("notify");
+      expect(err).toHaveBeenCalledTimes(1);
+      expect(err.mock.calls[0][0]).toContain("r2 down");
+      err.mockRestore();
+    });
+
+    it("公開: notify が落ちても 201 (ログだけ残す)", async () => {
+      const err = vi.spyOn(console, "error").mockImplementation(() => {});
+      const { deps } = publishDeps({
+        notify: async () => {
+          throw new Error("queue down");
+        },
+      });
+      const res = await updateDraft(publishAction, KEY, deps);
+      expect(res.status).toBe(201);
+      expect(err).toHaveBeenCalledTimes(1);
+      expect(err.mock.calls[0][0]).toContain("queue down");
+      err.mockRestore();
+    });
+
+    it("公開: 同じ update に本文の replace があれば、それを当てた内容で公開する", async () => {
+      const { deps, state, rec } = publishDeps();
+      await updateDraft(
+        action({
+          replace: { content: ["新"], "post-status": ["published"] },
+        }),
+        KEY,
+        deps,
+      );
+      expect(rec.input!.body).toBe("題\n新");
+      expect(state.put).toEqual({ bodyKey: "sb-old", body: "題\n新" });
+    });
+
+    it("公開: update (行の更新) は呼ばない", async () => {
+      const { deps, calls } = publishDeps();
+      await updateDraft(publishAction, KEY, deps);
+      expect(calls).not.toContain("update");
+    });
   });
 });

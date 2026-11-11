@@ -1,9 +1,12 @@
+import { jstDate } from "@jigsaw/db/article-date";
 import { draftPath } from "@jigsaw/db/draft";
+import { pagePath } from "@jigsaw/db/page-path";
 import { buildSbBody } from "./body";
-import { fail, message } from "./ingestResponse";
+import { pageImage } from "./firstImage";
+import { bestEffort, fail, message } from "./ingestResponse";
 import { isClip, parseEntry } from "./mf2";
 import { applyUpdate, type UpdateAction } from "./mf2update";
-import { readPostStatus } from "./postStatus";
+import { readPostStatus, stripPostStatus } from "./postStatus";
 import { SITE_URL } from "./site";
 
 // 下書き (draft 表) の create / update の手順だけを持つ。
@@ -123,9 +126,10 @@ export async function updateDraft(
       : {};
   const nextProps = applyUpdate(props, action);
 
-  // 読めない値は 400。published への切り替え(公開)はまだ扱わない: 次の Task。
+  // 読めない値は 400。
+  let status;
   try {
-    readPostStatus(nextProps);
+    status = readPostStatus(nextProps);
   } catch (e) {
     return fail(400, message(e));
   }
@@ -140,8 +144,41 @@ export async function updateDraft(
   }
   if (isClip(entry.categories)) return fail(400, CLIP_REJECTED);
 
+  const body = buildSbBody(entry.name, entry.content);
+
+  if (status === "published") {
+    // 公開すると題が /pages/<題> の URL になるので、ここで衝突を確かめる。
+    // 確かめるまで何も書かない。
+    if (await deps.titleTaken(entry.name)) {
+      return fail(409, `title already in use: ${entry.name}`);
+    }
+    // 同じ update に題や本文の replace が入っていた場合に備えて書き直す。
+    await deps.putBody(row.bodyKey, body);
+    const created = deps.now();
+    // draft 行の削除は publish の batch の中。ここで update は呼ばない。
+    const pageID = await deps.publish({
+      draftID: row.id,
+      title: entry.name,
+      bodyKey: row.bodyKey,
+      body,
+      image: pageImage(entry),
+      spoiler: entry.spoiler,
+      mf2: JSON.stringify({ ...next, properties: stripPostStatus(nextProps) }),
+      created,
+      date: jstDate(created),
+    });
+    // 検索と配信は後から作り直せる。公開済みなのに 500 を返すと、
+    // diary が押し直して 404 (draft はもう無い) になるので握る。
+    await bestEffort("[draft] md", () => deps.putMd(row.bodyKey, body));
+    await bestEffort("[draft] notify", () => deps.notify(pageID));
+    return new Response(null, {
+      status: 201,
+      headers: { Location: `${SITE_URL}${pagePath(entry.name)}` },
+    });
+  }
+
   // 題は URL に入らない (鍵で引く) ので、改題の衝突確認は要らない。
-  await deps.putBody(row.bodyKey, buildSbBody(entry.name, entry.content));
+  await deps.putBody(row.bodyKey, body);
   await deps.update({
     id: row.id,
     title: entry.name,

@@ -29,6 +29,12 @@ describe("draftPublishStatements", () => {
     expect(sqls.at(-1)).toContain('delete from "draft"');
   });
 
+  it("page の insert は returning で id を返す (公開後に引き直さない)", () => {
+    const first = sqlOf(draftPublishStatements(db, input())[0]);
+    expect(first.sql.toLowerCase()).toContain("returning");
+    expect(first.sql).toContain('"id"');
+  });
+
   it("本文のリンクを page_link に入れる (16 行ずつ)", () => {
     const body = [
       "題",

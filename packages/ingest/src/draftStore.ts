@@ -25,14 +25,19 @@ export function draftPublishStatements(
 ): Batch {
   const pageID = pageIDOf(input.title);
   return [
-    db.insert(pages).values({
-      title: input.title,
-      bodyKey: input.bodyKey,
-      created: input.created,
-      updated: input.created,
-      image: input.image,
-      spoiler: input.spoiler,
-    }),
+    // batch の結果から page.id を受け取る。commit 後に別の select を挟むと、
+    // それが落ちたとき公開済みなのに putMd / notify に進めず 500 になる。
+    db
+      .insert(pages)
+      .values({
+        title: input.title,
+        bodyKey: input.bodyKey,
+        created: input.created,
+        updated: input.created,
+        image: input.image,
+        spoiler: input.spoiler,
+      })
+      .returning({ id: pages.id }),
     db.insert(articles).values({
       pageID,
       created: input.created,
@@ -106,16 +111,13 @@ export function draftDeps(env: Env): DraftDeps {
       return row !== undefined;
     },
     publish: async (input) => {
-      await db.batch(draftPublishStatements(db, input));
-      const [row] = await db
-        .select({ id: pages.id })
-        .from(pages)
-        .where(eq(pages.title, input.title))
-        .limit(1);
-      if (!row) {
-        throw new Error(`page not found after insert: ${input.title}`);
+      const results = await db.batch(draftPublishStatements(db, input));
+      const first = results[0] as { id: number }[] | undefined;
+      const id = first?.[0]?.id;
+      if (typeof id !== "number") {
+        throw new Error(`page id missing from publish batch: ${input.title}`);
       }
-      return row.id;
+      return id;
     },
     // micropub.ts の putMd と同じ内容。micropub.ts が draftStore を import
     // するので、逆向きの import (循環) を避けてここで組む。

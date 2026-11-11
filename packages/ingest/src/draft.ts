@@ -153,6 +153,8 @@ export async function updateDraft(
       return fail(409, `title already in use: ${entry.name}`);
     }
     // 同じ update に題や本文の replace が入っていた場合に備えて書き直す。
+    // 本文は D1 より先に書く。D1 が落ちると R2 だけが新しくなり、同じ update を
+    // 送り直すまで保存済みの mf2 とずれる。
     await deps.putBody(row.bodyKey, body);
     const created = deps.now();
     // draft 行の削除は publish の batch の中。ここで update は呼ばない。
@@ -170,7 +172,10 @@ export async function updateDraft(
     // 検索と配信は後から作り直せる。公開済みなのに 500 を返すと、
     // diary が押し直して 404 (draft はもう無い) になるので握る。
     await bestEffort("[draft] md", () => deps.putMd(row.bodyKey, body));
-    await bestEffort("[draft] notify", () => deps.notify(pageID));
+    // mp-silent は配信しない合図 (既存の update と同じ意味)。公開自体は通常どおり。
+    if (!action.silent) {
+      await bestEffort("[draft] notify", () => deps.notify(pageID));
+    }
     return new Response(null, {
       status: 201,
       headers: { Location: `${SITE_URL}${pagePath(entry.name)}` },
@@ -178,6 +183,8 @@ export async function updateDraft(
   }
 
   // 題は URL に入らない (鍵で引く) ので、改題の衝突確認は要らない。
+  // 本文は D1 より先に書く。D1 が落ちると R2 だけが新しくなり、同じ update を
+  // 送り直すまで保存済みの mf2 とずれる。
   await deps.putBody(row.bodyKey, body);
   await deps.update({
     id: row.id,

@@ -178,6 +178,7 @@ publication record は `at://did:web:ds.jgs.me/site.standard.publication/3mz7iuy
 
 - `post-status` が無い create / update は今までどおり。`published` の create は普段の create。`draft` / `published` 以外の値は 400（黙って公開に倒さない）
 - draft の create / update は AP / Bluesky / Threads / Webmention・w-md・purge を呼ばない。`mp-silent` は無視する
+- 公開する update に `mp-silent` が付いていたら、公開（page / article / object / page_link / w-md、201 + Location）は通常どおり行い、AP publish（`notify`）だけ呼ばない
 - update は保存してある `mf2` に `applyUpdate` を当て、`parseEntry` で検証し直す。鍵に合う行が無ければ 404（公開済みかもしれない）
 - 公開は draft 行の内容をそのまま公開する。題が既存の page と衝突したら **409 で何も変えない**（create の `uniqueTitle` のように ` (1)` は付けない。チェック済みの題と違う題で出さないため）
 - 公開で `page` / `article` / `object` (`mf2` から `post-status` を落とす) / `page_link` を 1 つの D1 batch で入れて draft 行を消す。途中で落ちても「page ができて draft も残る」状態にならない。そのあと w-md と AP publish (`kind: "create"`) を呼ぶ。この 2 つは best-effort で、落ちても 201 を返す

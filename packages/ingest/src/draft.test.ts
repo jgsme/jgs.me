@@ -337,6 +337,48 @@ describe("updateDraft", () => {
       });
     });
 
+    it("公開: mp-silent なら notify を呼ばない (publish と putMd は呼ぶ)", async () => {
+      const { deps, calls } = publishDeps();
+      const res = await updateDraft(
+        action({
+          replace: { "post-status": ["published"] },
+          silent: true,
+        }),
+        KEY,
+        deps,
+      );
+      expect(res.status).toBe(201);
+      expect(res.headers.get("Location")).toBe(
+        "https://w.jgs.me/pages/%E9%A1%8C",
+      );
+      expect(calls).toEqual([
+        "findByKey",
+        "titleTaken",
+        "putBody",
+        "publish",
+        "putMd",
+      ]);
+    });
+
+    it("公開: spoiler が publish に届く", async () => {
+      const { deps, rec } = publishDeps({
+        findByKey: async () => ({
+          ...row,
+          mf2: JSON.stringify({
+            type: ["h-entry"],
+            properties: {
+              name: ["題"],
+              content: ["本文"],
+              "post-status": ["draft"],
+              spoiler: ["true"],
+            },
+          }),
+        }),
+      });
+      await updateDraft(publishAction, KEY, deps);
+      expect(rec.input!.spoiler).toBe(true);
+    });
+
     it("公開: 題が衝突したら 409 で、putBody も publish も呼ばない", async () => {
       const { deps, calls } = publishDeps({
         titleTaken: async () => {

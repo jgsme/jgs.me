@@ -1,7 +1,7 @@
 import {
   firstMoteUrl,
+  isMoteUrl,
   moteApiUrl,
-  MOTE_ORIGIN,
   type MoteRef,
 } from "@jigsaw/db/mote";
 import { pageImage } from "./firstImage";
@@ -50,8 +50,8 @@ export function motePosterResolver(
         console.error(`[mote] ${ref.url} posterUrl is not a string`);
         return UNAVAILABLE;
       }
-      // JSON は信用しない。mote 以外のホストは取りに行かない。
-      if (new URL(posterUrl).origin !== MOTE_ORIGIN) {
+      // JSON は信用しない。mote 以外のホストと userinfo 付きは取りに行かない。
+      if (!isMoteUrl(posterUrl)) {
         console.error(`[mote] ${ref.url} poster is not on mote: ${posterUrl}`);
         return UNAVAILABLE;
       }

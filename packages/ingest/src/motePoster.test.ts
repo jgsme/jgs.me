@@ -118,6 +118,15 @@ describe("motePosterResolver", () => {
     expect(rehosted).toEqual([]);
   });
 
+  it.each(["https://a:b@mote.jgs.me/x", "https://a@mote.jgs.me/x"])(
+    "posterUrl に userinfo (%s) があれば unavailable で、rehost を呼ばない",
+    async (posterUrl) => {
+      const { resolver, rehosted } = setup(async () => json({ posterUrl }));
+      expect(await resolver(REF)).toEqual(UNAVAILABLE);
+      expect(rehosted).toEqual([]);
+    },
+  );
+
   it("JSON が壊れていたら unavailable", async () => {
     const { resolver } = setup(async () => new Response("not json"));
     expect(await resolver(REF)).toEqual(UNAVAILABLE);

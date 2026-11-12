@@ -73,6 +73,22 @@ describe("parseMoteView", () => {
   });
 
   it.each([
+    ["1:100000", { width: 1, height: 100000 }],
+    ["100000:1", { width: 100000, height: 1 }],
+  ])("極端な aspectRatio (%s) は null にして view は残す", (_n, a) => {
+    const out = parseMoteView({ ...OK, aspectRatio: a });
+    expect(out).not.toBeNull();
+    expect(out?.aspectRatio).toBeNull();
+  });
+
+  it.each([
+    ["4:1", { width: 4, height: 1 }],
+    ["1:4", { width: 1, height: 4 }],
+  ])("境目の aspectRatio (%s) は残す", (_n, a) => {
+    expect(parseMoteView({ ...OK, aspectRatio: a })?.aspectRatio).toEqual(a);
+  });
+
+  it.each([
     [
       "videoUrl が別のホスト",
       { ...OK, videoUrl: "https://evil.example/v.mp4" },
@@ -86,6 +102,11 @@ describe("parseMoteView", () => {
       { ...OK, playback: { autoplay: "yes", muted: true, loop: true } },
     ],
     ["aspectRatio が 0", { ...OK, aspectRatio: { width: 0, height: 1 } }],
+    [
+      "videoUrl に user と password",
+      { ...OK, videoUrl: "https://a:b@mote.jgs.me/x" },
+    ],
+    ["videoUrl に user", { ...OK, videoUrl: "https://a@mote.jgs.me/x" }],
     ["title が数値", { ...OK, title: 1 }],
     ["null", null],
   ])("形の違う JSON は null: %s", (_n, v) => {

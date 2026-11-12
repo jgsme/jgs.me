@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { firstMoteUrl, moteApiUrl, parseMoteUrl } from "./mote";
+import { firstMoteUrl, isMoteUrl, moteApiUrl, parseMoteUrl } from "./mote";
 
 const R = "3mzzs3sn3d22l";
 const R2 = "3mzzs3sn3d33l";
@@ -78,6 +78,22 @@ describe("parseMoteUrl の厳格さ", () => {
     const url = parseMoteUrl(x)!.url;
     expect(parseMoteUrl(url)?.url).toBe(url);
   });
+});
+
+describe("isMoteUrl", () => {
+  it("mote.jgs.me の https URL は通す", () =>
+    expect(isMoteUrl("https://mote.jgs.me/v1/videos/a/b/poster")).toBe(true));
+  it("user と password の付いた URL は弾く", () =>
+    expect(isMoteUrl("https://a:b@mote.jgs.me/x")).toBe(false));
+  it("user だけ付いた URL は弾く", () =>
+    expect(isMoteUrl("https://a@mote.jgs.me/x")).toBe(false));
+  it("http は弾く", () =>
+    expect(isMoteUrl("http://mote.jgs.me/x")).toBe(false));
+  it("別のホストは弾く", () =>
+    expect(isMoteUrl("https://mote.jgs.me.evil.example/x")).toBe(false));
+  it("URL として読めない文字列は弾く", () =>
+    expect(isMoteUrl("not a url")).toBe(false));
+  it("文字列でなければ弾く", () => expect(isMoteUrl(42)).toBe(false));
 });
 
 describe("moteApiUrl", () => {

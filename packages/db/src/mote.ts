@@ -45,6 +45,22 @@ export function parseMoteUrl(url: string): MoteRef | null {
   return { actor, rkey, url: `${MOTE_ORIGIN}/u/${actor}/${rkey}` };
 }
 
+/**
+ * mote の JSON から来た URL (video / poster / page) を使ってよいか。
+ * origin が mote.jgs.me の https で、userinfo が無いものだけ通す
+ * (origin は userinfo を落として比べるので、それだけでは弾けない)。
+ */
+export function isMoteUrl(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  let u: URL;
+  try {
+    u = new URL(value);
+  } catch {
+    return false;
+  }
+  return u.origin === MOTE_ORIGIN && u.username === "" && u.password === "";
+}
+
 /** JSON を引く URL */
 export function moteApiUrl(ref: MoteRef): string {
   return `${MOTE_ORIGIN}/v1/videos/${encodeURIComponent(ref.actor)}/${ref.rkey}`;

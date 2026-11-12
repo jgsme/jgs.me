@@ -1,4 +1,4 @@
-import { MOTE_ORIGIN, moteApiUrl, parseMoteUrl } from "@jigsaw/db/mote";
+import { isMoteUrl, moteApiUrl, parseMoteUrl } from "@jigsaw/db/mote";
 
 export interface MoteView {
   readonly pageUrl: string;
@@ -30,16 +30,14 @@ function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
-// origin が mote.jgs.me の https URL だけ通す。
+// origin が mote.jgs.me の https URL (userinfo 無し) だけ通す。
 function moteUrl(v: unknown): string | null {
-  if (typeof v !== "string") return null;
-  try {
-    const u = new URL(v);
-    return u.origin === MOTE_ORIGIN ? u.toString() : null;
-  } catch {
-    return null;
-  }
+  return isMoteUrl(v) ? new URL(v as string).toString() : null;
 }
+
+// これより細い・平たい比は枠を決めるのに使わない (幅や高さがほぼ 0 になる)。
+// null にすると poster / 動画の寸法で決まる。
+const MAX_RATIO = 4;
 
 function stringOrNull(v: unknown): string | null | undefined {
   if (v === null || v === undefined) return null;
@@ -73,7 +71,10 @@ export function parseMoteView(json: unknown): MoteView | null {
     ) {
       return null;
     }
-    aspectRatio = { width: a.width as number, height: a.height as number };
+    const width = a.width as number;
+    const height = a.height as number;
+    const r = width / height;
+    if (r >= 1 / MAX_RATIO && r <= MAX_RATIO) aspectRatio = { width, height };
   }
 
   const p = json.playback;

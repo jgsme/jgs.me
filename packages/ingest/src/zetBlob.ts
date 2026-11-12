@@ -56,7 +56,7 @@ export async function rehostBlobImages(
 }
 
 // Workers の fetch は User-Agent を送らない (gyazoMigrate.ts と同じ理由で付ける)。
-const USER_AGENT = "jgs-me/0.1.0 (+https://w.jgs.me/)";
+export const USER_AGENT = "jgs-me/0.1.0 (+https://w.jgs.me/)";
 
 export function blobRehoster(
   fetchFn: FetchFn,

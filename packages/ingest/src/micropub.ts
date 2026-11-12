@@ -24,6 +24,8 @@ import { assertNotDraft, payloadPostStatus } from "./postStatus";
 import { handleDraftCreate, handleDraftUpdate } from "./draftStore";
 import { putMedia } from "@jigsaw/media";
 import { pageImage } from "./firstImage";
+import { motePosterResolver, resolveImage } from "./motePoster";
+import { envRehoster } from "./zetBlob";
 import { uniqueTitle } from "./uniqueTitle";
 import { extractLinks } from "./links";
 import { chunk } from "./rows";
@@ -130,6 +132,14 @@ async function loadArchiveClip(
 }
 
 // POST /micropub は action で分岐する。action が無ければ create (spec 既定)。
+// handler は collaborator を env から直に組む (注入口が無い)。zetDeps と同じ式。
+function moteFromEnv(env: Env) {
+  return motePosterResolver(
+    (input, init) => fetch(input, init),
+    envRehoster(env),
+  );
+}
+
 export async function handleMicropubPost(
   request: Request,
   env: Env,
@@ -220,6 +230,13 @@ async function handleMicropubCreate(
   // R2 に書く本文の 1 行目もこの題なので、put より先に決める。
   const title = await uniqueTitle(db, entry.name);
 
+  // 一覧のサムネと OG 画像。photo > 本文の先頭画像 > 最初の mote の poster。
+  const image = await resolveImage(
+    pageImage(entry),
+    entry.content,
+    moteFromEnv(env),
+  );
+
   // 本文を先に R2 へ書く。page 行が指す先を必ず存在させる (spec §6)。
   // 逆順だと「本文が引けない page」が生まれる。
   // R2 だけ書けて D1 が失敗した場合は、参照されない孤児オブジェクトが残るだけ。
@@ -246,7 +263,7 @@ async function handleMicropubCreate(
       updated: created,
       // 一覧のサムネと OG 画像。photo が無ければ本文の先頭画像を使う。
       // ネタバレでも画像は伏せない (伏せるのは本文)。
-      image: pageImage(entry),
+      image,
       spoiler: entry.spoiler,
     })
     .returning({ id: pages.id });
@@ -574,6 +591,13 @@ async function handleMicropubUpdate(
   // .json は消さず戻すときの原本として残す。旧 md は batch 成功後に
   // deleteMd で消す)。
   // 1行目の題はマージ後の name で書き直す (改題に追随する)。
+  // 本文が画像を持てばそれが勝つ (mote は見ない)。mote の JSON が一時的に取れ
+  // ないと null になり、次の update まで戻らない。
+  const image = await resolveImage(
+    pageImage(entry),
+    entry.content,
+    moteFromEnv(env),
+  );
   const body = buildSbBody(entry.name, entry.content);
   await env.R2.put(r2Key, body, {
     httpMetadata: { contentType: "text/plain; charset=utf-8" },
@@ -611,7 +635,7 @@ async function handleMicropubUpdate(
     // 変換時は bodyKey が新しい sb- キーになる。変換しない update では同じ値。
     .set({
       title: entry.name,
-      image: pageImage(entry),
+      image,
       spoiler: entry.spoiler,
       updated: action.silent ? target.updated : now,
       bodyKey,

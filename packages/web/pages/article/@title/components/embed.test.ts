@@ -43,6 +43,16 @@ describe("embedOf", () => {
     );
   });
 
+  it("Spotify の prerelease (配信前のページ) も対象", () => {
+    expect(
+      embedOf("https://open.spotify.com/prerelease/5RJ8hlD8Dx9XNZFMYbUIHA"),
+    ).toEqual({
+      kind: "oembed",
+      provider: "spotify",
+      url: "https://open.spotify.com/prerelease/5RJ8hlD8Dx9XNZFMYbUIHA",
+    });
+  });
+
   it("Spotify のトップやユーザーページは対象外", () => {
     expect(embedOf("https://open.spotify.com/")).toBeNull();
     expect(embedOf("https://open.spotify.com/user/foo")).toBeNull();

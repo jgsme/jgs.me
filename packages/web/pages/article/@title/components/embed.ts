@@ -12,7 +12,7 @@ export const OEMBED_ENDPOINTS: Record<OEmbedProvider, string> = {
 };
 
 const SPOTIFY_PATH =
-  /^\/(?:intl-[a-z]{2}(?:-[a-z]{2})?\/)?(track|album|playlist|episode|show|artist)\/([A-Za-z0-9]+)\/?$/;
+  /^\/(?:intl-[a-z]{2}(?:-[a-z]{2})?\/)?(track|album|playlist|episode|show|artist|prerelease)\/([A-Za-z0-9]+)\/?$/;
 const BSKY_PATH = /^\/profile\/[^/]+\/post\/[A-Za-z0-9]+\/?$/;
 
 export function getYouTubeVideoId(url: string): string | null {

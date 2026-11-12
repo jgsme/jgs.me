@@ -126,4 +126,37 @@ describe("purifyScrapboxText", () => {
       "雑用1: LLM を使って社内報のようなモノを作っている そういえば新卒の頃も社内報書いてたな〜みたいな 雑用2: PA業 妙に音響機材が揃うタイプの会社で、ややテクニカルに大変なので手伝っている";
     expect(purifyScrapboxText(input)).toBe(expected);
   });
+
+  describe("mote の URL", () => {
+    const M = "https://mote.jgs.me/u/ds.jgs.me/3mzzs3sn3d22l";
+    it("mote の URL 単体のリンクを除去する", () => {
+      expect(purifyScrapboxText(`a [${M}] b`)).toBe("a b");
+    });
+    it("ラベルが後ろの mote はラベルだけ残す", () => {
+      expect(purifyScrapboxText(`[${M} 動画]`)).toBe("動画");
+    });
+    it("ラベルが前の mote はラベルだけ残す", () => {
+      expect(purifyScrapboxText(`[動画 ${M}]`)).toBe("動画");
+    });
+    it("括弧の無い mote の URL を除去する", () => {
+      expect(purifyScrapboxText(`見て ${M} これ`)).toBe("見て これ");
+    });
+    it("mote でない素の URL は今までどおり残す", () => {
+      expect(purifyScrapboxText("見て https://example.com/x これ")).toBe(
+        "見て https://example.com/x これ",
+      );
+    });
+    it("mote だけの本文は空になる", () => {
+      expect(purifyScrapboxText(`[${M}]`)).toBe("");
+    });
+    it("ホストのドットは任意の文字に当たらない", () => {
+      const u = "https://moteXjgsXme/u/a/b";
+      expect(purifyScrapboxText(`見て ${u} これ`)).toBe(`見て ${u} これ`);
+    });
+    it("/u/ 以外の mote ホストの URL は残す", () => {
+      expect(purifyScrapboxText("見て https://mote.jgs.me/ これ")).toBe(
+        "見て https://mote.jgs.me/ これ",
+      );
+    });
+  });
 });

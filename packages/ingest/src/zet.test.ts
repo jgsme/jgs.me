@@ -60,7 +60,7 @@ function fake(over: Partial<ZetDeps> = {}) {
       calls.rehostBlob.push(url);
       return R2;
     },
-    motePoster: async () => null,
+    motePoster: async () => ({ kind: "unavailable" }),
     findByAtUri: async () => null,
     putBody: async (key, body) => {
       calls.putBody.push([key, body]);
@@ -134,7 +134,7 @@ describe("ingestZet: create", () => {
   it("画像の無い zet は mote の poster を image に入れる", async () => {
     const { deps, calls } = fake({
       getRecord: async () => found({ text: `動画 [${MOTE}]` }),
-      motePoster: async () => MOTE_POSTER,
+      motePoster: async () => ({ kind: "poster", url: MOTE_POSTER }),
     });
     expect((await ingestZet(payload, deps)).status).toBe(201);
     expect(calls.create[0]!.image).toBe(MOTE_POSTER);
@@ -146,7 +146,7 @@ describe("ingestZet: create", () => {
       getRecord: async () => found({ text: `[${MOTE}]\n[${BLOB}]` }),
       motePoster: async () => {
         called++;
-        return MOTE_POSTER;
+        return { kind: "poster", url: MOTE_POSTER };
       },
     });
     await ingestZet(payload, deps);
@@ -157,10 +157,19 @@ describe("ingestZet: create", () => {
   it("mote の poster が取れない zet は image が null のまま取り込まれる", async () => {
     const { deps, calls } = fake({
       getRecord: async () => found({ text: `動画 [${MOTE}]` }),
-      motePoster: async () => null,
+      motePoster: async () => ({ kind: "unavailable" }),
     });
     expect((await ingestZet(payload, deps)).status).toBe(201);
     expect(calls.create).toHaveLength(1);
+    expect(calls.create[0]!.image).toBeNull();
+  });
+
+  it("mote が none の zet も image は null で取り込まれる", async () => {
+    const { deps, calls } = fake({
+      getRecord: async () => found({ text: `動画 [${MOTE}]` }),
+      motePoster: async () => ({ kind: "none" }),
+    });
+    expect((await ingestZet(payload, deps)).status).toBe(201);
     expect(calls.create[0]!.image).toBeNull();
   });
 

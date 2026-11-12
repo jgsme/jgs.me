@@ -8,7 +8,7 @@ import { chunk } from "./rows";
 import { SITE_URL, objectURI } from "./site";
 import { purge } from "./purge";
 import { fetchZetRecord } from "./zetRecord";
-import { motePosterResolver } from "./motePoster";
+import { motePosterFromEnv } from "./motePoster";
 import { envRehoster } from "./zetBlob";
 import {
   ingestZet,
@@ -149,10 +149,7 @@ export function zetDeps(env: Env): ZetDeps {
     getRecord: (rkey) =>
       fetchZetRecord(rkey, (input, init) => fetch(input, init)),
     rehostBlob: envRehoster(env),
-    motePoster: motePosterResolver(
-      (input, init) => fetch(input, init),
-      envRehoster(env),
-    ),
+    motePoster: motePosterFromEnv(env),
     findByAtUri: (atUri) => findZetByAtUri(db, atUri),
     putBody: async (bodyKey, body) => {
       const key = r2KeyOf(bodyKey);

@@ -43,10 +43,41 @@ describe("parseMoteUrl", () => {
     `https://mote.jgs.me/u/%zz/${R}`, // 壊れた percent-encode
     `https://mote.jgs.me/u/a%2Fb/${R}`, // actor に / を含む
     `https://mote.jgs.me/u//${R}`, // actor が空
+    `https://mote.jgs.me/u/ds.jgs.me/zzzzzzzzzzzzz`, // rkey の先頭が k から z
     "not a url",
   ])("mote のページでない URL は null: %s", (u) =>
     expect(parseMoteUrl(u)).toBeNull(),
   );
+});
+
+describe("parseMoteUrl の厳格さ", () => {
+  it("actor が ? に decode されるなら null", () =>
+    expect(parseMoteUrl(`https://mote.jgs.me/u/a%3Fb/${R}`)).toBeNull());
+  it("actor が # に decode されるなら null", () =>
+    expect(parseMoteUrl(`https://mote.jgs.me/u/a%23b/${R}`)).toBeNull());
+  it("actor が空白に decode されるなら null", () =>
+    expect(parseMoteUrl(`https://mote.jgs.me/u/a%20b/${R}`)).toBeNull());
+  it("userinfo 付きは null", () =>
+    expect(
+      parseMoteUrl(`https://user:pw@mote.jgs.me/u/ds.jgs.me/${R}`),
+    ).toBeNull());
+  it("明示的な非既定ポートは null", () =>
+    expect(
+      parseMoteUrl(`https://mote.jgs.me:8443/u/ds.jgs.me/${R}`),
+    ).toBeNull());
+  it("既定ポート :443 は受けて正規の url を返す", () =>
+    expect(parseMoteUrl(`https://mote.jgs.me:443/u/ds.jgs.me/${R}`)?.url).toBe(
+      `https://mote.jgs.me/u/ds.jgs.me/${R}`,
+    ));
+  it("末尾ドット付きのホストは null", () =>
+    expect(parseMoteUrl(`https://mote.jgs.me./u/ds.jgs.me/${R}`)).toBeNull());
+  it.each([
+    `https://mote.jgs.me/u/ds.jgs.me/${R}`,
+    `https://mote.jgs.me/u/did%3Aweb%3Ads.jgs.me/${R}`,
+  ])("url を再度 parse しても同じ url になる: %s", (x) => {
+    const url = parseMoteUrl(x)!.url;
+    expect(parseMoteUrl(url)?.url).toBe(url);
+  });
 });
 
 describe("moteApiUrl", () => {

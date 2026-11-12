@@ -12,7 +12,10 @@ export interface MoteRef {
 }
 
 // atproto の TID (13 文字の base32-sortable)。
-const RKEY = /^[2-7a-z]{13}$/;
+const RKEY = /^[234567abcdefghij][234567abcdefghijklmnopqrstuvwxyz]{12}$/;
+
+// 展開後の actor に許す文字 (handle と DID)。? # 空白などが残ると url が曖昧になる。
+const ACTOR = /^[A-Za-z0-9.:_-]+$/;
 
 /** URL 全体が mote のページの URL なら分解する。違えば null */
 export function parseMoteUrl(url: string): MoteRef | null {
@@ -23,6 +26,7 @@ export function parseMoteUrl(url: string): MoteRef | null {
     return null;
   }
   if (u.protocol !== "https:" || u.host !== "mote.jgs.me") return null;
+  if (u.username !== "" || u.password !== "" || u.port !== "") return null;
 
   // /u/<actor>/<rkey>。末尾の / は 1 つまで許す。
   const m = /^\/u\/([^/]+)\/([^/]+?)\/?$/.exec(u.pathname);
@@ -36,7 +40,7 @@ export function parseMoteUrl(url: string): MoteRef | null {
   } catch {
     return null;
   }
-  if (actor === "" || actor.includes("/")) return null;
+  if (!ACTOR.test(actor)) return null;
 
   return { actor, rkey, url: `${MOTE_ORIGIN}/u/${actor}/${rkey}` };
 }

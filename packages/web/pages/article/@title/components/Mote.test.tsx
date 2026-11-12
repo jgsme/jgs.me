@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { renderToString } from "react-dom/server";
 import { parse } from "@progfay/scrapbox-parser";
 import type { Motes, MoteView } from "@/server/mote";
-import { MoteLink, MotesContext } from "./Mote";
+import { MoteEmbed, MoteLink, MotesContext } from "./Mote";
 import { ScrapboxNode } from "./ScrapboxNode";
 
 const URL_ = "https://mote.jgs.me/u/jgs.me/3mz7iuy6k2222";
@@ -87,6 +87,46 @@ describe("MoteLink", () => {
     const html = render({}, { aspectRatio: null });
     expect(html).not.toContain("aspect-ratio");
     expect(html).toContain("max-height:80vh");
+  });
+
+  it("autoplay の動画の HTML は muted", () => {
+    expect(render({ [URL_]: VIEW })).toMatch(/\smuted/);
+  });
+
+  it("autoplay の動画は record の muted が false でも HTML は muted", () => {
+    const html = render(
+      {},
+      { playback: { autoplay: true, muted: false, loop: false } },
+    );
+    expect(html).toMatch(/\smuted/);
+  });
+
+  it("autoplay でなく muted が false の動画の HTML は muted でない", () => {
+    const html = render(
+      {},
+      { playback: { autoplay: false, muted: false, loop: false } },
+    );
+    expect(html).not.toMatch(/\smuted/);
+  });
+
+  it("MoteEmbed に videoUrl を key として付ける", () => {
+    let element: React.ReactElement | null = null;
+    const Probe = () => {
+      element = MoteLink({
+        url: URL_,
+        href: URL_,
+        label: URL_,
+      }) as React.ReactElement | null;
+      return null;
+    };
+    renderToString(
+      <MotesContext value={{ [URL_]: VIEW }}>
+        <Probe />
+      </MotesContext>,
+    );
+    expect(element).not.toBeNull();
+    expect(element!.type).toBe(MoteEmbed);
+    expect(element!.key).toBe(VIEW.videoUrl);
   });
 
   it("view が無ければリンクを描く", () => {

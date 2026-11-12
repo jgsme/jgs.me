@@ -36,6 +36,7 @@ export const MoteEmbed: React.FC<{ view: MoteView }> = ({ view }) => {
             ? undefined
             : IntersectionObserver,
         onNeedControls: () => setNeedControls(true),
+        onFailed: () => setFailed(true),
       },
     );
   }, [attrs.muted, attrs.playWhenVisible, failed]);
@@ -91,7 +92,10 @@ export const MoteLink: React.FC<{
   label: string;
 }> = ({ url, href, label }) => {
   const view = useMote(url);
-  if (view) return <MoteEmbed view={view} />;
+  // key で作り直す — vike はクライアント遷移でページを key 無しで描き直すので、
+  // 同じ位置に別の mote が来ると failed / controls / observer / 要素の muted を
+  // 引き継いでしまう。
+  if (view) return <MoteEmbed key={view.videoUrl} view={view} />;
   return (
     <a
       href={href}

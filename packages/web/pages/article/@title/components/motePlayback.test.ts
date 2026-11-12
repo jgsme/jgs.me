@@ -90,10 +90,14 @@ describe("videoAttrs", () => {
 
 type Entries = readonly { readonly isIntersecting: boolean }[];
 
-const fakeElement = (play: () => Promise<void> = async () => {}) => {
+const fakeElement = (
+  play: () => Promise<void> = async () => {},
+  error: unknown = null,
+) => {
   const log: string[] = [];
   let muted = false;
   const el = {
+    error,
     get muted() {
       return muted;
     },
@@ -144,6 +148,7 @@ describe("attachPlayback", () => {
     attachPlayback(el, AUTO, {
       IntersectionObserver: Observer,
       onNeedControls: () => {},
+      onFailed: () => {},
     });
     fire(true);
     expect(log).toEqual(["muted=true", "play muted=true"]);
@@ -155,6 +160,7 @@ describe("attachPlayback", () => {
     attachPlayback(el, MANUAL(true), {
       IntersectionObserver: Observer,
       onNeedControls: () => {},
+      onFailed: () => {},
     });
     expect(el.muted).toBe(true);
     expect(log).toEqual(["muted=true"]);
@@ -167,6 +173,7 @@ describe("attachPlayback", () => {
     attachPlayback(el, MANUAL(false), {
       IntersectionObserver: fakeObserver().Observer,
       onNeedControls: () => {},
+      onFailed: () => {},
     });
     expect(el.muted).toBe(false);
   });
@@ -177,6 +184,7 @@ describe("attachPlayback", () => {
     attachPlayback(el, AUTO, {
       IntersectionObserver: Observer,
       onNeedControls: () => {},
+      onFailed: () => {},
     });
     expect(state.observed).toEqual([el]);
     fire(true);
@@ -193,11 +201,120 @@ describe("attachPlayback", () => {
     attachPlayback(el, AUTO, {
       IntersectionObserver: Observer,
       onNeedControls,
+      onFailed: () => {},
     });
     fire(true);
     await flush();
     expect(onNeedControls).toHaveBeenCalledTimes(1);
     expect(el.muted).toBe(true);
+  });
+
+  it("自分の pause で中断された play (AbortError) では onNeedControls を呼ばない", async () => {
+    const { el } = fakeElement(() =>
+      Promise.reject(new DOMException("interrupted", "AbortError")),
+    );
+    const { Observer, fire } = fakeObserver();
+    const onNeedControls = vi.fn();
+    attachPlayback(el, AUTO, {
+      IntersectionObserver: Observer,
+      onNeedControls,
+      onFailed: () => {},
+    });
+    fire(true);
+    await flush();
+    expect(onNeedControls).not.toHaveBeenCalled();
+  });
+
+  it("AbortError のあとも observer は付いたまま", async () => {
+    const { el } = fakeElement(() =>
+      Promise.reject(new DOMException("interrupted", "AbortError")),
+    );
+    const { Observer, state, fire } = fakeObserver();
+    attachPlayback(el, AUTO, {
+      IntersectionObserver: Observer,
+      onNeedControls: () => {},
+      onFailed: () => {},
+    });
+    fire(true);
+    await flush();
+    expect(state.disconnected).toBe(0);
+  });
+
+  it("AbortError のあと画面に入り直したら play を呼ぶ", async () => {
+    const { el, log } = fakeElement(() =>
+      Promise.reject(new DOMException("interrupted", "AbortError")),
+    );
+    const { Observer, fire } = fakeObserver();
+    attachPlayback(el, AUTO, {
+      IntersectionObserver: Observer,
+      onNeedControls: () => {},
+      onFailed: () => {},
+    });
+    fire(true);
+    await flush();
+    fire(false);
+    fire(true);
+    await flush();
+    expect(log.filter((l) => l.startsWith("play"))).toHaveLength(2);
+  });
+
+  it("play が拒否されたら observer を外す", async () => {
+    const { el } = fakeElement(() =>
+      Promise.reject(new DOMException("denied", "NotAllowedError")),
+    );
+    const { Observer, state, fire } = fakeObserver();
+    attachPlayback(el, AUTO, {
+      IntersectionObserver: Observer,
+      onNeedControls: () => {},
+      onFailed: () => {},
+    });
+    fire(true);
+    await flush();
+    expect(state.disconnected).toBe(1);
+  });
+
+  it("play が拒否されたあとは画面に入り直しても play を呼ばない", async () => {
+    const { el, log } = fakeElement(() =>
+      Promise.reject(new DOMException("denied", "NotAllowedError")),
+    );
+    const { Observer, fire } = fakeObserver();
+    attachPlayback(el, AUTO, {
+      IntersectionObserver: Observer,
+      onNeedControls: () => {},
+      onFailed: () => {},
+    });
+    fire(true);
+    await flush();
+    // 本物の observer は disconnect 後に呼ばれない。fake は呼べてしまうので
+    // 呼ばれても play しないことまで確かめる。
+    fire(true);
+    await flush();
+    expect(log.filter((l) => l.startsWith("play"))).toHaveLength(1);
+  });
+
+  it("hydration より前に読み込みに失敗していたら onFailed を呼び、再生しない", () => {
+    const { el, log } = fakeElement(async () => {}, { code: 4 });
+    const { Observer, state } = fakeObserver();
+    const onFailed = vi.fn();
+    attachPlayback(el, AUTO, {
+      IntersectionObserver: Observer,
+      onNeedControls: () => {},
+      onFailed,
+    });
+    expect(onFailed).toHaveBeenCalledTimes(1);
+    expect(state.observed).toHaveLength(0);
+    expect(log.filter((l) => l.startsWith("play"))).toHaveLength(0);
+  });
+
+  it("読み込みに失敗していなければ onFailed を呼ばない", () => {
+    const { el } = fakeElement();
+    const onFailed = vi.fn();
+    attachPlayback(el, AUTO, {
+      IntersectionObserver: fakeObserver().Observer,
+      onNeedControls: () => {},
+      onFailed,
+    });
+    expect(onFailed).not.toHaveBeenCalled();
   });
 
   it("IntersectionObserver が無ければ onNeedControls を呼び、再生はしない", () => {
@@ -206,6 +323,7 @@ describe("attachPlayback", () => {
     attachPlayback(el, AUTO, {
       IntersectionObserver: undefined,
       onNeedControls,
+      onFailed: () => {},
     });
     expect(onNeedControls).toHaveBeenCalledTimes(1);
     expect(el.muted).toBe(true);
@@ -218,6 +336,7 @@ describe("attachPlayback", () => {
     attachPlayback(el, MANUAL(false), {
       IntersectionObserver: undefined,
       onNeedControls,
+      onFailed: () => {},
     });
     expect(onNeedControls).not.toHaveBeenCalled();
   });
@@ -228,6 +347,7 @@ describe("attachPlayback", () => {
     const cleanup = attachPlayback(el, AUTO, {
       IntersectionObserver: Observer,
       onNeedControls: () => {},
+      onFailed: () => {},
     });
     cleanup();
     expect(state.disconnected).toBe(1);

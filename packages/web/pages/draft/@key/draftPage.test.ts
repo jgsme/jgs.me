@@ -18,6 +18,7 @@ const draftData = (): Data => ({
   title: "ひみつの題",
   blocks: [],
   embeds: {},
+  motes: {},
   xhtm: {},
   spoiler: false,
 });

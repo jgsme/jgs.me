@@ -71,6 +71,8 @@ To run the unit and integration tests:
 pnpm --filter web test
 ```
 
+`vitest.config.ts` は `*.test.ts` と `*.test.tsx` を拾う (描画のテストは `.tsx`)。
+
 ### Database Migrations
 
 To generate a new migration after changing the schema in `packages/db/src/schema.ts`:

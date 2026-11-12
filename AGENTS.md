@@ -104,6 +104,11 @@ npx wrangler d1 migrations apply w --remote  # 適用
 2. `pages/article/@title/` — 記事詳細（`/pages/@title`）。R2 から本文を取得し、`@progfay/scrapbox-parser` でパースする。本文は Scrapbox archive の `<scrapbox-id>.json` または Micropub (diary) の `<sb-uuid>.sb`。どちらも 1 行目が題。同期廃止で `.json` は増えないが、Micropub 経由でページ自体は増える。
    HTML 記事は druck として入る（`article` には入らない）。トップの article 一覧・周年日記・検索・suggest・関連記事には出ず、`/rss.xml` には article と混ぜる。HTML 記事 (`html-` 始まりの bodyKey) は `html-<uuid>.render.json` (ingest が組み直したもの) をページの中の `.jgs-html-article` に描く。iframe は使わず、CSS は scope 済み。CSP はこのページにだけ付き、`+data` が `pageContext.headersResponse` に積む (vike は `+headersResponse` を `+data` より先に解決するので、`+headersResponse` では書けない)。HTML article への出入りはページを丸ごと読み込む (`+onPageTransitionStart`)。
    通常の article の本文の `code:xhtm` (diary の部品) は中身が `{"key":"<sha256>.json"}` 1 行で、部品の JSON (`{ styles, libs, body, scripts }`) は w-media (ingest の media endpoint が書く。web は binding `MEDIA` で読むだけ) にある。`+data` が SSR で読み (`xhtmParts.ts`)、読めない・壊れたものはその部品だけ描かない。`styles` と `body` は `div.xhtm-host` に innerHTML で描き、`scripts` は effect で `new Function("root", code)(root)` として呼んで戻り値の関数を cleanup で呼ぶ (`components/xhtmPart.ts` の `runXhtmPart`。`libs` はページ内で src ごとに 1 回だけ読む)。なのでクライアント遷移で出入りしても読み込み直さない。script は w.jgs.me の origin で CSP 無しで動く (通常の article に CSP は無い。druck の CSP は `frame-src 'none'` で同じ記事の YouTube 埋め込みを壊すので掛けない)。
+   本文の mote の URL (`https://mote.jgs.me/u/<actor>/<rkey>`、短い動画のサービス) は `<video>` に描く。判定は `@jigsaw/db/mote` の `parseMoteUrl` で、web (描画) と ingest (サムネ) が同じ規則を使う。actor は `^[A-Za-z0-9.:_-]+$` だけ通し、userinfo と明示 port は弾く (port 付きの `did:web` の mote は普通のリンクのまま)。JSON (`/v1/videos/<actor>/<rkey>`) は `+data` が SSR で引き (`server/mote.ts` の `fetchMotes`、timeout 2 秒、1 ページ 10 本まで)、`MotesContext` で配る。draft のプレビュー (`pages/draft/@key/`) も同じく引いて渡す。JSON は第三者の内容なので使う項目だけ写し、url は origin が `mote.jgs.me` のものだけ通す。形が違う・取れない・10 本を超えた分は普通のリンクで出す。`<video>` が読み込みに失敗したときもリンクに落とす。枠は `aspectRatio` から SSR の時点で確定し (レイアウトが動かない)、高さの上限 80vh は inline style (`maxHeight`、比が分かれば `width: min(100%, Nvh)`) で付ける (`pnpm lint:tokens` が任意値の `max-h-[…]` を弾くため)。`aspectRatio` が null なら poster / 動画の寸法で決まる。
+   再生の約束 (`components/motePlayback.ts` / `Mote.tsx`)。手本と test は mote の repo (`jgsme/mote`) の `apps/appview/src/player.ts` と `src/playback.ts` にある。
+   - `autoplay: true`: `controls` を付けず、常に muted (音は勝手に鳴らさない)。画面に入ったら `play()`、出たら `pause()` (IntersectionObserver)。`play()` が拒否される・IntersectionObserver が無いときは `controls` を付ける
+   - `autoplay: false`: `controls` を付け、muted は record の `muted`。自動では再生しない
+   - 共通: `loop` は record の値。`playsinline` と `preload="none"` は常に付き、`autoplay` 属性は付けない (再生の開始は上の observer だけ)
 3. `/a/{id}` — `/pages/{title}` への共有 URL リダイレクト。clip は `/c/{id}`、zet は `/z/{zet.id}`。実体は `server/routes/redirects.ts`、形式は `utils/permalink.ts`。7 日 edge cache、ingest が update 時に purge する。
 4. `pages/search/` — 検索。
 5. `pages/clips/` — clip 一覧。
@@ -133,6 +138,8 @@ web の `@/*` は `packages/web/` 基準（`tsconfig.json` と `vite.config.ts`�
 | `zet`           | diary の日々の断片 (id, pageID, rkey, date, title, created)                               |
 | `druck`         | HTML 記事 (AI が作ったもの) (id, pageID, date, created)                                   |
 | `draft`         | 公開前の article (id, key, title, bodyKey, spoiler, mf2, created, updated)。page と無関係 |
+
+`page.image` (一覧のサムネと OG 画像) の決め方。article / clip は photo > 本文の先頭画像 > 本文の最初の mote の poster > 無し (`packages/ingest/src/motePoster.ts` の `articleImage`)。zet は本文の先頭画像 > 最初の mote の poster > 無し (`resolveImage`)。poster は mote の JSON の `posterUrl` (origin が `mote.jgs.me` のものだけ) を w-media に写した URL。mote の取得 (JSON は 5 秒、poster の download は 10 秒) が失敗しても取り込みは止めない。結果は `poster` / `none` / `unavailable` の 3 つで、`none` は mote が消えている (404) か poster が無い、`unavailable` はそれ以外 (timeout・通信失敗・5xx・壊れた JSON・origin 違い・写せなかった)。article の update で `unavailable` なら前の `image` を残し、`none` なら null にする。既知の副作用: update で本文の画像を外して mote を足し、その時 mote が `unavailable` だと、外した画像が次の update までサムネに残る。zet は再取り込みでも前の `image` を渡さないので、`unavailable` は null になる。poster の大きさは jgs.me 側では制限しない (mote の appview が 1MB に抑える)。本文から mote の URL を `purifyScrapboxText` が抜粋 (`articleBody.ts` の description など) から落とす。
 
 `page.spoiler` は diary が付けるネタバレの印 (article は Micropub の `spoiler` property、zet は record の `spoiler`)。立っている page は Bluesky / Threads / ActivityPub に題と URL だけを出し、Webmention を送らない。`page.image` (一覧のサムネと OG 画像) は伏せず、普段どおり本文の先頭画像を持つ (アイキャッチにネタバレになる画像を置かない運用)。web は記事ページの本文を HTML に描いたまま hidden で隠し、「表示する」を押すと見せる (bot には読ませる)。zets 一覧・検索・RSS・og:description で抜粋を伏せる。
 
@@ -196,6 +203,12 @@ publication record は `at://did:web:ds.jgs.me/site.standard.publication/3mz7iuy
 1. **merge より前に**、この branch の worktree の `packages/ingest` から `draft` 表の migration (0020) を当てる (merge で deploy された新しいコードが無い表を引いて落ちるため)。先に `npx wrangler d1 migrations list w --remote` で未適用を確認し、`npx wrangler d1 migrations apply w --remote` で当てる
 2. jgs.me を merge して deploy
 3. そのあとで diary 側を出す
+
+#### mote を使うときに知っておくこと
+
+- 記事ページは `s-maxage=86400` で edge に載る。mote を消した後や、JSON が取れなかった時の描画は最大 1 日残る。消えた mote は「読み込みに失敗したらリンク」に落ちるので、壊れたプレイヤーにはならない。
+- mote の URL も外部リンクなので、publish のたびに `mote.jgs.me` 宛ての Webmention が queue に積まれる (`packages/ap/src/outlinks.ts`)。mote は Webmention の endpoint を出していないので、endpoint 探しの取得が 1 回走るだけで何も送られない。
+- 既に取り込んだ zet の `image` は遡って埋めない。`pnpm zet-rehost` (`/internal/zet-rehost`) は blob の URL を書き換えるだけで、`image` が null のものには触らない。
 
 ### Environment Variables
 

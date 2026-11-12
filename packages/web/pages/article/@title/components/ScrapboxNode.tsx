@@ -9,6 +9,7 @@ import { quoteClassName } from "./quote";
 import { embedOf } from "./embed";
 import { YouTubeEmbed } from "./YouTubeEmbed";
 import { OEmbedLink } from "./OEmbedLink";
+import { MoteLink } from "./Mote";
 import { pagePath } from "@jigsaw/db/page-path";
 
 export const ScrapboxNode: React.FC<{
@@ -49,6 +50,15 @@ export const ScrapboxNode: React.FC<{
       if (target?.kind === "oembed") {
         return (
           <OEmbedLink
+            url={target.url}
+            href={node.href}
+            label={node.content || node.href}
+          />
+        );
+      }
+      if (target?.kind === "mote") {
+        return (
+          <MoteLink
             url={target.url}
             href={node.href}
             label={node.content || node.href}

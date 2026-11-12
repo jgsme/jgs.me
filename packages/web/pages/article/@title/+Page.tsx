@@ -10,6 +10,7 @@ import { shareUrlPath } from "./components/shareUrl";
 import { RelatedPages } from "./components/RelatedPages";
 import { Backlinks } from "./components/Backlinks";
 import { OEmbedsContext } from "./components/OEmbed";
+import { MotesContext } from "./components/Mote";
 import { XhtmPartsContext } from "./components/XhtmHost";
 import { clientOnly } from "vike-react/clientOnly";
 import { WarpButton } from "../../components/WarpButton";
@@ -136,30 +137,36 @@ const Page = () => {
           className={`e-content space-y-1 ${videoClip ? "clip-video-body" : ""}`}
         >
           <OEmbedsContext value={d.embeds}>
-            <XhtmPartsContext value={d.xhtm}>
-              <SpoilerGate spoiler={d.spoiler} onReveal={remeasure}>
-                {quoteClip
-                  ? // 引用が主役のページでは、連続する引用行を 1 つの引用として出す。
-                    groupQuoteRuns(d.blocks).map((item, i) =>
-                      item.type === "quoteRun" ? (
-                        <QuoteRun
-                          key={i}
-                          lines={item.lines}
-                          indent={item.indent}
-                        />
-                      ) : (
+            <MotesContext value={d.motes}>
+              <XhtmPartsContext value={d.xhtm}>
+                <SpoilerGate spoiler={d.spoiler} onReveal={remeasure}>
+                  {quoteClip
+                    ? // 引用が主役のページでは、連続する引用行を 1 つの引用として出す。
+                      groupQuoteRuns(d.blocks).map((item, i) =>
+                        item.type === "quoteRun" ? (
+                          <QuoteRun
+                            key={i}
+                            lines={item.lines}
+                            indent={item.indent}
+                          />
+                        ) : (
+                          <ScrapboxBlock
+                            key={i}
+                            block={item.block}
+                            emphasizeQuote
+                          />
+                        ),
+                      )
+                    : d.blocks.map((block, i) => (
                         <ScrapboxBlock
                           key={i}
-                          block={item.block}
-                          emphasizeQuote
+                          block={block}
+                          photo={photoClip}
                         />
-                      ),
-                    )
-                  : d.blocks.map((block, i) => (
-                      <ScrapboxBlock key={i} block={block} photo={photoClip} />
-                    ))}
-              </SpoilerGate>
-            </XhtmPartsContext>
+                      ))}
+                </SpoilerGate>
+              </XhtmPartsContext>
+            </MotesContext>
           </OEmbedsContext>
         </div>
 

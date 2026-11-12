@@ -8,6 +8,7 @@
     "./article-date": "./src/articleDate.ts",
     "./fetch-body": "./src/fetchBody.ts",
     "./zet": "./src/zet.ts",
+    "./mote": "./src/mote.ts",
     "./standard": "./src/standard.ts",
     "./html-article": "./src/htmlArticle.ts",
     "./page-path": "./src/pagePath.ts",
@@ -18,6 +19,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@progfay/scrapbox-parser": "catalog:",
     "drizzle-orm": "catalog:"
   },
   "devDependencies": {

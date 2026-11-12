@@ -37,15 +37,17 @@ function setup(
 ) {
   const fetched: { url: string; init?: RequestInit }[] = [];
   const rehosted: string[] = [];
+  const rehostSignals: AbortSignal[] = [];
   const fetchFn: FetchFn = async (url, init) => {
     fetched.push({ url, init });
     return res();
   };
-  const resolver = motePosterResolver(fetchFn, async (url) => {
+  const resolver = motePosterResolver(fetchFn, async (url, signal) => {
     rehosted.push(url);
+    rehostSignals.push(signal);
     return rehostResult();
   });
-  return { resolver, fetched, rehosted };
+  return { resolver, fetched, rehosted, rehostSignals };
 }
 
 describe("motePosterResolver", () => {
@@ -68,6 +70,22 @@ describe("motePosterResolver", () => {
     expect(headers["User-Agent"]).toMatch(/^jgs-me\//);
     expect(headers.Accept).toBe("application/json");
     expect(fetched[0]!.init?.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("poster の取得には JSON と同じ signal を渡す", async () => {
+    const { resolver, fetched, rehostSignals } = setup(async () =>
+      json({ posterUrl: POSTER }),
+    );
+    await resolver(REF);
+    expect(rehostSignals).toHaveLength(1);
+    expect(rehostSignals[0]).toBe(fetched[0]!.init?.signal);
+  });
+
+  it("呼ぶたびに別の signal を作る", async () => {
+    const { resolver, fetched } = setup(async () => json({ posterUrl: null }));
+    await resolver(REF);
+    await resolver(REF);
+    expect(fetched[0]!.init?.signal).not.toBe(fetched[1]!.init?.signal);
   });
 
   it("posterUrl が null の mote は none で、rehost を呼ばない", async () => {
@@ -161,24 +179,46 @@ describe("motePosterResolver", () => {
 describe("motePosterFromEnv", () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it("poster の取得に AbortSignal を付けて fetch する", async () => {
+  const setupEnv = (poster: () => Promise<Response>) => {
     const calls: { url: string; init?: RequestInit }[] = [];
     vi.stubGlobal("fetch", async (url: string, init?: RequestInit) => {
       calls.push({ url, init });
       if (url === moteApiUrl(REF)) return json({ posterUrl: POSTER });
-      return new Response(new Uint8Array([1]), {
-        headers: { "content-type": "image/jpeg" },
-      });
+      return poster();
     });
-    const put = vi.fn(async () => "k.jpeg");
     const env = {
-      MEDIA: { put },
+      MEDIA: { put: vi.fn(async () => undefined) },
       MEDIA_BASE_URL: "https://r2.jgs.me",
     } as unknown as Env;
-    const r = await motePosterFromEnv(env)(REF);
+    return { calls, motePoster: motePosterFromEnv(env) };
+  };
+  const jpeg = async () =>
+    new Response(new Uint8Array([0xff, 0xd8, 0xff]), {
+      headers: { "content-type": "image/jpeg" },
+    });
+
+  it("poster を写した URL を返す", async () => {
+    const { motePoster } = setupEnv(jpeg);
+    expect(await motePoster(REF)).toEqual({
+      kind: "poster",
+      url: expect.stringMatching(/^https:\/\/r2\.jgs\.me\/[0-9a-f]{64}\.jpg$/),
+    });
+  });
+
+  it("JSON と poster の取得に同じ AbortSignal を渡す", async () => {
+    const { calls, motePoster } = setupEnv(jpeg);
+    await motePoster(REF);
+    const api = calls.find((c) => c.url === moteApiUrl(REF));
     const poster = calls.find((c) => c.url === POSTER);
-    expect(poster?.init?.signal).toBeInstanceOf(AbortSignal);
-    expect(r.kind).not.toBe("none");
+    expect(api?.init?.signal).toBeInstanceOf(AbortSignal);
+    expect(poster?.init?.signal).toBe(api?.init?.signal);
+  });
+
+  it("poster の取得が reject したら unavailable", async () => {
+    const { motePoster } = setupEnv(async () => {
+      throw new DOMException("timed out", "TimeoutError");
+    });
+    expect(await motePoster(REF)).toEqual(UNAVAILABLE);
   });
 });
 

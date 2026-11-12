@@ -7,18 +7,27 @@ import type { Entry } from "./mf2";
 // scrapboxToHtml) と同じ scrapbox-parser を通す。両者の判定がずれると
 // 「本文には出ていない画像がサムネになる」「コードブロックに貼った URL を
 // 拾う」といった食い違いが起きる。
-function findInNodes(nodes: readonly Node[]): string | null {
+//
+// pick が null 以外を返した最初の node の値。firstMote.ts も使う。
+export function findInNodes<T>(
+  nodes: readonly Node[],
+  pick: (node: Node) => T | null,
+): T | null {
   for (const node of nodes) {
-    if (node.type === "image" || node.type === "strongImage") return node.src;
+    const picked = pick(node);
+    if (picked !== null) return picked;
     // decoration / strong / quote は子ノードを持つ。装飾の中に置いた画像も
     // 本文では画像として出るので、降りて探す。
     if ("nodes" in node) {
-      const found = findInNodes(node.nodes);
-      if (found) return found;
+      const found = findInNodes(node.nodes, pick);
+      if (found !== null) return found;
     }
   }
   return null;
 }
+
+const imageOf = (node: Node): string | null =>
+  node.type === "image" || node.type === "strongImage" ? node.src : null;
 
 // content は題を含まない本文 (mf2 の content)。R2 に置く .sb と違って
 // 1行目が題ではないので、hasTitle: false で読む。
@@ -27,14 +36,14 @@ export function firstImageURL(content: string): string | null {
 
   for (const block of parse(content, { hasTitle: false })) {
     if (block.type === "line") {
-      const found = findInNodes(block.nodes);
+      const found = findInNodes(block.nodes, imageOf);
       if (found) return found;
       continue;
     }
     if (block.type === "table") {
       for (const row of block.cells) {
         for (const cell of row) {
-          const found = findInNodes(cell);
+          const found = findInNodes(cell, imageOf);
           if (found) return found;
         }
       }

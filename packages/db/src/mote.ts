@@ -1,8 +1,6 @@
 // mote (短い動画のサービス。ページの URL は https://mote.jgs.me/u/<actor>/<rkey>)
 // の URL の規則。web (描画) と ingest (サムネ) が同じ規則を使うのでここに置く。
 
-import { parse, type Node } from "@progfay/scrapbox-parser";
-
 export const MOTE_ORIGIN = "https://mote.jgs.me";
 
 export interface MoteRef {
@@ -64,44 +62,4 @@ export function isMoteUrl(value: unknown): boolean {
 /** JSON を引く URL */
 export function moteApiUrl(ref: MoteRef): string {
   return `${MOTE_ORIGIN}/v1/videos/${encodeURIComponent(ref.actor)}/${ref.rkey}`;
-}
-
-// 読み側 (web の ScrapboxNode / ap の scrapboxToHtml) と同じ scrapbox-parser を
-// 通す。コードブロックに貼った URL を拾わないため。
-function findInNodes(nodes: readonly Node[]): MoteRef | null {
-  for (const node of nodes) {
-    if (node.type === "link" && node.pathType !== "relative") {
-      const ref = parseMoteUrl(node.href);
-      if (ref) return ref;
-    }
-    // decoration / strong / quote は子ノードを持つ。
-    if ("nodes" in node) {
-      const found = findInNodes(node.nodes);
-      if (found) return found;
-    }
-  }
-  return null;
-}
-
-/** Scrapbox 記法の本文から最初の mote の URL を返す。無ければ null */
-export function firstMoteUrl(content: string): MoteRef | null {
-  if (!content.trim()) return null;
-
-  for (const block of parse(content, { hasTitle: false })) {
-    if (block.type === "line") {
-      const found = findInNodes(block.nodes);
-      if (found) return found;
-      continue;
-    }
-    if (block.type === "table") {
-      for (const row of block.cells) {
-        for (const cell of row) {
-          const found = findInNodes(cell);
-          if (found) return found;
-        }
-      }
-    }
-    // codeBlock は本文でもリンクにならないので見ない。
-  }
-  return null;
 }

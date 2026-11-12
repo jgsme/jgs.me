@@ -132,6 +132,7 @@ export async function findZetByAtUri(
       zetID: zets.id,
       bodyKey: pages.bodyKey,
       cid: copies.cid,
+      image: pages.image,
     })
     .from(copies)
     .innerJoin(objects, eq(objects.id, copies.objectID))

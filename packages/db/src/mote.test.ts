@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { firstMoteUrl, isMoteUrl, moteApiUrl, parseMoteUrl } from "./mote";
+import { isMoteUrl, moteApiUrl, parseMoteUrl } from "./mote";
 
 const R = "3mzzs3sn3d22l";
 const R2 = "3mzzs3sn3d33l";
@@ -101,40 +101,4 @@ describe("moteApiUrl", () => {
     expect(
       moteApiUrl(parseMoteUrl(`https://mote.jgs.me/u/did:web:ds.jgs.me/${R}`)!),
     ).toBe(`https://mote.jgs.me/v1/videos/did%3Aweb%3Ads.jgs.me/${R}`));
-});
-
-describe("firstMoteUrl", () => {
-  it("本文の最初の mote を返す", () =>
-    expect(
-      firstMoteUrl(
-        `a\n[https://example.com x]\n[https://mote.jgs.me/u/ds.jgs.me/${R}]\n[https://mote.jgs.me/u/b.test/${R}]`,
-      )?.actor,
-    ).toBe("ds.jgs.me"));
-  it("ラベル付きの mote を拾う", () =>
-    expect(
-      firstMoteUrl(`[動画 https://mote.jgs.me/u/ds.jgs.me/${R}]`)?.url,
-    ).toBe(`https://mote.jgs.me/u/ds.jgs.me/${R}`));
-  it("素の URL の mote を拾う", () =>
-    expect(
-      firstMoteUrl(`見て https://mote.jgs.me/u/ds.jgs.me/${R} これ`)?.rkey,
-    ).toBe(R));
-  it("装飾の中の mote を拾う", () =>
-    expect(
-      firstMoteUrl(`[* [https://mote.jgs.me/u/ds.jgs.me/${R2}]]`)?.rkey,
-    ).toBe(R2));
-  it("コードブロックの中の mote は拾わない", () =>
-    expect(
-      firstMoteUrl(`code:a\n https://mote.jgs.me/u/ds.jgs.me/${R}\n`),
-    ).toBeNull());
-  it("コードブロックの後ろの mote は拾う", () =>
-    expect(
-      firstMoteUrl(
-        `code:a\n https://mote.jgs.me/u/x.test/${R}\n[https://mote.jgs.me/u/ds.jgs.me/${R2}]`,
-      )?.actor,
-    ).toBe("ds.jgs.me"));
-  it("mote でないリンクだけの本文は null", () =>
-    expect(firstMoteUrl("[https://example.com x]")).toBeNull());
-  it("mote の無い本文は null", () =>
-    expect(firstMoteUrl("ただの本文")).toBeNull());
-  it("空文字は null", () => expect(firstMoteUrl("")).toBeNull());
 });

@@ -85,7 +85,13 @@ function fake(over: Partial<ZetDeps> = {}) {
   return { deps, calls };
 }
 
-const existing = { pageID: 7, zetID: 3, bodyKey: "sb-old", cid: "bafyold" };
+const existing = {
+  pageID: 7,
+  zetID: 3,
+  bodyKey: "sb-old",
+  cid: "bafyold",
+  image: null,
+};
 
 describe("zetURL", () => {
   it("w.jgs.me の /pages/zet%3A<rkey>", () => {
@@ -288,6 +294,29 @@ describe("ingestZet: update", () => {
         links: ["公園", "朝"],
       },
     ]);
+  });
+
+  const OLD_POSTER = "https://r2.jgs.me/old-poster.jpeg";
+  const moteOnly = () => found({ text: `見て\n[${MOTE}]` }, "bafycid2");
+
+  it("画像の無い zet の update で mote が unavailable なら前の image を残す", async () => {
+    const { deps, calls } = fake({
+      findByAtUri: async () => ({ ...existing, image: OLD_POSTER }),
+      getRecord: async () => moteOnly(),
+      motePoster: async () => ({ kind: "unavailable" }),
+    });
+    await ingestZet(payload, deps);
+    expect(calls.update[0]!.image).toBe(OLD_POSTER);
+  });
+
+  it("画像の無い zet の update で mote が none なら image を null にする", async () => {
+    const { deps, calls } = fake({
+      findByAtUri: async () => ({ ...existing, image: OLD_POSTER }),
+      getRecord: async () => moteOnly(),
+      motePoster: async () => ({ kind: "none" }),
+    });
+    await ingestZet(payload, deps);
+    expect(calls.update[0]!.image).toBeNull();
   });
 
   it("個別・一覧・share URL (/p, /z) を purge し、update で publish する", async () => {

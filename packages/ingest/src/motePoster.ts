@@ -1,41 +1,46 @@
-import {
-  firstMoteUrl,
-  isMoteUrl,
-  moteApiUrl,
-  type MoteRef,
-} from "@jigsaw/db/mote";
+import { isMoteUrl, moteApiUrl, type MoteRef } from "@jigsaw/db/mote";
 import { pageImage } from "./firstImage";
+import { firstMoteUrl } from "./firstMote";
 import { message } from "./ingestResponse";
 import type { Env } from "./index";
 import type { Entry } from "./mf2";
 import type { FetchFn } from "./pdsRecord";
-import { rehosterWith, USER_AGENT, type RehostBlob } from "./zetBlob";
+import { rehosterWith, USER_AGENT } from "./zetBlob";
 
 // mote の URL から、w-media に写した poster を引く。throw / reject しない。
 // none: mote が無い (404) か poster が無い (posterUrl null)。確定した答え。
-// unavailable: それ以外 (timeout・通信失敗・5xx・壊れた JSON・不正な origin・
-// 写せなかった)。調べられなかっただけなので、呼び側は前の値を保てる。
+// unavailable: それ以外 (timeout・通信失敗・404 以外の 4xx / 5xx・壊れた JSON・
+// posterUrl が無い / 文字列でない・mote の URL でない・写せなかった)。
+// 調べられなかっただけなので、呼び側は前の値を保てる。
 export type MotePosterResult =
   | { readonly kind: "poster"; readonly url: string }
   | { readonly kind: "none" }
   | { readonly kind: "unavailable" };
 export type MotePoster = (ref: MoteRef) => Promise<MotePosterResult>;
 
-const JSON_TIMEOUT_MS = 5000;
-const POSTER_TIMEOUT_MS = 10_000;
+// JSON と poster の取得をまとめて 5 秒で諦める。micropub の応答の途中で走り、
+// diary の micropub client は 15 秒で切るので、ここで食い潰さない。
+const TIMEOUT_MS = 5000;
+
+// poster を w-media に写して URL を返す。fetch には signal を付ける。
+export type RehostPoster = (
+  url: string,
+  signal: AbortSignal,
+) => Promise<string | null>;
 
 const UNAVAILABLE: MotePosterResult = { kind: "unavailable" };
 const NONE: MotePosterResult = { kind: "none" };
 
 export function motePosterResolver(
   fetchFn: FetchFn,
-  rehost: RehostBlob,
+  rehost: RehostPoster,
 ): MotePoster {
   return async (ref) => {
+    const signal = AbortSignal.timeout(TIMEOUT_MS);
     try {
       const res = await fetchFn(moteApiUrl(ref), {
         headers: { Accept: "application/json", "User-Agent": USER_AGENT },
-        signal: AbortSignal.timeout(JSON_TIMEOUT_MS),
+        signal,
       });
       // 消えた mote は想定内。ログは出さない。
       if (res.status === 404) return NONE;
@@ -55,7 +60,7 @@ export function motePosterResolver(
         console.error(`[mote] ${ref.url} poster is not on mote: ${posterUrl}`);
         return UNAVAILABLE;
       }
-      const url = await rehost(posterUrl);
+      const url = await rehost(posterUrl, signal);
       if (url === null) {
         console.error(`[mote] ${ref.url} poster was not stored`);
         return UNAVAILABLE;
@@ -68,13 +73,14 @@ export function motePosterResolver(
   };
 }
 
-// 実環境の組み立て。poster の取得にも制限時間を付ける。
+// 実環境の組み立て。poster の取得も JSON と同じ期限の中で行う。
 export function motePosterFromEnv(env: Env): MotePoster {
   return motePosterResolver(
     (input, init) => fetch(input, init),
-    rehosterWith(env, (input, init) =>
-      fetch(input, { ...init, signal: AbortSignal.timeout(POSTER_TIMEOUT_MS) }),
-    ),
+    (url, signal) =>
+      rehosterWith(env, (input, init) => fetch(input, { ...init, signal }))(
+        url,
+      ),
   );
 }
 

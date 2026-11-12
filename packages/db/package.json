@@ -19,7 +19,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@progfay/scrapbox-parser": "catalog:",
     "drizzle-orm": "catalog:"
   },
   "devDependencies": {

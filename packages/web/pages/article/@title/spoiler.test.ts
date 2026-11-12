@@ -28,6 +28,7 @@ function articleData(spoiler: boolean): Data {
     atUri: null,
     clipKind: null,
     embeds: {},
+    motes: {},
     xhtm: {},
     blocks: buildArticleBody("ミステリの感想\n犯人は執事").blocks,
     spoiler,

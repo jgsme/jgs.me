@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { fetchBody } from "@jigsaw/db/fetch-body";
+import { fetchMotes } from "@/server/mote";
 import data from "./+data";
 
 const KEY = "A".repeat(43);
@@ -16,6 +17,7 @@ vi.mock("@/db/getDB", () => {
 });
 vi.mock("@jigsaw/db/fetch-body", () => ({ fetchBody: vi.fn() }));
 vi.mock("@/server/oembed", () => ({ fetchOEmbeds: vi.fn(async () => ({})) }));
+vi.mock("@/server/mote", () => ({ fetchMotes: vi.fn(async () => ({})) }));
 vi.mock("../../article/@title/xhtmParts", () => ({
   loadXhtmParts: vi.fn(async () => ({})),
 }));
@@ -94,4 +96,29 @@ it("fetchBody に draft の bodyKey を渡す (page 表を引かない)", async 
   expect(fetchBody).toHaveBeenCalledWith(R2, "sb-1", "題");
   // drafts の 1 回だけ。page / backlinks / 関連記事の引き当てはしない。
   expect(limit).toHaveBeenCalledTimes(1);
+});
+
+const MOTE = "https://mote.jgs.me/u/jgs.me/3mz7iuy6k2222";
+
+it("本文に mote の link があれば正規化した URL で fetchMotes を呼ぶ", async () => {
+  rows.push(row);
+  vi.mocked(fetchBody).mockResolvedValue(`題\n[${MOTE}/]`);
+  await data(context(KEY, new Headers()));
+  expect(fetchMotes).toHaveBeenCalledWith([MOTE]);
+});
+
+it("fetchMotes の結果を motes として返す", async () => {
+  rows.push(row);
+  vi.mocked(fetchBody).mockResolvedValue(`題\n[${MOTE}]`);
+  const motes = { [MOTE]: { pageUrl: MOTE } };
+  vi.mocked(fetchMotes).mockResolvedValueOnce(motes as never);
+  const d = await data(context(KEY, new Headers()));
+  expect(d.motes).toEqual(motes);
+});
+
+it("mote の link が無い下書きは motes が空", async () => {
+  rows.push(row);
+  vi.mocked(fetchBody).mockResolvedValue("題\n本文");
+  const d = await data(context(KEY, new Headers()));
+  expect(d.motes).toEqual({});
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "@progfay/scrapbox-parser";
-import { collectOEmbedUrls, embedOf } from "./embed";
+import { collectMoteUrls, collectOEmbedUrls, embedOf } from "./embed";
 
 describe("embedOf", () => {
   it("YouTube は動画 ID を返す", () => {
@@ -58,6 +58,21 @@ describe("embedOf", () => {
     expect(embedOf("https://open.spotify.com/user/foo")).toBeNull();
   });
 
+  it("mote の URL は mote の埋め込みになる", () => {
+    expect(
+      embedOf("https://mote.jgs.me/u/ds.jgs.me/3mzzs3sn3d22l/?x=1"),
+    ).toEqual({
+      kind: "mote",
+      url: "https://mote.jgs.me/u/ds.jgs.me/3mzzs3sn3d22l",
+    });
+  });
+
+  it("mote の JSON の URL は埋め込みにならない", () => {
+    expect(
+      embedOf("https://mote.jgs.me/v1/videos/ds.jgs.me/3mzzs3sn3d22l"),
+    ).toBeNull();
+  });
+
   it("壊れた URL は null", () => {
     expect(embedOf("not a url")).toBeNull();
   });
@@ -77,6 +92,31 @@ describe("collectOEmbedUrls", () => {
     expect(collectOEmbedUrls(blocks)).toEqual([
       "https://bsky.app/profile/a.bsky.social/post/aaa",
       "https://open.spotify.com/track/xyz",
+    ]);
+  });
+});
+
+const MOTE_A = "https://mote.jgs.me/u/ds.jgs.me/3mzzs3sn3d22l";
+const MOTE_B = "https://mote.jgs.me/u/ds.jgs.me/3mzzs3sn3d23l";
+
+describe("collectMoteUrls", () => {
+  const blocks = parse(
+    [
+      "title",
+      `[${MOTE_A}]`,
+      "[https://bsky.app/profile/a.bsky.social/post/aaa]",
+      `[* [${MOTE_B}?x=1]]`,
+      `[${MOTE_A}/]`,
+    ].join("\n"),
+  );
+
+  it("collectMoteUrls は出現順に重複無しで返す", () => {
+    expect(collectMoteUrls(blocks)).toEqual([MOTE_A, MOTE_B]);
+  });
+
+  it("collectOEmbedUrls は mote を含めない", () => {
+    expect(collectOEmbedUrls(blocks)).toEqual([
+      "https://bsky.app/profile/a.bsky.social/post/aaa",
     ]);
   });
 });

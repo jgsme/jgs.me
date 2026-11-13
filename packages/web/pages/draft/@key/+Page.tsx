@@ -6,6 +6,7 @@ import {
   SpoilerGate,
   remeasure,
 } from "../../article/@title/components/SpoilerGate";
+import { MotesContext } from "../../article/@title/components/Mote";
 import { OEmbedsContext } from "../../article/@title/components/OEmbed";
 import { XhtmPartsContext } from "../../article/@title/components/XhtmHost";
 
@@ -26,13 +27,15 @@ const Page = () => {
       <h1 className="text-2xl font-bold mb-8">{d.title}</h1>
       <div className="e-content space-y-1">
         <OEmbedsContext value={d.embeds}>
-          <XhtmPartsContext value={d.xhtm}>
-            <SpoilerGate spoiler={d.spoiler} onReveal={remeasure}>
-              {d.blocks.map((block, i) => (
-                <ScrapboxBlock key={i} block={block} />
-              ))}
-            </SpoilerGate>
-          </XhtmPartsContext>
+          <MotesContext value={d.motes}>
+            <XhtmPartsContext value={d.xhtm}>
+              <SpoilerGate spoiler={d.spoiler} onReveal={remeasure}>
+                {d.blocks.map((block, i) => (
+                  <ScrapboxBlock key={i} block={block} />
+                ))}
+              </SpoilerGate>
+            </XhtmPartsContext>
+          </MotesContext>
         </OEmbedsContext>
       </div>
     </main>

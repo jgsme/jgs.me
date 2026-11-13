@@ -6,9 +6,13 @@ import { isDraftKey } from "@jigsaw/db/draft";
 import { fetchBody } from "@jigsaw/db/fetch-body";
 import { getDB } from "@/db/getDB";
 import { fetchOEmbeds } from "@/server/oembed";
+import { fetchMotes } from "@/server/mote";
 import type { Bindings } from "@/server/types";
 import { buildArticleBody } from "../../article/@title/articleBody";
-import { collectOEmbedUrls } from "../../article/@title/components/embed";
+import {
+  collectMoteUrls,
+  collectOEmbedUrls,
+} from "../../article/@title/components/embed";
 import { loadXhtmParts } from "../../article/@title/xhtmParts";
 import { applyDraftHeaders } from "./draftHeaders";
 
@@ -41,14 +45,22 @@ const data = async (c: Context) => {
   if (body === null) throw render(404);
 
   const { blocks } = buildArticleBody(body);
-  const [embeds, xhtm] = await Promise.all([
+  const [embeds, motes, xhtm] = await Promise.all([
     fetchOEmbeds(collectOEmbedUrls(blocks)),
+    fetchMotes(collectMoteUrls(blocks)),
     loadXhtmParts(c.env.MEDIA, blocks),
   ]);
 
   // config({ title, description }) は呼ばない。+title.ts の固定の題だけを出し、
   // OG の題・説明に下書きの中身を載せない。
-  return { title: row.title, blocks, embeds, xhtm, spoiler: row.spoiler };
+  return {
+    title: row.title,
+    blocks,
+    embeds,
+    motes,
+    xhtm,
+    spoiler: row.spoiler,
+  };
 };
 
 export default data;

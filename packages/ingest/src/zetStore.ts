@@ -8,6 +8,7 @@ import { chunk } from "./rows";
 import { SITE_URL, objectURI } from "./site";
 import { purge } from "./purge";
 import { fetchZetRecord } from "./zetRecord";
+import { motePosterFromEnv } from "./motePoster";
 import { envRehoster } from "./zetBlob";
 import {
   ingestZet,
@@ -131,6 +132,7 @@ export async function findZetByAtUri(
       zetID: zets.id,
       bodyKey: pages.bodyKey,
       cid: copies.cid,
+      image: pages.image,
     })
     .from(copies)
     .innerJoin(objects, eq(objects.id, copies.objectID))
@@ -148,6 +150,7 @@ export function zetDeps(env: Env): ZetDeps {
     getRecord: (rkey) =>
       fetchZetRecord(rkey, (input, init) => fetch(input, init)),
     rehostBlob: envRehoster(env),
+    motePoster: motePosterFromEnv(env),
     findByAtUri: (atUri) => findZetByAtUri(db, atUri),
     putBody: async (bodyKey, body) => {
       const key = r2KeyOf(bodyKey);

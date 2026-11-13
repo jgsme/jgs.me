@@ -56,7 +56,7 @@ export async function rehostBlobImages(
 }
 
 // Workers の fetch は User-Agent を送らない (gyazoMigrate.ts と同じ理由で付ける)。
-const USER_AGENT = "jgs-me/0.1.0 (+https://w.jgs.me/)";
+export const USER_AGENT = "jgs-me/0.1.0 (+https://w.jgs.me/)";
 
 export function blobRehoster(
   fetchFn: FetchFn,
@@ -74,12 +74,17 @@ export function blobRehoster(
   };
 }
 
-export function envRehoster(env: Env): RehostBlob {
+// fetchFn を差し替えられる版。envRehoster は global fetch を使う。
+export function rehosterWith(env: Env, fetchFn: FetchFn): RehostBlob {
   return blobRehoster(
-    (input, init) => fetch(input, init),
+    fetchFn,
     (bytes, type) => putMedia(env.MEDIA, bytes, type),
     env.MEDIA_BASE_URL,
   );
+}
+
+export function envRehoster(env: Env): RehostBlob {
+  return rehosterWith(env, (input, init) => fetch(input, init));
 }
 
 export type ZetRehostRow = {

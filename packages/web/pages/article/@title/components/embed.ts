@@ -1,10 +1,12 @@
+import { parseMoteUrl } from "@jigsaw/db/mote";
 import type { Block, Node as NodeType } from "@progfay/scrapbox-parser";
 
 export type OEmbedProvider = "bluesky" | "spotify";
 
 export type EmbedTarget =
   | { kind: "youtube"; videoId: string }
-  | { kind: "oembed"; provider: OEmbedProvider; url: string };
+  | { kind: "oembed"; provider: OEmbedProvider; url: string }
+  | { kind: "mote"; url: string }; // url は正規化済み (MoteRef.url)
 
 export const OEMBED_ENDPOINTS: Record<OEmbedProvider, string> = {
   bluesky: "https://embed.bsky.app/oembed",
@@ -60,6 +62,9 @@ export function embedOf(url: string): EmbedTarget | null {
   const videoId = getYouTubeVideoId(url);
   if (videoId) return { kind: "youtube", videoId };
 
+  const mote = parseMoteUrl(url);
+  if (mote) return { kind: "mote", url: mote.url };
+
   let parsed: URL;
   try {
     parsed = new URL(url);
@@ -97,26 +102,35 @@ export function embedOfNode(node: NodeType): EmbedTarget | null {
   return embedOf(node.href);
 }
 
-function oembedUrlsOf(nodes: NodeType[]): string[] {
+function urlsOf(nodes: NodeType[], kind: "oembed" | "mote"): string[] {
   return nodes.flatMap((node) => {
     const target = embedOfNode(node);
-    const own = target?.kind === "oembed" ? [target.url] : [];
+    const own = target?.kind === kind ? [target.url] : [];
     const nested =
       "nodes" in node && Array.isArray(node.nodes)
-        ? oembedUrlsOf(node.nodes)
+        ? urlsOf(node.nodes, kind)
         : [];
     return [...own, ...nested];
   });
 }
 
-// 本文中の oEmbed 対象 URL を、出てくる順に重複なしで集める。
 // 表のセルは parser がリンクを解釈しないので見ない。
-export function collectOEmbedUrls(blocks: Block[]): string[] {
+function collect(blocks: Block[], kind: "oembed" | "mote"): string[] {
   return [
     ...new Set(
       blocks.flatMap((block) =>
-        block.type === "line" ? oembedUrlsOf(block.nodes) : [],
+        block.type === "line" ? urlsOf(block.nodes, kind) : [],
       ),
     ),
   ];
+}
+
+// 本文中の oEmbed 対象 URL を、出てくる順に重複なしで集める。
+export function collectOEmbedUrls(blocks: Block[]): string[] {
+  return collect(blocks, "oembed");
+}
+
+// 本文中の mote の URL (正規化済み) を、出てくる順に重複なしで集める。
+export function collectMoteUrls(blocks: Block[]): string[] {
+  return collect(blocks, "mote");
 }

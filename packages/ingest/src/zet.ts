@@ -2,6 +2,7 @@ import { zetPageTitle, zetPath } from "@jigsaw/db/zet";
 import { buildSbBody } from "./body";
 import { extractLinks } from "./links";
 import { firstImageURL } from "./firstImage";
+import { resolveImage, type MotePoster } from "./motePoster";
 import { bestEffort, fail, message } from "./ingestResponse";
 import { SITE_URL } from "./site";
 import { rehostBlobImages, type RehostBlob } from "./zetBlob";
@@ -16,6 +17,8 @@ export type ZetTarget = {
   zetID: number;
   bodyKey: string;
   cid: string | null;
+  // page.image。mote が調べられなかったときに残す。
+  image: string | null;
 };
 
 export type ZetCreateInput = {
@@ -52,6 +55,7 @@ export type ZetUpdateInput = {
 export type ZetDeps = {
   getRecord: (rkey: string) => Promise<FetchZetResult>;
   rehostBlob: RehostBlob;
+  motePoster: MotePoster;
   findByAtUri: (atUri: string) => Promise<ZetTarget | null>;
   putBody: (bodyKey: string, body: string) => Promise<void>;
   // 書いた page.id を返す。
@@ -102,7 +106,13 @@ export async function ingestZet(
   const body = buildSbBody(pageTitle, text);
   const links = extractLinks(body);
   // サムネと OG 画像。ネタバレでも画像は伏せない (伏せるのは本文)。
-  const image = firstImageURL(text);
+  // update で mote が調べられなかったときは今の image を残す (article と同じ)。
+  const image = await resolveImage(
+    firstImageURL(text),
+    text,
+    deps.motePoster,
+    existing?.image ?? null,
+  );
   const spoiler = record.spoiler;
   const mf2 = JSON.stringify(payload);
   const location = zetURL(ref.rkey);

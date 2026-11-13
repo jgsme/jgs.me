@@ -13,6 +13,8 @@ const AT_URI = `at://did:web:ds.jgs.me/me.jgs.diary.zet/${RKEY}`;
 const BLOB =
   "https://ds.jgs.me/xrpc/com.atproto.sync.getBlob?did=did:web:ds.jgs.me&cid=bafkreiimg";
 const R2 = "https://r2.jgs.me/abc.png";
+const MOTE = "https://mote.jgs.me/u/ds.jgs.me/3mzzs3sn3d22l";
+const MOTE_POSTER = "https://r2.jgs.me/poster.jpeg";
 
 const payload = {
   type: ["h-entry"],
@@ -58,6 +60,7 @@ function fake(over: Partial<ZetDeps> = {}) {
       calls.rehostBlob.push(url);
       return R2;
     },
+    motePoster: async () => ({ kind: "unavailable" }),
     findByAtUri: async () => null,
     putBody: async (key, body) => {
       calls.putBody.push([key, body]);
@@ -82,7 +85,13 @@ function fake(over: Partial<ZetDeps> = {}) {
   return { deps, calls };
 }
 
-const existing = { pageID: 7, zetID: 3, bodyKey: "sb-old", cid: "bafyold" };
+const existing = {
+  pageID: 7,
+  zetID: 3,
+  bodyKey: "sb-old",
+  cid: "bafyold",
+  image: null,
+};
 
 describe("zetURL", () => {
   it("w.jgs.me の /pages/zet%3A<rkey>", () => {
@@ -126,6 +135,48 @@ describe("ingestZet: create", () => {
     expect((await ingestZet(payload, deps)).status).toBe(201);
     expect(calls.putBody[0]![1]).toContain(`[${BLOB}#.png]`);
     expect(calls.create[0]!.image).toBe(`${BLOB}#.png`);
+  });
+
+  it("画像の無い zet は mote の poster を image に入れる", async () => {
+    const { deps, calls } = fake({
+      getRecord: async () => found({ text: `動画 [${MOTE}]` }),
+      motePoster: async () => ({ kind: "poster", url: MOTE_POSTER }),
+    });
+    expect((await ingestZet(payload, deps)).status).toBe(201);
+    expect(calls.create[0]!.image).toBe(MOTE_POSTER);
+  });
+
+  it("画像と mote の両方がある zet は画像を image に入れる", async () => {
+    let called = 0;
+    const { deps, calls } = fake({
+      getRecord: async () => found({ text: `[${MOTE}]\n[${BLOB}]` }),
+      motePoster: async () => {
+        called++;
+        return { kind: "poster", url: MOTE_POSTER };
+      },
+    });
+    await ingestZet(payload, deps);
+    expect(calls.create[0]!.image).toBe(R2);
+    expect(called).toBe(0);
+  });
+
+  it("mote の poster が取れない zet は image が null のまま取り込まれる", async () => {
+    const { deps, calls } = fake({
+      getRecord: async () => found({ text: `動画 [${MOTE}]` }),
+      motePoster: async () => ({ kind: "unavailable" }),
+    });
+    expect((await ingestZet(payload, deps)).status).toBe(201);
+    expect(calls.create).toHaveLength(1);
+    expect(calls.create[0]!.image).toBeNull();
+  });
+
+  it("mote が none の zet も image は null で取り込まれる", async () => {
+    const { deps, calls } = fake({
+      getRecord: async () => found({ text: `動画 [${MOTE}]` }),
+      motePoster: async () => ({ kind: "none" }),
+    });
+    expect((await ingestZet(payload, deps)).status).toBe(201);
+    expect(calls.create[0]!.image).toBeNull();
   });
 
   it("page / zet / object / copy に入れる値を渡す", async () => {
@@ -243,6 +294,29 @@ describe("ingestZet: update", () => {
         links: ["公園", "朝"],
       },
     ]);
+  });
+
+  const OLD_POSTER = "https://r2.jgs.me/old-poster.jpeg";
+  const moteOnly = () => found({ text: `見て\n[${MOTE}]` }, "bafycid2");
+
+  it("画像の無い zet の update で mote が unavailable なら前の image を残す", async () => {
+    const { deps, calls } = fake({
+      findByAtUri: async () => ({ ...existing, image: OLD_POSTER }),
+      getRecord: async () => moteOnly(),
+      motePoster: async () => ({ kind: "unavailable" }),
+    });
+    await ingestZet(payload, deps);
+    expect(calls.update[0]!.image).toBe(OLD_POSTER);
+  });
+
+  it("画像の無い zet の update で mote が none なら image を null にする", async () => {
+    const { deps, calls } = fake({
+      findByAtUri: async () => ({ ...existing, image: OLD_POSTER }),
+      getRecord: async () => moteOnly(),
+      motePoster: async () => ({ kind: "none" }),
+    });
+    await ingestZet(payload, deps);
+    expect(calls.update[0]!.image).toBeNull();
   });
 
   it("個別・一覧・share URL (/p, /z) を purge し、update で publish する", async () => {

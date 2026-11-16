@@ -10,6 +10,12 @@ describe("purifyScrapboxText", () => {
     expect(purifyScrapboxText("[[太字]] のテキスト")).toBe("太字 のテキスト");
   });
 
+  it("[[画像URL]] を除去し、] を残さない", () => {
+    expect(purifyScrapboxText("前 [[https://r2.jgs.me/a.png]] 後")).toBe(
+      "前 後",
+    );
+  });
+
   it("装飾記法 [* text] を除去する", () => {
     expect(purifyScrapboxText("[* 強調] されたテキスト")).toBe(
       "強調 されたテキスト",

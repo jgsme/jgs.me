@@ -224,7 +224,7 @@ publication record は `at://did:web:ds.jgs.me/site.standard.publication/3mz7iuy
 
 ## Version Control Workflow
 
-**main に直接 push しない。必ず Pull Request を使う。push と merge はそれぞれユーザー承認を待つ。**
+**main に直接 push しない。必ず Pull Request を使う。merge はユーザー承認を待つ。**
 
 1. 最新の `origin/main` から branch を作る。
    ```bash
@@ -240,7 +240,7 @@ publication record は `at://did:web:ds.jgs.me/site.standard.publication/3mz7iuy
    pnpm format
    git commit -m "feat: description of changes"
    ```
-3. ユーザー承認後に push する。
+3. push する。
    ```bash
    git push -u origin feat/your-feature-name
    ```

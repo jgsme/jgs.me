@@ -12,6 +12,38 @@ import { OEmbedLink } from "./OEmbedLink";
 import { MoteLink } from "./Mote";
 import { pagePath } from "@jigsaw/db/page-path";
 
+// 画像を画面中央基準で本文幅の外に広げる。写真の clip と [[画像URL]] で使う。
+const BleedImage: React.FC<{ src: string; indent: number }> = ({
+  src,
+  indent,
+}) => {
+  const image = photoImageSources(src);
+  return (
+    <span
+      className="block photo-bleed my-2"
+      // 行のインデント (ScrapboxBlock の padding-left) のぶん、はみ出しの
+      // 中心が右へずれる。打ち消す量を index.css に渡す。
+      style={
+        indent > 0
+          ? ({
+              "--photo-indent": `${indent * 1.5}rem`,
+            } as React.CSSProperties)
+          : undefined
+      }
+    >
+      <img
+        src={image.src}
+        srcSet={image.srcSet}
+        sizes={image.sizes}
+        alt=""
+        className="block max-w-full h-auto rounded mx-auto"
+        loading="lazy"
+        decoding="async"
+      />
+    </span>
+  );
+};
+
 export const ScrapboxNode: React.FC<{
   node: NodeType;
   /* 行のインデント段数。引用のはみ出しを止めるためだけに使う。ScrapboxBlock が
@@ -93,33 +125,7 @@ export const ScrapboxNode: React.FC<{
       // 写真の clip では画像を画面中央基準で広げる。引用と違ってインデントは見ない。
       // 写真が主役のページでは、インデントは書いた時の癖でしか付いておらず、
       // それで画像の出方が変わるほうが読み手には不可解になる。
-      if (photo) {
-        const image = photoImageSources(node.src);
-        return (
-          <span
-            className="block photo-bleed my-2"
-            // 行のインデント (ScrapboxBlock の padding-left) のぶん、はみ出しの
-            // 中心が右へずれる。打ち消す量を index.css に渡す。
-            style={
-              indent > 0
-                ? ({
-                    "--photo-indent": `${indent * 1.5}rem`,
-                  } as React.CSSProperties)
-                : undefined
-            }
-          >
-            <img
-              src={image.src}
-              srcSet={image.srcSet}
-              sizes={image.sizes}
-              alt=""
-              className="block max-w-full h-auto rounded mx-auto"
-              loading="lazy"
-              decoding="async"
-            />
-          </span>
-        );
-      }
+      if (photo) return <BleedImage src={node.src} indent={indent} />;
       if (!emphasizeQuote) {
         const image = bodyImageSources(node.src);
         return (
@@ -247,8 +253,13 @@ export const ScrapboxNode: React.FC<{
         </>
       );
 
+    case "strongImage":
+      // [[画像URL]] は書き手がその画像だけ本文幅の外に広げたい時の記法。
+      // 写真 clip か引用 clip かには関係なく、どのページでも広げる。
+      return <BleedImage src={node.src} indent={indent} />;
+
     default:
-      // helpfeel / formula / strongImage / strongIcon / googleMap / commandLine / blank など
+      // helpfeel / formula / strongIcon / googleMap / commandLine / blank など
       // 未対応のノード。本文が黙って消えないよう、必ず raw をテキストとして残す
       return <>{node.raw}</>;
   }

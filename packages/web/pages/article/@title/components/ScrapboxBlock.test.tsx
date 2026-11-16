@@ -18,12 +18,15 @@ const VIEW: MoteView = {
   alt: null,
 };
 
-const renderLine = (text: string) => {
+const renderLine = (
+  text: string,
+  props: { photo?: boolean; emphasizeQuote?: boolean } = {},
+) => {
   const block = parse(`title\n${text}`)[1];
   if (!block) throw new Error("block expected");
   return renderToString(
     <MotesContext value={{ [URL_]: VIEW }}>
-      <ScrapboxBlock block={block} />
+      <ScrapboxBlock block={block} {...props} />
     </MotesContext>,
   );
 };
@@ -50,5 +53,41 @@ describe("ScrapboxBlock の行の入れ物", () => {
 
   it("埋め込みの無い行は p で包む", () => {
     expect(renderLine("[* ただの行]")).toMatch(/^<p/);
+  });
+});
+
+describe("strongImage", () => {
+  const IMG = "https://r2.jgs.me/a.png";
+
+  it("[[画像URL]] は photo-bleed で包む", () => {
+    const html = renderLine(`[[${IMG}]]`);
+    expect(html).toContain("photo-bleed");
+    expect(html).toContain("<img");
+    expect(html).not.toContain("[[");
+  });
+
+  it("普通の画像は photo-bleed にしない", () => {
+    expect(renderLine(`[${IMG}]`)).not.toContain("photo-bleed");
+  });
+
+  it("インデントされた行では --photo-indent を渡す", () => {
+    expect(renderLine(`  [[${IMG}]]`)).toContain("--photo-indent:3rem");
+  });
+
+  it("引用 clip でも [[画像URL]] は広げる", () => {
+    const html = renderLine(`[[${IMG}]]`, { emphasizeQuote: true });
+    expect(html).toContain("photo-bleed");
+    expect(html).not.toContain("max-w-96");
+  });
+
+  it("写真 clip の [[画像URL]] は 1 回だけ包む", () => {
+    const html = renderLine(`[[${IMG}]]`, { photo: true });
+    expect(html.match(/photo-bleed/g)).toHaveLength(1);
+  });
+
+  it("画像でない [[URL]] は太字のリンクのまま", () => {
+    const html = renderLine("[[https://example.com/x]]");
+    expect(html).not.toContain("photo-bleed");
+    expect(html).toContain("<strong");
   });
 });

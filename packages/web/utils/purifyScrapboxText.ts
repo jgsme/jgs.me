@@ -23,6 +23,7 @@ export function purifyScrapboxText(text: string): string {
   return text
     .replace(/^(code|table):.+$/gm, "")
     .replace(/`[^`]+`/g, "")
+    .replace(/\[\[https?:\/\/[^\s\]]+\]\]/g, "")
     .replace(/\[[^\]]*\.(icon|jpg|jpeg|png|gif|svg|webp|gyazo)[^\]]*\]/gi, "")
     .replace(/\[https?:\/\/[^\s\]]+\s+([^\]]+)\]/g, "$1")
     .replace(/\[https?:\/\/[^\]]+\]/g, "")

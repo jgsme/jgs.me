@@ -91,3 +91,24 @@ describe("strongImage", () => {
     expect(html).toContain("<strong");
   });
 });
+
+describe("強調の段階", () => {
+  it("4 段目以上にも class が付く", () => {
+    expect(renderLine("[**** 四]")).toContain(
+      'class="text-deco-4-mobile md:text-deco-4 wrap-anywhere"',
+    );
+  });
+  it("* を 11 個書いても 10 段目", () => {
+    expect(renderLine("[*********** 十一]")).toContain("md:text-deco-10");
+  });
+  it("斜体と重ねても両方付く", () => {
+    const html = renderLine("[*/ 斜体]");
+    expect(html).toContain("text-deco-1-mobile");
+    expect(html).toContain("italic");
+  });
+  it("UI の段の class を使わない", () => {
+    const html = renderLine("[*** 三]");
+    expect(html).not.toContain("text-3xl");
+    expect(html).not.toContain("font-bold");
+  });
+});

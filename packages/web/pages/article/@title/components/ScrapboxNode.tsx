@@ -5,6 +5,7 @@ import {
   photoImageSources,
   QUOTE_CLIP_IMAGE_WIDTH,
 } from "@/utils/bodyImage";
+import { decoClassName, decoLevel } from "./deco";
 import { quoteClassName } from "./quote";
 import { embedOf } from "./embed";
 import { YouTubeEmbed } from "./YouTubeEmbed";
@@ -165,9 +166,8 @@ export const ScrapboxNode: React.FC<{
 
     case "decoration": {
       const classes: string[] = [];
-      if (node.decos.includes("*-1")) classes.push("text-xl font-bold");
-      if (node.decos.includes("*-2")) classes.push("text-2xl font-bold");
-      if (node.decos.includes("*-3")) classes.push("text-3xl font-bold");
+      const level = decoLevel(node.decos);
+      if (level !== null) classes.push(decoClassName(level));
       if (node.decos.some((d) => d === "/")) classes.push("italic");
       if (node.decos.some((d) => d === "-")) classes.push("line-through");
 

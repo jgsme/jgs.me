@@ -88,9 +88,10 @@ fi
 
 # text-deco-* は記事本文の強調 (deco.ts) 専用で、UI の文字サイズとは別の体系。
 # UI に紛れ込むと、本文だけ大きくする意図の段が UI の大きさを決めてしまう。
-# 使ってよいのは記事本文を描く components/ の下だけ。
+# class の文字列は deco.ts だけが持ち、ほかの component は decoClassName 経由で受け取る。
+# 文字列を含んでよいのは deco.ts とその test (ScrapboxBlock.test.tsx 含む) だけ。
 if grep -rnE "${ex[@]}" '(^|[^a-zA-Z0-9-])text-deco-' "${targets[@]}" \
-  | grep -vE '^packages/web/pages/article/@title/components/'; then
+  | grep -vE '^packages/web/pages/article/@title/components/(deco\.ts|deco\.test\.ts|ScrapboxBlock\.test\.tsx):'; then
   echo "!! text-deco-* は記事本文の強調だけに使う。UI では UI の語彙を使う"
   status=1
 fi

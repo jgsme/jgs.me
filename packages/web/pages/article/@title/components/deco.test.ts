@@ -48,6 +48,7 @@ describe("isDecoBleedLine", () => {
     ["後ろに文がある", "[******* 七] 後"],
     ["引用の中", "> [******* 七]"],
     ["埋め込みを含む", "[******* [https://www.youtube.com/watch?v=abc123]]"],
+    ["画像を含む", "[******* [https://example.com/a.png]]"],
     ["強調の無い行", "ただの行"],
   ])("%s は広げない", (_, text) => {
     expect(isDecoBleedLine(line(text))).toBe(false);

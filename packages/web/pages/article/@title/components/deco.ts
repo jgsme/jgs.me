@@ -1,4 +1,4 @@
-import type { Block } from "@progfay/scrapbox-parser";
+import type { Block, Node as NodeType } from "@progfay/scrapbox-parser";
 import { containsEmbed } from "./embed";
 
 /**
@@ -39,11 +39,22 @@ export function decoClassName(level: number): string {
 /** 広げ始める段。これ以上の強調だけの行を本文幅の外へ出す。 */
 const BLEED_MIN_LEVEL = 7;
 
+/** node の下 (自身を含む) に画像があるか。 */
+function containsImage(nodes: readonly NodeType[]): boolean {
+  return nodes.some(
+    (n) =>
+      n.type === "image" ||
+      n.type === "strongImage" ||
+      ("nodes" in n && containsImage(n.nodes)),
+  );
+}
+
 /**
  * 本文幅の外へ広げて中央に置く行か。
  * インデント 0 で、強調 1 個だけの行に限る。前後に文が付く行を広げると、
  * 文の途中で幅が変わる。インデントや引用の中は位置がずれるので広げない。
- * 埋め込みは自分で幅を持つので広げない。
+ * 埋め込みと画像は自分で幅を持つので、強調で包んでも広げない
+ * (画像を広げたいときは `[[画像URL]]` を使う)。
  */
 export function isDecoBleedLine(block: Block): boolean {
   if (block.type !== "line" || block.indent !== 0) return false;
@@ -51,6 +62,9 @@ export function isDecoBleedLine(block: Block): boolean {
   if (!node || rest.length > 0 || node.type !== "decoration") return false;
   const level = decoLevel(node.decos);
   return (
-    level !== null && level >= BLEED_MIN_LEVEL && !containsEmbed(block.nodes)
+    level !== null &&
+    level >= BLEED_MIN_LEVEL &&
+    !containsEmbed(block.nodes) &&
+    !containsImage(block.nodes)
   );
 }

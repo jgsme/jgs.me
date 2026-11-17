@@ -110,6 +110,7 @@ npx wrangler d1 migrations apply w --remote  # 適用
    - `autoplay: true`: `controls` を付けず、常に muted (音は勝手に鳴らさない)。画面に入ったら `play()`、出たら `pause()` (IntersectionObserver)。`play()` が拒否された・IntersectionObserver が無いときは `controls` を付ける。自分の `pause()` で中断された `play()` の `AbortError` は拒否に数えない (画面から早く出ただけで controls が出てしまう)。拒否で controls を付けたら observer を外し、以後の再生は読者に任せる (読者が音を出して止めた動画を、画面に入り直したときに鳴らさない)
    - `autoplay: false`: `controls` を付け、muted は record の `muted`。自動では再生しない
    - 共通: `loop` は record の値。`playsinline` と `preload="none"` は常に付き、`autoplay` 属性は付けない (再生の開始は上の observer だけ)
+     本文の強調 (`[* ]`〜`[********** ]`) は 10 段階で、段ごとの class は `components/deco.ts` の表が持つ。md (768px) を境に `text-deco-N-mobile` と `md:text-deco-N` が切り替わる。md 以上で、インデントの無い行が 7〜10 段目の強調 1 個だけでできている (埋め込みを含まない) ときは、`deco-bleed` で本文幅の外へ広げて中央に揃える (`isDecoBleedLine`)。前後に文が付く行やインデント・引用の中は位置がずれるので広げない。値の正は laque で、UI の文字サイズ (`text-2xs`〜`text-6xl`) とは別の体系。`text-deco-*` を記事本文の `components/` の外で書くと `pnpm lint:tokens` が落ちる。
 3. `/a/{id}` — `/pages/{title}` への共有 URL リダイレクト。clip は `/c/{id}`、zet は `/z/{zet.id}`。実体は `server/routes/redirects.ts`、形式は `utils/permalink.ts`。7 日 edge cache、ingest が update 時に purge する。
 4. `pages/search/` — 検索。
 5. `pages/clips/` — clip 一覧。

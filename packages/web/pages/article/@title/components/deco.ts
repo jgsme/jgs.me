@@ -1,3 +1,6 @@
+import type { Block } from "@progfay/scrapbox-parser";
+import { containsEmbed } from "./embed";
+
 /**
  * 強調 `[* x]` の段ごとの class。
  *
@@ -31,4 +34,23 @@ export function decoLevel(decos: readonly string[]): number | null {
 /** 段 (1〜10) の class。範囲の外は空文字。 */
 export function decoClassName(level: number): string {
   return DECO_CLASSES[level - 1] ?? "";
+}
+
+/** 広げ始める段。これ以上の強調だけの行を本文幅の外へ出す。 */
+const BLEED_MIN_LEVEL = 7;
+
+/**
+ * 本文幅の外へ広げて中央に置く行か。
+ * インデント 0 で、強調 1 個だけの行に限る。前後に文が付く行を広げると、
+ * 文の途中で幅が変わる。インデントや引用の中は位置がずれるので広げない。
+ * 埋め込みは自分で幅を持つので広げない。
+ */
+export function isDecoBleedLine(block: Block): boolean {
+  if (block.type !== "line" || block.indent !== 0) return false;
+  const [node, ...rest] = block.nodes;
+  if (!node || rest.length > 0 || node.type !== "decoration") return false;
+  const level = decoLevel(node.decos);
+  return (
+    level !== null && level >= BLEED_MIN_LEVEL && !containsEmbed(block.nodes)
+  );
 }

@@ -112,3 +112,17 @@ describe("強調の段階", () => {
     expect(html).not.toContain("font-bold");
   });
 });
+
+describe("強調を本文幅の外へ広げる", () => {
+  it("7 段目だけの行に付く", () => {
+    expect(renderLine("[******* 七]")).toMatch(
+      /^<p[^>]*class="[^"]*md:deco-bleed md:text-center/,
+    );
+  });
+  it("6 段目には付かない", () => {
+    expect(renderLine("[****** 六]")).not.toContain("deco-bleed");
+  });
+  it("混ざった行には付かない", () => {
+    expect(renderLine("前 [******* 七]")).not.toContain("deco-bleed");
+  });
+});

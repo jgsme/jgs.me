@@ -42,6 +42,18 @@
   translate: -50% 0;
 }
 
+/* 7〜10 段目の強調だけの行を本文幅の外に広げる。中央に置くやり方は photo-bleed
+   と同じで、幅も max で本文幅を下限にする (画面が狭いと 90vw は本文幅より狭い)。
+   広げるのは md 以上、インデント 0、強調だけの行に限る (isDecoBleedLine)。
+   インデント 0 にしか付かないので、photo-bleed のような --photo-indent の補正は
+   要らない。 */
+@utility deco-bleed {
+  width: max(var(--container-deco), 100%);
+  position: relative;
+  left: 50%;
+  translate: -50% 0;
+}
+
 /* 大きく出す引用に付けるダブルクォート。DOM のテキストにしないので、
    引用を選択してコピーしても引用符が混ざらない。
 

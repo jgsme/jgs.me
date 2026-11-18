@@ -134,3 +134,12 @@ export function collectOEmbedUrls(blocks: Block[]): string[] {
 export function collectMoteUrls(blocks: Block[]): string[] {
   return collect(blocks, "mote");
 }
+
+// 子の node まで降りて、埋め込みになるリンクを含むか見る。
+export function containsEmbed(nodes: readonly NodeType[]): boolean {
+  return nodes.some(
+    (n) =>
+      embedOfNode(n) !== null ||
+      ("nodes" in n && Array.isArray(n.nodes) && containsEmbed(n.nodes)),
+  );
+}

@@ -321,8 +321,8 @@ importers:
         specifier: 'catalog:'
         version: 4.13.13
       laque:
-        specifier: ^0.2.0
-        version: 0.2.0(tailwindcss@4.3.3)
+        specifier: ^0.3.0
+        version: 0.3.0(tailwindcss@4.3.3)
       react:
         specifier: 'catalog:'
         version: 19.3.0
@@ -2252,8 +2252,8 @@ packages:
     peerDependencies:
       tailwindcss: ^4.0.0
 
-  laque@0.2.0:
-    resolution: {integrity: sha512-wOAwIgJXSJT8udSAfVN1rG5SG5fIzh2H88daX7CsL+2K+osJd2MXjvOvfOarSIeVG220DJ8nueJvV8kMRA6/Og==}
+  laque@0.3.0:
+    resolution: {integrity: sha512-pEyLcCIdKywrKmcSrvH33rklJSixQUBuhWlefO+/hvfd+9wuVS3ym2G9H3lClI2Gk0NmK5XTJvGcoX/PzfPHPQ==}
     peerDependencies:
       tailwindcss: ^4.0.0
 
@@ -4376,7 +4376,7 @@ snapshots:
     dependencies:
       tailwindcss: 4.3.3
 
-  laque@0.2.0(tailwindcss@4.3.3):
+  laque@0.3.0(tailwindcss@4.3.3):
     dependencies:
       tailwindcss: 4.3.3
 

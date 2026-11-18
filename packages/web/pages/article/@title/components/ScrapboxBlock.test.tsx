@@ -91,3 +91,38 @@ describe("strongImage", () => {
     expect(html).toContain("<strong");
   });
 });
+
+describe("強調の段階", () => {
+  it("4 段目以上にも class が付く", () => {
+    expect(renderLine("[**** 四]")).toContain(
+      'class="text-deco-4-mobile md:text-deco-4 wrap-anywhere"',
+    );
+  });
+  it("* を 11 個書いても 10 段目", () => {
+    expect(renderLine("[*********** 十一]")).toContain("md:text-deco-10");
+  });
+  it("斜体と重ねても両方付く", () => {
+    const html = renderLine("[*/ 斜体]");
+    expect(html).toContain("text-deco-1-mobile");
+    expect(html).toContain("italic");
+  });
+  it("UI の段の class を使わない", () => {
+    const html = renderLine("[*** 三]");
+    expect(html).not.toContain("text-3xl");
+    expect(html).not.toContain("font-bold");
+  });
+});
+
+describe("強調を本文幅の外へ広げる", () => {
+  it("7 段目だけの行に付く", () => {
+    expect(renderLine("[******* 七]")).toMatch(
+      /^<p[^>]*class="[^"]*md:deco-bleed md:text-center/,
+    );
+  });
+  it("6 段目には付かない", () => {
+    expect(renderLine("[****** 六]")).not.toContain("deco-bleed");
+  });
+  it("混ざった行には付かない", () => {
+    expect(renderLine("前 [******* 七]")).not.toContain("deco-bleed");
+  });
+});

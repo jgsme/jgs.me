@@ -1,22 +1,15 @@
 import React, { useContext } from "react";
-import type {
-  Block as BlockType,
-  Node as NodeType,
-} from "@progfay/scrapbox-parser";
+import type { Block as BlockType } from "@progfay/scrapbox-parser";
 import { parseCardBlock } from "./card";
 import { isHorizontalRule } from "./horizontalRule";
 import { ScrapboxNode } from "./ScrapboxNode";
-import { embedOfNode } from "./embed";
+import { isDecoBleedLine } from "./deco";
+import { containsEmbed } from "./embed";
 import { XhtmHost, XhtmPartsContext } from "./XhtmHost";
 import { parseXhtmBlock } from "./xhtmPart";
 
-function containsEmbed(nodes: readonly NodeType[]): boolean {
-  return nodes.some(
-    (n) =>
-      embedOfNode(n) !== null ||
-      ("nodes" in n && Array.isArray(n.nodes) && containsEmbed(n.nodes)),
-  );
-}
+const QUOTE_CLASS =
+  "leading-relaxed [&:has(+[data-quote])]:mb-0 [&:has(+[data-quote])>blockquote]:pb-0 [[data-quote]+&>blockquote]:pt-0";
 
 export const ScrapboxBlock: React.FC<{
   block: BlockType;
@@ -43,6 +36,9 @@ export const ScrapboxBlock: React.FC<{
       // リンクも埋め込みになるので、子の node まで降りて見る。
       const hasBlockElement = hasQuote || containsEmbed(block.nodes);
       const Tag = hasBlockElement ? "div" : "p";
+      // 7〜10 段目だけの行は広い画面で本文幅の外へ広げ、中央に置く。
+      const bleed = isDecoBleedLine(block);
+      const baseClass = hasQuote ? QUOTE_CLASS : "leading-relaxed";
       // 引用は1行ごとに別の blockquote になる。連続する行どうしの間だけ
       // blockquote の上下 padding と親の space-y の margin を消し、1つの引用に見せる。
       // space-y は v4 で「次に兄弟がある要素の margin-bottom」なので、消すのも手前の行の側。
@@ -50,9 +46,7 @@ export const ScrapboxBlock: React.FC<{
         <Tag
           data-quote={hasQuote || undefined}
           className={
-            hasQuote
-              ? "leading-relaxed [&:has(+[data-quote])]:mb-0 [&:has(+[data-quote])>blockquote]:pb-0 [[data-quote]+&>blockquote]:pt-0"
-              : "leading-relaxed"
+            bleed ? `${baseClass} md:deco-bleed md:text-center` : baseClass
           }
           style={{ paddingLeft: `${block.indent * 1.5}rem` }}
         >

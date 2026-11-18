@@ -32,7 +32,7 @@ export const HtmlFoot: React.FC<{ d: HtmlArticleData }> = ({ d }) => {
                 {publishedDisplay}
               </time>
             )}
-            <span className="text-[11px] tracking-[0.08em] leading-relaxed border border-solid border-white/40 text-paper rounded px-1">
+            <span className="text-2xs tracking-[0.08em] leading-relaxed border border-solid border-white/40 text-paper rounded px-1">
               HTML
             </span>
             <CopyButton

@@ -21,7 +21,7 @@
     "standard-publication": "pnpm --filter cli standard-publication"
   },
   "devDependencies": {
-    "prettier": "^3.9.6",
+    "prettier": "^3.10.1",
     "wrangler": "catalog:"
   }
 }

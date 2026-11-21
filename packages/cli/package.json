@@ -14,7 +14,7 @@
     "standard-publication": "node src/standardPublication.ts"
   },
   "devDependencies": {
-    "@types/node": "^24.10.1",
+    "@types/node": "^24.19.2",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }
